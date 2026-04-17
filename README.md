@@ -19,9 +19,9 @@ Don't use any data you see on the watch to take a medical decision.
 - Go to Settings -> Inter-app settings 
 - Enable "Broadcast data locally" and "Send BG data to other apps"
 - Tap on "Identify Receiver" and put "com.arthur.bgollee" (without the quotation marks and separated by a space if there is any other app listening to xdrip)
-- When bg data is send to watch, push the bottom-right button on the watch. It will show your glucose
+- When bg data is send to watch, long-press the bottom-right button on the watch. It will show your glucose
 
-  /!\   If bluetooth was disconnected ('lap' icon not showing on watch), press the bottom-right button twice to reenable bluetooth and then sync the glucose data
+  /!\   If bluetooth was disconnected ('lap' icon not showing on watch), long-press the bottom-right button twice to reenable bluetooth and then sync the glucose data
   
  
 
