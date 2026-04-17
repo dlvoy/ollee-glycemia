@@ -1,13 +1,4 @@
-# Summary
-
-- [BGOllee](https://github.com/Arthur86000/BGOllee#bgollee)
-- [Install](https://github.com/Arthur86000/BGOllee#install)
-- [TODO](https://github.com/Arthur86000/BGOllee#todo)
-
-
-
-
-# BGOllee
+## BGOllee
 
 BGOllee is an apk that collects glucose information from xdrip and send them to an Ollee Watch
 
