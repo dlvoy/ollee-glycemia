@@ -1,4 +1,4 @@
-## BGOllee
+# BGOllee
 
 BGOllee is an apk that collects glucose information from xdrip and send them to an Ollee Watch
 
