@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_button">Demander permissions</string>
+    <string name="select_device">Choisir la montre</string>
+    <string name="no_device">Choisis une montre</string>
+
+    <string name="glycemia">Glycémie</string>
+    <string name="received_at">Reçue à</string>
+    <string name="status">Statut</string>
+
+    <string name="inactive">Inactif</string>
+    <string name="last_data">Dernière donnée reçue</string>
+</resources>
