@@ -1,8 +1,8 @@
 # Summary
 
-- [BGOllee](https://github.com/Arthur86000/Wear-Assistant#wear-assistant)
-- [Install](https://github.com/Arthur86000/Wear-Assistant#install)
-- [TODO](https://github.com/Arthur86000/Wear-Assistant#todo)
+- [BGOllee](https://github.com/Arthur86000/BGOllee#wear-assistant)
+- [Install](https://github.com/Arthur86000/BGOllee#install)
+- [TODO](https://github.com/Arthur86000/BGOllee#todo)
 
 
 
