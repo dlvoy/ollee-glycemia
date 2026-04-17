@@ -27,7 +27,7 @@ Don't use any data you see on the watch to take a medical decision.
 
 # TODO
 - Improve Bluetooth interractions to save battery life
-- Put delta values (but might be useless if an Ollee Watch update allow to create custom watchfaces)
+- Put delta values
 - Notifications for low or high glucose
 
 # Other
