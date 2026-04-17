@@ -4,7 +4,7 @@ BGOllee is an apk that collects glucose information from xdrip and send them to 
 
 # Disclaimer
 
-Don't use any data you see on the watch to take a medical decision.
+Don't use any data you see on the watch to take a medical decision. It is very likely the bg you see on the watch will be false because of synchronization issues
 
 
 
@@ -27,8 +27,10 @@ Don't use any data you see on the watch to take a medical decision.
 
 # TODO
 - Improve Bluetooth interractions to save battery life
+- Create ways to prevent wrong values behind on the watch (out-of-sync issues)
 - Put delta values
 - Notifications for low or high glucose
+
 
 # Other
 
