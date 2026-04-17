@@ -1,6 +1,6 @@
 # Summary
 
-- [BGOllee](https://github.com/Arthur86000/BGOllee#wear-assistant)
+- [BGOllee](https://github.com/Arthur86000/BGOllee#bgollee)
 - [Install](https://github.com/Arthur86000/BGOllee#install)
 - [TODO](https://github.com/Arthur86000/BGOllee#todo)
 
