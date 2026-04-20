@@ -77,6 +77,9 @@ class MainActivity : AppCompatActivity() {
         btnSelectDevice.setOnClickListener { showPairedDevices() }
 
         updateUI()
+
+        // ✅ AUTO START SERVICE
+        startBleServiceSafe()
     }
 
     override fun onStart() {
@@ -164,6 +167,19 @@ class MainActivity : AppCompatActivity() {
     // DEVICE SELECTION
     // ========================
 
+    private fun disableBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+            val intent = Intent(
+                android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+            )
+
+            intent.data = android.net.Uri.parse("package:$packageName")
+
+            startActivity(intent)
+        }
+    }
+
     @SuppressLint("MissingPermission")
     private fun showPairedDevices() {
 
@@ -221,13 +237,20 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
 
+        // BLE Android 12+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             perms.add(Manifest.permission.BLUETOOTH_CONNECT)
             perms.add(Manifest.permission.BLUETOOTH_SCAN)
         }
 
+        // Android 14+
         if (Build.VERSION.SDK_INT >= 34) {
             perms.add(Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE)
+        }
+
+        // 🔔 Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            perms.add(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         ActivityCompat.requestPermissions(this, perms.toTypedArray(), 1)
@@ -241,8 +264,13 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, results)
 
         if (results.isNotEmpty() && results.all { it == PackageManager.PERMISSION_GRANTED }) {
+
             Toast.makeText(this, "Permissions OK", Toast.LENGTH_SHORT).show()
+
+            disableBatteryOptimization() // 🔥 ICI
+
             startBleServiceSafe()
+
         } else {
             Toast.makeText(this, "Permissions denied ❌", Toast.LENGTH_SHORT).show()
         }

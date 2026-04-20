@@ -1,96 +1,144 @@
 package com.arthur.bgollee
 
-import android.Manifest
 import android.app.*
 import android.bluetooth.*
-import android.content.Intent
-import android.os.Build
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
-import androidx.annotation.RequiresPermission
+import android.content.*
+import android.os.*
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.util.*
 
 class BleService : Service() {
 
+    private lateinit var notificationManager: NotificationManager
     private var gatt: BluetoothGatt? = null
-    private var isReady = false
+    private var deviceAddress: String? = null
+    private lateinit var prefs: SharedPreferences
+
+    private var isConnecting = false
+    private var isConnected = false
+    private var servicesReady = false
+
     private var pendingBg: String? = null
-    private var deviceAddress: String? = null // 🔥 FIX IMPORTANT
 
-    private val SERVICE_UUID =
-        UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+    companion object {
+        const val CHANNEL_ID = "ble_service_channel"
 
-    private val WRITE_UUID =
-        UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
+        val SERVICE_UUID =
+            UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+
+        val CHAR_UUID =
+            UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
+    }
+
+    // ========================
+    // BLUETOOTH STATE RECEIVER
+    // ========================
+
+    private val btReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+
+            if (intent.action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+
+                val state = intent.getIntExtra(
+                    BluetoothAdapter.EXTRA_STATE,
+                    BluetoothAdapter.ERROR
+                )
+
+                when (state) {
+
+                    BluetoothAdapter.STATE_OFF -> {
+                        log("🔴 Bluetooth OFF")
+
+                        isConnected = false
+                        servicesReady = false
+
+                        gatt?.close()
+                        gatt = null
+                    }
+
+                    BluetoothAdapter.STATE_ON -> {
+                        log("🟢 Bluetooth ON → reconnexion")
+
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            connect()
+                        }, 1000)
+                    }
+                }
+            }
+        }
+    }
 
     // ========================
     // LIFECYCLE
     // ========================
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onCreate() {
         super.onCreate()
 
-        startForeground(1, notif())
-        send("Service démarré 🚀")
-    }
+        prefs = getSharedPreferences("data", MODE_PRIVATE)
+        deviceAddress = prefs.getString("device_address", null)
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        notificationManager = getSystemService(NotificationManager::class.java)
 
-        // 🔥 récup adresse directe si présente
-        intent?.getStringExtra("device_address")?.let {
-            deviceAddress = it
-            send("Adresse reçue: $it")
+        createNotificationChannel()
+        startForeground(1, createNotification("🔄 Initialisation..."))
+
+        registerReceiver(
+            btReceiver,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
+
+        log("🚀 Service créé")
+
+        Handler(Looper.getMainLooper()).post {
             connect()
         }
+    }
 
-        val rawBg = intent?.getStringExtra("bg")
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(btReceiver)
+    }
 
-        if (rawBg != null) {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-            send("🩸 BG brut: $rawBg")
+        val bg = intent?.getStringExtra("bg")
 
-            val cleanBg = rawBg
+        intent?.getStringExtra("device_address")?.let {
+            deviceAddress = it
+            prefs.edit().putString("device_address", it).apply()
+        }
+
+        if (bg != null) {
+            log("📥 BG reçu: $bg")
+
+            val cleanBg = bg
                 .replace(",", ".")
                 .replace("[^0-9.]".toRegex(), "")
                 .split(".")[0]
                 .take(3)
 
             if (cleanBg.isEmpty()) {
-                send("❌ BG invalide")
+                log("❌ BG invalide")
                 return START_STICKY
             }
 
-            // 🔥 FORMAT MONTRE (CRITIQUE)
-            val formattedBg = cleanBg.padStart(4, ' ')
+            val formatted = cleanBg.padStart(4, ' ')
+            pendingBg = formatted
 
-            send("✅ BG formaté: '$formattedBg'")
-
-            pendingBg = formattedBg
-
-            // sauvegarde UI
-            val prefs = getSharedPreferences("data", MODE_PRIVATE)
             prefs.edit()
                 .putString("last_bg", cleanBg)
                 .putLong("last_time", System.currentTimeMillis())
                 .apply()
 
-            sendBroadcast(Intent("BG_UPDATED").setPackage(packageName))
+            sendBroadcast(Intent("BG_UPDATED"))
 
-            if (gatt != null && isReady) {
+            trySend()
+        }
 
-                send("📤 Envoi direct")
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    sendNow()
-                }, 300)
-
-            } else {
-                send("En attente BLE ⏳")
-            }
+        if (gatt == null && !isConnecting) {
+            connect()
         }
 
         return START_STICKY
@@ -100,24 +148,39 @@ class BleService : Service() {
     // CONNECTION
     // ========================
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private fun connect() {
 
-        isReady = false
-
-        val addr = deviceAddress
-            ?: getSharedPreferences("data", MODE_PRIVATE)
-                .getString("device_address", null)
-
-        if (addr == null) {
-            send("Pas de montre ❌")
+        if (isConnecting) {
+            log("⚠️ Connexion déjà en cours")
             return
         }
 
-        send("Connexion à $addr")
-        val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(addr)
+        val addr = deviceAddress ?: run {
+            log("❌ Pas d'adresse")
+            return
+        }
 
-        gatt = device.connectGatt(this, false, gattCallback)
+        val manager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val adapter = manager.adapter
+
+        val device = adapter.getRemoteDevice(addr)
+
+        // 🔥 RESET GATT IMPORTANT
+        if (gatt != null) {
+            log("♻️ Reset GATT")
+            gatt?.close()
+            gatt = null
+        }
+
+        log("🔗 Connexion à $addr")
+
+        isConnecting = true
+
+        gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+        } else {
+            device.connectGatt(this, false, gattCallback)
+        }
     }
 
     // ========================
@@ -126,23 +189,38 @@ class BleService : Service() {
 
     private val gattCallback = object : BluetoothGattCallback() {
 
-        @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-        override fun onConnectionStateChange(
-            g: BluetoothGatt,
-            status: Int,
-            newState: Int
-        ) {
+        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+
+            log("STATE → status=$status newState=$newState")
+
+            isConnecting = false
+
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                send("Connecté ✅")
+                log("✅ Connecté")
+
+                isConnected = true
+                servicesReady = false
                 gatt = g
-                g.requestMtu(247)
 
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                send("Déconnecté ❌")
+                // 🔥 améliore stabilité
+                g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
 
-                isReady = false
+                g.discoverServices()
+                sendStatus("Connecté")
+                updateNotification("🟢 Connecté à la montre")
+            }
+
+            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                log("❌ Déconnecté")
+
+                isConnected = false
+                servicesReady = false
+
                 gatt?.close()
                 gatt = null
+
+                sendStatus("Déconnecté")
+                updateNotification("🔴 Déconnecté (reconnexion...)")
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     connect()
@@ -150,31 +228,23 @@ class BleService : Service() {
             }
         }
 
-        override fun onMtuChanged(
-            g: BluetoothGatt,
-            mtu: Int,
-            status: Int
-        ) {
-            send("MTU OK = $mtu")
-            g.discoverServices()
-        }
+        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
 
-        override fun onServicesDiscovered(
-            g: BluetoothGatt,
-            status: Int
-        ) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
+            log("📡 Services découverts")
 
-                send("Services OK ✅")
-                isReady = true
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    sendNow()
-                }, 500)
-
-            } else {
-                send("Erreur services ❌")
+            for (service in g.services) {
+                log("🧩 SERVICE: ${service.uuid}")
+                for (char in service.characteristics) {
+                    log("   🔹 CHAR: ${char.uuid}")
+                }
             }
+
+            servicesReady = true
+
+            // 🔥 delay critique (sinon montre ignore)
+            Handler(Looper.getMainLooper()).postDelayed({
+                trySend()
+            }, 1000)
         }
 
         override fun onCharacteristicWrite(
@@ -182,45 +252,60 @@ class BleService : Service() {
             characteristic: BluetoothGattCharacteristic,
             status: Int
         ) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                send("✅ Write confirmé")
-            } else {
-                send("❌ Write échoué: $status")
-            }
+            if (status == BluetoothGatt.GATT_SUCCESS)
+                log("✅ Write confirmé")
+            else
+                log("❌ Write échoué: $status")
         }
     }
 
     // ========================
-    // WRITE
+    // ENVOI
     // ========================
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private fun sendNow() {
-        val value = pendingBg ?: return
-
-        gatt?.let {
-            writeNow(it, value)
-            pendingBg = null
-        }
+    private fun updateNotification(text: String) {
+        val notification = createNotification(text)
+        notificationManager.notify(1, notification)
     }
 
-    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-    private fun writeNow(gatt: BluetoothGatt, value: String) {
+    private fun trySend() {
 
-        val service = gatt.getService(SERVICE_UUID) ?: run {
-            send("Service introuvable ❌")
+        val bg = pendingBg ?: return
+
+        if (!isConnected) {
+            log("⏳ Pas encore connecté")
             return
         }
 
-        val charac = service.getCharacteristic(WRITE_UUID) ?: run {
-            send("Charac introuvable ❌")
+        if (!servicesReady) {
+            log("⏳ Services pas prêts")
+            return
+        }
+
+        sendToWatch(bg)
+        pendingBg = null
+    }
+
+    private fun sendToWatch(bg: String) {
+
+        val g = gatt ?: return
+
+        log("📡 Envoi glycémie: '$bg'")
+
+        val service = g.getService(SERVICE_UUID) ?: run {
+            log("❌ Service introuvable")
+            return
+        }
+
+        val charac = service.getCharacteristic(CHAR_UUID) ?: run {
+            log("❌ Characteristic introuvable")
             return
         }
 
         val payload = byteArrayOf(
             0x02, 0x2f,
             0x20, 0x20
-        ) + value.toByteArray()
+        ) + bg.toByteArray()
 
         val crc = crc16(payload)
 
@@ -236,9 +321,9 @@ class BleService : Service() {
         charac.value = packet
         charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
-        val success = gatt.writeCharacteristic(charac)
+        val success = g.writeCharacteristic(charac)
 
-        send("📤 Envoi: '$value' / OK=$success")
+        log("📤 write = $success → $bg")
     }
 
     // ========================
@@ -262,31 +347,45 @@ class BleService : Service() {
         return crc
     }
 
-    // ========================
-    // UTILS
-    // ========================
+    override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun notif(): Notification {
-        val id = "ble"
+    private fun createNotification(text: String): Notification {
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val chan = NotificationChannel(id, "BLE", NotificationManager.IMPORTANCE_LOW)
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(chan)
-        }
+        val intent = Intent(this, MainActivity::class.java)
 
-        return NotificationCompat.Builder(this, id)
-            .setContentTitle("BLE actif")
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("xDrip → Watch")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true) // 🔥 IMPORTANT
             .build()
     }
 
-    private fun send(msg: String) {
-        val intent = Intent("BLE_STATUS")
-        intent.setPackage(packageName)
-        intent.putExtra("status", msg)
-        sendBroadcast(intent)
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "BLE Service",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        getSystemService(NotificationManager::class.java)
+            .createNotificationChannel(channel)
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    private fun log(msg: String) {
+        Log.d("BleService", msg)
+    }
+
+    private fun sendStatus(status: String) {
+        val intent = Intent("BLE_STATUS")
+        intent.putExtra("status", status)
+        sendBroadcast(intent)
+    }
 }
