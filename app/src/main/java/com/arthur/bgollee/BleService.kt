@@ -113,22 +113,50 @@ class BleService : Service() {
         if (bg != null) {
             log("📥 BG reçu: $bg")
 
-            val cleanBg = bg
-                .replace(",", ".")
-                .replace("[^0-9.]".toRegex(), "")
-                .split(".")[0]
-                .take(3)
+            val raw = bg.replace(",", ".")
 
-            if (cleanBg.isEmpty()) {
-                log("❌ BG invalide")
-                return START_STICKY
+            val formatted = if (raw.contains(".")) {
+                // ========================
+                // mmol/L
+                // ========================
+                val mmol = raw.toFloatOrNull()
+
+                if (mmol == null) {
+                    log("❌ mmol invalide")
+                    return START_STICKY
+                }
+
+                val safe = mmol.coerceIn(0f, 99.9f)
+
+                String.format("%.1f", safe)
+                    .take(4)
+                    .padStart(4, ' ')
+
+            } else {
+                // ========================
+                // mg/dL
+                // ========================
+                val mgdl = raw
+                    .replace("[^0-9]".toRegex(), "")
+                    .toIntOrNull()
+
+                if (mgdl == null) {
+                    log("❌ mg/dL invalide")
+                    return START_STICKY
+                }
+
+                val safe = mgdl.coerceIn(0, 999)
+
+                safe.toString()
+                    .padStart(4, ' ')
             }
 
-            val formatted = cleanBg.padStart(4, ' ')
             pendingBg = formatted
 
+            log("📦 Format envoyé: '$formatted'")
+
             prefs.edit()
-                .putString("last_bg", cleanBg)
+                .putString("last_bg", formatted.trim())
                 .putLong("last_time", System.currentTimeMillis())
                 .apply()
 
@@ -161,11 +189,8 @@ class BleService : Service() {
         }
 
         val manager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val adapter = manager.adapter
+        val device = manager.adapter.getRemoteDevice(addr)
 
-        val device = adapter.getRemoteDevice(addr)
-
-        // 🔥 RESET GATT IMPORTANT
         if (gatt != null) {
             log("♻️ Reset GATT")
             gatt?.close()
@@ -176,16 +201,13 @@ class BleService : Service() {
 
         isConnecting = true
 
-        gatt = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
-        } else {
-            device.connectGatt(this, false, gattCallback)
-        }
+        gatt = device.connectGatt(
+            this,
+            false,
+            gattCallback,
+            BluetoothDevice.TRANSPORT_LE
+        )
     }
-
-    // ========================
-    // GATT CALLBACK
-    // ========================
 
     private val gattCallback = object : BluetoothGattCallback() {
 
@@ -202,12 +224,10 @@ class BleService : Service() {
                 servicesReady = false
                 gatt = g
 
-                // 🔥 améliore stabilité
                 g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
-
                 g.discoverServices()
-                sendStatus("Connecté")
-                updateNotification("🟢 Connecté à la montre")
+
+                updateNotification("🟢 Connecté")
             }
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -219,8 +239,7 @@ class BleService : Service() {
                 gatt?.close()
                 gatt = null
 
-                sendStatus("Déconnecté")
-                updateNotification("🔴 Déconnecté (reconnexion...)")
+                updateNotification("🔴 Reconnexion...")
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     connect()
@@ -229,19 +248,10 @@ class BleService : Service() {
         }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
-
             log("📡 Services découverts")
-
-            for (service in g.services) {
-                log("🧩 SERVICE: ${service.uuid}")
-                for (char in service.characteristics) {
-                    log("   🔹 CHAR: ${char.uuid}")
-                }
-            }
 
             servicesReady = true
 
-            // 🔥 delay critique (sinon montre ignore)
             Handler(Looper.getMainLooper()).postDelayed({
                 trySend()
             }, 1000)
@@ -253,9 +263,9 @@ class BleService : Service() {
             status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS)
-                log("✅ Write confirmé")
+                log("✅ Write OK")
             else
-                log("❌ Write échoué: $status")
+                log("❌ Write FAIL: $status")
         }
     }
 
@@ -263,17 +273,12 @@ class BleService : Service() {
     // ENVOI
     // ========================
 
-    private fun updateNotification(text: String) {
-        val notification = createNotification(text)
-        notificationManager.notify(1, notification)
-    }
-
     private fun trySend() {
 
         val bg = pendingBg ?: return
 
         if (!isConnected) {
-            log("⏳ Pas encore connecté")
+            log("⏳ Pas connecté")
             return
         }
 
@@ -290,22 +295,15 @@ class BleService : Service() {
 
         val g = gatt ?: return
 
-        log("📡 Envoi glycémie: '$bg'")
+        log("📡 Envoi: '$bg'")
 
-        val service = g.getService(SERVICE_UUID) ?: run {
-            log("❌ Service introuvable")
-            return
-        }
-
-        val charac = service.getCharacteristic(CHAR_UUID) ?: run {
-            log("❌ Characteristic introuvable")
-            return
-        }
+        val service = g.getService(SERVICE_UUID) ?: return
+        val charac = service.getCharacteristic(CHAR_UUID) ?: return
 
         val payload = byteArrayOf(
             0x02, 0x2f,
             0x20, 0x20
-        ) + bg.toByteArray()
+        ) + bg.toByteArray(Charsets.US_ASCII)
 
         val crc = crc16(payload)
 
@@ -318,12 +316,15 @@ class BleService : Service() {
             (crc and 0xFF).toByte()
         ) + payload
 
+        log("📏 Payload size = ${payload.size}")
+        log("HEX: " + packet.joinToString(" ") { "%02X".format(it) })
+
         charac.value = packet
         charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         val success = g.writeCharacteristic(charac)
 
-        log("📤 write = $success → $bg")
+        log("📤 write = $success")
     }
 
     // ========================
@@ -365,7 +366,7 @@ class BleService : Service() {
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
-            .setOngoing(true) // 🔥 IMPORTANT
+            .setOngoing(true)
             .build()
     }
 
@@ -375,17 +376,14 @@ class BleService : Service() {
             "BLE Service",
             NotificationManager.IMPORTANCE_LOW
         )
-        getSystemService(NotificationManager::class.java)
-            .createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun updateNotification(text: String) {
+        notificationManager.notify(1, createNotification(text))
     }
 
     private fun log(msg: String) {
         Log.d("BleService", msg)
-    }
-
-    private fun sendStatus(status: String) {
-        val intent = Intent("BLE_STATUS")
-        intent.putExtra("status", status)
-        sendBroadcast(intent)
     }
 }
