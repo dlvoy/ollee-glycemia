@@ -13,15 +13,16 @@ Do not use any data displayed on the watch to make medical decisions. The BG val
 - Tap on "Select a watch" and choose your Ollee Watch
   
 For xDrip
-- Open the xDrip app
+<pre>- Open the xDrip app
 - Go to Settings → Inter-app settings
 - Enable "Broadcast data locally" and "Send BG data to other apps"
 - Tap on "Identify Receiver" and enter com.arthur.bgollee (without quotation marks; separate with a space if other apps are already listed)
+</pre>
 
 For GlucoDataHandler
-- Open the GlucoDataHandler
+<pre>- Open the GlucoDataHandler
 - Go to Settings -> Transfer Values -> Enable "Local Applications" and click on it -> Enable "Send xDrip+ Broadcast" -> Identify xDrip+ broadcast receivers -> Choose "BG Ollee"
-
+</pre>
 
 
 - When BG data is sent to the watch, long-press the bottom-right button to display your glucose level
