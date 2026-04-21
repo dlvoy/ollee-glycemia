@@ -30,4 +30,4 @@ Do not use any data displayed on the watch to make medical decisions. The BG val
 Feel free to fork this repository and modify it.
 
 According to the Ollee Watch roadmap (https://www.olleewatch.com/blog/feature-roadmap-october-2025
-), many updates are planned, including support for third-party watch faces.
+), many updates are planned, including support for third-party watch faces. In the meantime, this application is a solid workaround!
