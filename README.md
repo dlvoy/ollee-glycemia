@@ -20,10 +20,10 @@ When BG data is sent to the watch, long-press the bottom-right button to display
 ⚠️ If Bluetooth is disconnected (the *'lap'* icon is not visible on the watch or blinking), long-press the bottom-right button twice to re-enable Bluetooth and sync the glucose data again
 
 ## TODO
-Prevent outdated/incorrect values from remaining on the watch (sync issues)
-Add delta values
-Add notifications for low and high glucose levels
-Other
+- Prevent outdated/incorrect values from remaining on the watch (sync issues)
+- Add delta values
+- Add notifications for low and high glucose levels
+
 
 ## Others
 
