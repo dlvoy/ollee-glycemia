@@ -1,10 +1,11 @@
 # BGOllee
 
-BGOllee is an APK that collects glucose data from xDrip and sends it to an Ollee Watch.
+BGOllee is an APK that collects glucose data from xDrip (or GLucoDataHandler) and sends it to an Ollee Watch.
 
 ## Disclaimer
 
 Do not use any data displayed on the watch to make medical decisions. The BG values shown on the watch may be inaccurate due to synchronization issues.
+
 
 ## Install
 - Download the APK from the releases section: https://github.com/Arthur86000/BGOllee/releases/
@@ -38,6 +39,8 @@ For GlucoDataHandler
 
 
 ## Others
+
+I find that GlucoDataHandler is more reliable than xDrip
 
 Feel free to fork this repository and modify it.
 
