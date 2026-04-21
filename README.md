@@ -8,6 +8,10 @@ Do not use any data displayed on the watch to make medical decisions. The BG val
 
 
 ## Install
+
+- Close the official Ollee Watch app
+- Go into your phone's bluetooth settings
+- Connect to your watch (make sure bluetooth is on on your watch). You may find it under "Rarely used devices"
 - Download the APK from the releases section: https://github.com/Arthur86000/BGOllee/releases/
 - Install and open the app
 - Tap on "Request Permissions" and accept
