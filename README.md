@@ -1,39 +1,33 @@
-# BGOllee
+BGOllee
 
-BGOllee is an apk that collects glucose data from xdrip and send it to an Ollee Watch
+BGOllee is an APK that collects glucose data from xDrip and sends it to an Ollee Watch.
 
-# Disclaimer
+Disclaimer
 
-Don't use any data you see on the watch to take a medical decision. It is very likely the bg you see on the watch will be false because of synchronization issues
+Do not use any data displayed on the watch to make medical decisions. The BG values shown on the watch may be inaccurate due to synchronization issues.
 
+Install
+Download the APK from the releases section: https://github.com/Arthur86000/BGOllee/releases/
+Install and open the app
+Tap on "Request Permissions" and accept
+Tap on "Select a watch" and choose your Ollee Watch
+Open the xDrip app
+Go to Settings → Inter-app settings
+Enable "Broadcast data locally" and "Send BG data to other apps"
+Tap on "Identify Receiver" and enter com.arthur.bgollee (without quotation marks; separate with a space if other apps are already listed)
+When BG data is sent to the watch, long-press the bottom-right button to display your glucose level
 
+⚠️ If Bluetooth is disconnected (the *'lap'* icon is not visible on the watch), long-press the bottom-right button twice to re-enable Bluetooth, then sync the glucose data again
 
+TODO
+Prevent outdated/incorrect values from remaining on the watch (sync issues)
+Add delta values
+Add notifications for low and high glucose levels
+Other
 
-# Install
- 
-- Download the apk in the release section (https://github.com/Arthur86000/BGOllee/releases/)
-- Install the app and open it
-- Tap on the "Request Permissions" button and accept
-- Tap on the "Select a watch" button and choose your Ollee Watch
-- Open the xdrip app
-- Go to Settings -> Inter-app settings 
-- Enable "Broadcast data locally" and "Send BG data to other apps"
-- Tap on "Identify Receiver" and put "com.arthur.bgollee" (without the quotation marks and separated by a space if there is any other app listening to xdrip)
-- When bg data is send to watch, long-press the bottom-right button on the watch. It will show your glucose
+Others
 
-  /!\   If bluetooth was disconnected ('*lap*' icon not showing on watch), long-press the bottom-right button twice to reenable bluetooth and then sync the glucose data
-  
- 
+Feel free to fork this repository and modify it.
 
-# TODO
-
-- Create ways to prevent wrong values behind on the watch (out-of-sync issues)
-- Put delta values
-- Notifications for low or high glucose
-
-
-# Other
-
-This app could be a way to show data from many apps (weather, stock, crypto, reminders, even notifications). The MainActivity.kt could easily be adapted. You are absolutely free to fork this repository and modify it. Keep in mind that the Ollee Watch roadmap (https://www.olleewatch.com/blog/feature-roadmap-october-2025) shows that many updates are coming, especially opening the app to allow the creation of 3rd party watchfaces
-
-
+According to the Ollee Watch roadmap (https://www.olleewatch.com/blog/feature-roadmap-october-2025
+), many updates are planned, including support for third-party watch faces.
