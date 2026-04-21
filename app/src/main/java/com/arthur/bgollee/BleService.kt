@@ -7,8 +7,6 @@ import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.util.*
-import com.arthur.bgollee.MainActivity
-
 
 class BleService : Service() {
 
@@ -23,53 +21,18 @@ class BleService : Service() {
 
     private var pendingBg: String? = null
 
-    // ✅ Anti spam + état erreur
     private var lastSent: String? = null
     private var isInErrorState = false
 
     companion object {
         const val CHANNEL_ID = "ble_service_channel"
-
-        private const val TIMEOUT_MS = 15 * 60 * 1000L // 15 min
+        private const val TIMEOUT_MS = 15 * 60 * 1000L
 
         val SERVICE_UUID =
             UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
 
         val CHAR_UUID =
             UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
-    }
-
-    // ========================
-    // RECEIVER BT
-    // ========================
-
-    private val btReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-
-            if (intent.action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-
-                when (intent.getIntExtra(
-                    BluetoothAdapter.EXTRA_STATE,
-                    BluetoothAdapter.ERROR
-                )) {
-
-                    BluetoothAdapter.STATE_OFF -> {
-                        log("🔴 Bluetooth OFF")
-                        isConnected = false
-                        servicesReady = false
-                        gatt?.close()
-                        gatt = null
-                    }
-
-                    BluetoothAdapter.STATE_ON -> {
-                        log("🟢 Bluetooth ON → reconnexion")
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            connect()
-                        }, 1000)
-                    }
-                }
-            }
-        }
     }
 
     // ========================
@@ -104,6 +67,7 @@ class BleService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         val bg = intent?.getStringExtra("bg")
+        val trend = intent?.getStringExtra("trend")
 
         intent?.getStringExtra("device_address")?.let {
             deviceAddress = it
@@ -111,7 +75,7 @@ class BleService : Service() {
         }
 
         if (bg != null) {
-            handleBg(bg)
+            handleBg(bg, trend)
         }
 
         if (gatt == null && !isConnecting) {
@@ -125,14 +89,14 @@ class BleService : Service() {
     // GESTION BG
     // ========================
 
-    private fun handleBg(bg: String) {
+    private fun handleBg(bg: String, trend: String?) {
 
         val now = System.currentTimeMillis()
 
-        val formatted = formatBg(bg)
+        val formatted = formatBg(bg, trend)
 
         pendingBg = formatted
-        isInErrorState = false // reset erreur
+        isInErrorState = false
 
         prefs.edit()
             .putString("last_bg", formatted.trim())
@@ -144,35 +108,39 @@ class BleService : Service() {
         trySend()
     }
 
-    private fun formatBg(bg: String?): String {
+    private fun formatBg(bg: String?, trend: String?): String {
 
-        if (bg.isNullOrBlank()) return "Err "
+        if (bg.isNullOrBlank()) return "Err   "
 
-        val raw = bg.replace(",", ".")
+        val clean = bg.replace(",", ".")
 
-        // ===== mmol =====
-        if (raw.contains(".")) {
+        val isMmol = clean.contains(".")
 
-            val mmol = raw.toFloatOrNull() ?: return "Err "
-
-            val safe = mmol.coerceIn(0f, 99.9f)
-
-            return String.format("%.1f", safe)
-                .take(4)
-                .padStart(4, ' ')
+        val valueStr = if (isMmol) {
+            val mmol = clean.toFloatOrNull() ?: return "Err   "
+            String.format("%.1f", mmol.coerceIn(0f, 99.9f))
+        } else {
+            val mgdl = clean.replace("[^0-9]".toRegex(), "")
+                .toIntOrNull() ?: return "Err   "
+            mgdl.coerceIn(0, 999).toString()
         }
 
-        // ===== mg/dL =====
-        val mgdl = raw.replace("[^0-9]".toRegex(), "")
-            .toIntOrNull() ?: return "Err "
+        val arrow = when (trend) {
+            "UP" -> "+"
+            "DOWN" -> "-"
+            "FLAT" -> " "
+            else -> " "
+        }
 
-        val safe = mgdl.coerceIn(0, 999)
+        // 👉 on met la valeur FULL à droite sur 5 caractères
+        val valueAligned = valueStr.take(5).padStart(5, ' ')
 
-        return safe.toString().padStart(4, ' ')
+        // 👉 1 char flèche + 5 chars valeur = 6 total
+        return (arrow + valueAligned).take(6)
     }
 
     // ========================
-    // TIMEOUT WATCHER
+    // TIMEOUT
     // ========================
 
     private fun startTimeoutWatcher() {
@@ -190,7 +158,7 @@ class BleService : Service() {
                     if (!isInErrorState) {
                         log("⏱ Timeout → ERROR")
 
-                        pendingBg = "Err "
+                        pendingBg = "Err   "
                         isInErrorState = true
 
                         trySend()
@@ -205,8 +173,37 @@ class BleService : Service() {
     }
 
     // ========================
-    // CONNECTION
+    // BLUETOOTH
     // ========================
+
+    private val btReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+
+            if (intent.action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+
+                when (intent.getIntExtra(
+                    BluetoothAdapter.EXTRA_STATE,
+                    BluetoothAdapter.ERROR
+                )) {
+
+                    BluetoothAdapter.STATE_OFF -> {
+                        log("🔴 Bluetooth OFF")
+                        isConnected = false
+                        servicesReady = false
+                        gatt?.close()
+                        gatt = null
+                    }
+
+                    BluetoothAdapter.STATE_ON -> {
+                        log("🟢 Bluetooth ON → reconnexion")
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            connect()
+                        }, 1000)
+                    }
+                }
+            }
+        }
+    }
 
     private fun connect() {
 
@@ -283,7 +280,6 @@ class BleService : Service() {
 
         if (!isConnected || !servicesReady) return
 
-        // ✅ anti spam
         if (bg == lastSent) return
 
         sendToWatch(bg)
@@ -300,8 +296,7 @@ class BleService : Service() {
         val charac = service.getCharacteristic(CHAR_UUID) ?: return
 
         val payload = byteArrayOf(
-            0x02, 0x2f,
-            0x20, 0x20
+            0x02, 0x2f
         ) + bg.toByteArray(Charsets.US_ASCII)
 
         val crc = crc16(payload)
@@ -319,6 +314,8 @@ class BleService : Service() {
         charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
         g.writeCharacteristic(charac)
+
+        log("📤 Envoyé → '$bg'")
     }
 
     private fun crc16(data: ByteArray): Int {
@@ -339,6 +336,10 @@ class BleService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    // ========================
+    // NOTIF
+    // ========================
 
     private fun createNotification(text: String): Notification {
         val intent = Intent(this, MainActivity::class.java)
