@@ -21,7 +21,9 @@ For xDrip
 
 For GlucoDataHandler
 <pre>- Open the GlucoDataHandler
-- Go to Settings -> Transfer Values -> Enable "Local Applications" and click on it -> Enable "Send xDrip+ Broadcast" -> Identify xDrip+ broadcast receivers -> Choose "BG Ollee"
+- Go to Settings -> Transfer Values -> Enable "Local Applications" and click on it 
+- Enable "Send xDrip+ Broadcast" 
+- Identify xDrip+ broadcast receivers -> Choose "BG Ollee"
 </pre>
 
 
