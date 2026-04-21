@@ -22,6 +22,8 @@ For GlucoDataHandler
 - Open the GlucoDataHandler
 - Go to Settings -> Transfer Values -> Enable "Local Applications" and click on it -> Enable "Send xDrip+ Broadcast" -> Identify xDrip+ broadcast receivers -> Choose "BG Ollee"
 
+
+
 - When BG data is sent to the watch, long-press the bottom-right button to display your glucose level
 
 ⚠️ If Bluetooth is disconnected (the *'lap'* icon is not visible on the watch or blinking), long-press the bottom-right button twice to re-enable Bluetooth and sync the glucose data again
