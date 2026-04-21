@@ -34,6 +34,6 @@ Don't use any data you see on the watch to take a medical decision. It is very l
 
 # Other
 
-This app could be a way to show data from many apps (weather, stock, crypto, reminders, even notifications). The MainActivity.kt could easily be adapted. You are absolutely free to fork this repository and modify it to do whatever you want. Keep in mind that the Ollee Watch roadmap (https://www.olleewatch.com/blog/feature-roadmap-october-2025) shows that many updates are coming, especially opening the app to allow the creation of 3rd party watchfaces
+This app could be a way to show data from many apps (weather, stock, crypto, reminders, even notifications). The MainActivity.kt could easily be adapted. You are absolutely free to fork this repository and modify it. Keep in mind that the Ollee Watch roadmap (https://www.olleewatch.com/blog/feature-roadmap-october-2025) shows that many updates are coming, especially opening the app to allow the creation of 3rd party watchfaces
 
 
