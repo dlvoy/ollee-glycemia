@@ -1,12 +1,12 @@
-#BGOllee
+# BGOllee
 
 BGOllee is an APK that collects glucose data from xDrip and sends it to an Ollee Watch.
 
-##Disclaimer
+## Disclaimer
 
 Do not use any data displayed on the watch to make medical decisions. The BG values shown on the watch may be inaccurate due to synchronization issues.
 
-##Install
+## Install
 Download the APK from the releases section: https://github.com/Arthur86000/BGOllee/releases/
 Install and open the app
 Tap on "Request Permissions" and accept
@@ -19,13 +19,13 @@ When BG data is sent to the watch, long-press the bottom-right button to display
 
 ⚠️ If Bluetooth is disconnected (the *'lap'* icon is not visible on the watch), long-press the bottom-right button twice to re-enable Bluetooth, then sync the glucose data again
 
-##TODO
+## TODO
 Prevent outdated/incorrect values from remaining on the watch (sync issues)
 Add delta values
 Add notifications for low and high glucose levels
 Other
 
-##Others
+## Others
 
 Feel free to fork this repository and modify it.
 
