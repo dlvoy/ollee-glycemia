@@ -7,6 +7,8 @@ import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.util.*
+import com.arthur.bgollee.MainActivity
+
 
 class BleService : Service() {
 
@@ -21,8 +23,14 @@ class BleService : Service() {
 
     private var pendingBg: String? = null
 
+    // ✅ Anti spam + état erreur
+    private var lastSent: String? = null
+    private var isInErrorState = false
+
     companion object {
         const val CHANNEL_ID = "ble_service_channel"
+
+        private const val TIMEOUT_MS = 15 * 60 * 1000L // 15 min
 
         val SERVICE_UUID =
             UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
@@ -32,7 +40,7 @@ class BleService : Service() {
     }
 
     // ========================
-    // BLUETOOTH STATE RECEIVER
+    // RECEIVER BT
     // ========================
 
     private val btReceiver = object : BroadcastReceiver() {
@@ -40,26 +48,21 @@ class BleService : Service() {
 
             if (intent.action == BluetoothAdapter.ACTION_STATE_CHANGED) {
 
-                val state = intent.getIntExtra(
+                when (intent.getIntExtra(
                     BluetoothAdapter.EXTRA_STATE,
                     BluetoothAdapter.ERROR
-                )
-
-                when (state) {
+                )) {
 
                     BluetoothAdapter.STATE_OFF -> {
                         log("🔴 Bluetooth OFF")
-
                         isConnected = false
                         servicesReady = false
-
                         gatt?.close()
                         gatt = null
                     }
 
                     BluetoothAdapter.STATE_ON -> {
                         log("🟢 Bluetooth ON → reconnexion")
-
                         Handler(Looper.getMainLooper()).postDelayed({
                             connect()
                         }, 1000)
@@ -84,16 +87,13 @@ class BleService : Service() {
         createNotificationChannel()
         startForeground(1, createNotification("🔄 Initialisation..."))
 
-        registerReceiver(
-            btReceiver,
-            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        )
+        registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
 
         log("🚀 Service créé")
 
-        Handler(Looper.getMainLooper()).post {
-            connect()
-        }
+        Handler(Looper.getMainLooper()).post { connect() }
+
+        startTimeoutWatcher()
     }
 
     override fun onDestroy() {
@@ -111,58 +111,7 @@ class BleService : Service() {
         }
 
         if (bg != null) {
-            log("📥 BG reçu: $bg")
-
-            val raw = bg.replace(",", ".")
-
-            val formatted = if (raw.contains(".")) {
-                // ========================
-                // mmol/L
-                // ========================
-                val mmol = raw.toFloatOrNull()
-
-                if (mmol == null) {
-                    log("❌ mmol invalide")
-                    return START_STICKY
-                }
-
-                val safe = mmol.coerceIn(0f, 99.9f)
-
-                String.format("%.1f", safe)
-                    .take(4)
-                    .padStart(4, ' ')
-
-            } else {
-                // ========================
-                // mg/dL
-                // ========================
-                val mgdl = raw
-                    .replace("[^0-9]".toRegex(), "")
-                    .toIntOrNull()
-
-                if (mgdl == null) {
-                    log("❌ mg/dL invalide")
-                    return START_STICKY
-                }
-
-                val safe = mgdl.coerceIn(0, 999)
-
-                safe.toString()
-                    .padStart(4, ' ')
-            }
-
-            pendingBg = formatted
-
-            log("📦 Format envoyé: '$formatted'")
-
-            prefs.edit()
-                .putString("last_bg", formatted.trim())
-                .putLong("last_time", System.currentTimeMillis())
-                .apply()
-
-            sendBroadcast(Intent("BG_UPDATED"))
-
-            trySend()
+            handleBg(bg)
         }
 
         if (gatt == null && !isConnecting) {
@@ -173,29 +122,103 @@ class BleService : Service() {
     }
 
     // ========================
+    // GESTION BG
+    // ========================
+
+    private fun handleBg(bg: String) {
+
+        val now = System.currentTimeMillis()
+
+        val formatted = formatBg(bg)
+
+        pendingBg = formatted
+        isInErrorState = false // reset erreur
+
+        prefs.edit()
+            .putString("last_bg", formatted.trim())
+            .putLong("last_time", now)
+            .apply()
+
+        sendBroadcast(Intent("BG_UPDATED"))
+
+        trySend()
+    }
+
+    private fun formatBg(bg: String?): String {
+
+        if (bg.isNullOrBlank()) return "Err "
+
+        val raw = bg.replace(",", ".")
+
+        // ===== mmol =====
+        if (raw.contains(".")) {
+
+            val mmol = raw.toFloatOrNull() ?: return "Err "
+
+            val safe = mmol.coerceIn(0f, 99.9f)
+
+            return String.format("%.1f", safe)
+                .take(4)
+                .padStart(4, ' ')
+        }
+
+        // ===== mg/dL =====
+        val mgdl = raw.replace("[^0-9]".toRegex(), "")
+            .toIntOrNull() ?: return "Err "
+
+        val safe = mgdl.coerceIn(0, 999)
+
+        return safe.toString().padStart(4, ' ')
+    }
+
+    // ========================
+    // TIMEOUT WATCHER
+    // ========================
+
+    private fun startTimeoutWatcher() {
+
+        val handler = Handler(Looper.getMainLooper())
+
+        val runnable = object : Runnable {
+            override fun run() {
+
+                val lastTime = prefs.getLong("last_time", 0L)
+                val now = System.currentTimeMillis()
+
+                if (now - lastTime > TIMEOUT_MS) {
+
+                    if (!isInErrorState) {
+                        log("⏱ Timeout → ERROR")
+
+                        pendingBg = "Err "
+                        isInErrorState = true
+
+                        trySend()
+                    }
+                }
+
+                handler.postDelayed(this, 60_000)
+            }
+        }
+
+        handler.post(runnable)
+    }
+
+    // ========================
     // CONNECTION
     // ========================
 
     private fun connect() {
 
-        if (isConnecting) {
-            log("⚠️ Connexion déjà en cours")
-            return
-        }
+        if (isConnecting) return
 
-        val addr = deviceAddress ?: run {
-            log("❌ Pas d'adresse")
-            return
-        }
+        val addr = deviceAddress ?: return
 
         val manager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val device = manager.adapter.getRemoteDevice(addr)
 
-        if (gatt != null) {
-            log("♻️ Reset GATT")
-            gatt?.close()
-            gatt = null
-        }
+        gatt?.close()
+        gatt = null
 
         log("🔗 Connexion à $addr")
 
@@ -213,13 +236,9 @@ class BleService : Service() {
 
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
 
-            log("STATE → status=$status newState=$newState")
-
             isConnecting = false
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                log("✅ Connecté")
-
                 isConnected = true
                 servicesReady = false
                 gatt = g
@@ -231,8 +250,6 @@ class BleService : Service() {
             }
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                log("❌ Déconnecté")
-
                 isConnected = false
                 servicesReady = false
 
@@ -248,24 +265,11 @@ class BleService : Service() {
         }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
-            log("📡 Services découverts")
-
             servicesReady = true
 
             Handler(Looper.getMainLooper()).postDelayed({
                 trySend()
             }, 1000)
-        }
-
-        override fun onCharacteristicWrite(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
-            if (status == BluetoothGatt.GATT_SUCCESS)
-                log("✅ Write OK")
-            else
-                log("❌ Write FAIL: $status")
         }
     }
 
@@ -277,25 +281,20 @@ class BleService : Service() {
 
         val bg = pendingBg ?: return
 
-        if (!isConnected) {
-            log("⏳ Pas connecté")
-            return
-        }
+        if (!isConnected || !servicesReady) return
 
-        if (!servicesReady) {
-            log("⏳ Services pas prêts")
-            return
-        }
+        // ✅ anti spam
+        if (bg == lastSent) return
 
         sendToWatch(bg)
+
+        lastSent = bg
         pendingBg = null
     }
 
     private fun sendToWatch(bg: String) {
 
         val g = gatt ?: return
-
-        log("📡 Envoi: '$bg'")
 
         val service = g.getService(SERVICE_UUID) ?: return
         val charac = service.getCharacteristic(CHAR_UUID) ?: return
@@ -316,20 +315,11 @@ class BleService : Service() {
             (crc and 0xFF).toByte()
         ) + payload
 
-        log("📏 Payload size = ${payload.size}")
-        log("HEX: " + packet.joinToString(" ") { "%02X".format(it) })
-
         charac.value = packet
         charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 
-        val success = g.writeCharacteristic(charac)
-
-        log("📤 write = $success")
+        g.writeCharacteristic(charac)
     }
-
-    // ========================
-    // CRC
-    // ========================
 
     private fun crc16(data: ByteArray): Int {
         var crc = 0xFFFF
@@ -351,13 +341,10 @@ class BleService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(text: String): Notification {
-
         val intent = Intent(this, MainActivity::class.java)
 
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
+            this, 0, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
