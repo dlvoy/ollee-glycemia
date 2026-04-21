@@ -17,7 +17,7 @@ Enable "Broadcast data locally" and "Send BG data to other apps"
 Tap on "Identify Receiver" and enter com.arthur.bgollee (without quotation marks; separate with a space if other apps are already listed)
 When BG data is sent to the watch, long-press the bottom-right button to display your glucose level
 
-⚠️ If Bluetooth is disconnected (the *'lap'* icon is not visible on the watch), long-press the bottom-right button twice to re-enable Bluetooth, then sync the glucose data again
+⚠️ If Bluetooth is disconnected (the *'lap'* icon is not visible on the watch or blinking), long-press the bottom-right button twice to re-enable Bluetooth and sync the glucose data again
 
 ## TODO
 Prevent outdated/incorrect values from remaining on the watch (sync issues)
