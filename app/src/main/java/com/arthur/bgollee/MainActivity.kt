@@ -51,17 +51,34 @@ class MainActivity : AppCompatActivity() {
     // ========================
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_BleTest)
         super.onCreate(savedInstanceState)
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(40, 40, 40, 40)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
         }
+
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.olleexdrip)
+            val params = LinearLayout.LayoutParams(
+                (200 * resources.displayMetrics.density).toInt(),
+                (100 * resources.displayMetrics.density).toInt()
+            )
+            params.setMargins(0, 0, 0, 40)
+            layoutParams = params
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        layout.addView(logo)
 
         tableLayout = TableLayout(this).apply {
             setColumnStretchable(1, true)
-            setPadding(0, 120, 0, 120)
+            setPadding(0, 240, 0, 40)
         }
 
         fun createRow(icon: String, label: String): Pair<TableRow, TextView> {
