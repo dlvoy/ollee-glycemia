@@ -62,7 +62,17 @@ class XdripReceiver : BroadcastReceiver() {
             else -> "FLAT"
         }
 
-        Log.d("XDRIP", "🩸 BG=$bg | 📈 slope=$slope → trend=$trend")
+        // ========================
+        // 📉 DELTA (mg/dL change since last reading)
+        // ========================
+        val delta = when (val d = extras.get("com.eveningoutpost.dexdrip.Extras.BgDelta")) {
+            is Double -> d
+            is Float -> d.toDouble()
+            is Int -> d.toDouble()
+            else -> null
+        }
+
+        Log.d("XDRIP", "🩸 BG=$bg | 📈 slope=$slope → trend=$trend | 📉 delta=$delta")
 
         // ========================
         // 💾 SAVE LOCAL
@@ -90,6 +100,11 @@ class XdripReceiver : BroadcastReceiver() {
             // send the trend only if available
             trend?.let {
                 putExtra("trend", it)
+            }
+
+            // send delta only if available
+            delta?.let {
+                putExtra("delta", it)
             }
         }
 

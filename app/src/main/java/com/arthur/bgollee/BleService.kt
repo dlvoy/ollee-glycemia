@@ -68,6 +68,7 @@ class BleService : Service() {
 
         val bg = intent?.getStringExtra("bg")
         val trend = intent?.getStringExtra("trend")
+        val delta = if (intent?.hasExtra("delta") == true) intent.getDoubleExtra("delta", Double.NaN).takeUnless { it.isNaN() } else null
 
         intent?.getStringExtra("device_address")?.let {
             deviceAddress = it
@@ -75,7 +76,7 @@ class BleService : Service() {
         }
 
         if (bg != null) {
-            handleBg(bg, trend)
+            handleBg(bg, trend, delta)
         }
 
         if (gatt == null && !isConnecting) {
@@ -89,11 +90,11 @@ class BleService : Service() {
     // BG MANAGEMENT
     // ========================
 
-    private fun handleBg(bg: String, trend: String?) {
+    private fun handleBg(bg: String, trend: String?, delta: Double? = null) {
 
         val now = System.currentTimeMillis()
 
-        val formatted = formatBg(bg, trend)
+        val formatted = formatBg(bg, trend, delta)
 
         pendingBg = formatted
         isInErrorState = false
@@ -108,7 +109,7 @@ class BleService : Service() {
         trySend()
     }
 
-    private fun formatBg(bg: String?, trend: String?): String {
+    private fun formatBg(bg: String?, trend: String?, delta: Double? = null): String {
 
         if (bg.isNullOrBlank()) return "Err   "
 
@@ -116,14 +117,33 @@ class BleService : Service() {
 
         val isMmol = clean.contains(".")
 
-        val valueStr = if (isMmol) {
-            val mmol = clean.toFloatOrNull() ?: return "Err   "
-            String.format("%.1f", mmol.coerceIn(0f, 99.9f))
-        } else {
+        // ========================
+        // mg/dL: 3 chars glucose + 3 chars delta (left-padded), no trend arrow
+        // ========================
+        if (!isMmol) {
             val mgdl = clean.replace("[^0-9]".toRegex(), "")
                 .toIntOrNull() ?: return "Err   "
-            mgdl.coerceIn(0, 999).toString()
+            val clampedMgdl = mgdl.coerceIn(0, 999)
+
+            // Left-pad glucose into exactly 3 chars (values ≥1000 are already clamped to 999)
+            val glucoseStr = clampedMgdl.toString().padStart(3, ' ')
+
+            // Delta: round, clamp to [-99, 99], left-pad into exactly 3 chars
+            val deltaStr = if (delta != null) {
+                val deltaInt = Math.round(delta).toInt().coerceIn(-99, 99)
+                deltaInt.toString().padStart(3, ' ')
+            } else {
+                "   "
+            }
+
+            return glucoseStr + deltaStr  // exactly 6 chars
         }
+
+        // ========================
+        // mmol/L: legacy 6-char format (1 trend arrow + 5 value chars)
+        // ========================
+        val mmol = clean.toFloatOrNull() ?: return "Err   "
+        val valueStr = String.format("%.1f", mmol.coerceIn(0f, 99.9f))
 
         val arrow = when (trend) {
             "UP" -> "+"
@@ -132,10 +152,8 @@ class BleService : Service() {
             else -> " "
         }
 
-        // 👉 we put the FULL value on the right over 5 characters
-        val valueAligned = valueStr.take(5).padStart(5, ' ')
-
         // 👉 1 arrow char + 5 value chars = 6 total
+        val valueAligned = valueStr.take(5).padStart(5, ' ')
         return (arrow + valueAligned).take(6)
     }
 
