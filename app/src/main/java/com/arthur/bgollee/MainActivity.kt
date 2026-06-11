@@ -45,6 +45,10 @@ class MainActivity : AppCompatActivity() {
     // LIFECYCLE
     // ========================
 
+    private lateinit var textViewWatchContainer: LinearLayout
+    private lateinit var textViewWatchPrefix: TextView
+    private lateinit var textViewWatchValue: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -59,6 +63,26 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
         }
 
+        // Monospace bold value for watch transmission display
+        textViewWatchContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 20, 0, 20)
+        }
+
+        textViewWatchPrefix = TextView(this).apply {
+            textSize = 18f
+        }
+
+        textViewWatchValue = TextView(this).apply {
+            textSize = 18f
+            typeface = android.graphics.Typeface.MONOSPACE
+            paint.isFakeBoldText = true
+        }
+
+        textViewWatchContainer.addView(textViewWatchPrefix)
+        textViewWatchContainer.addView(textViewWatchValue)
+
         btnPermission = Button(this).apply {
             text = getString(R.string.permission_button)
         }
@@ -68,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         layout.addView(textView)
+        layout.addView(textViewWatchContainer)
         layout.addView(btnPermission)
         layout.addView(btnSelectDevice)
 
@@ -142,6 +167,8 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("data", MODE_PRIVATE)
 
         val bg = prefs.getString("last_bg", "--")
+        val deltaFloat = prefs.getFloat("last_delta", Float.NaN)
+        val lastSent = prefs.getString("last_sent", "      ") // 6 chars default
         val time = prefs.getLong("last_time", 0)
 
         val formattedTime =
@@ -155,12 +182,29 @@ class MainActivity : AppCompatActivity() {
             else -> getString(R.string.inactive)
         }
 
+        val deltaStr = if (!deltaFloat.isNaN()) {
+            val roundedDelta = Math.round(deltaFloat)
+            if (roundedDelta >= 0) " $roundedDelta" else "$roundedDelta"
+        } else {
+            ""
+        }
+
+        val glycemiaLabelText = if (deltaStr.isNotEmpty()) {
+            "$bg ($deltaStr)"
+        } else {
+            bg
+        }
+
         textView.text = """
-            🩸 ${getString(R.string.glycemia)}: $bg
+            🩸 ${getString(R.string.glycemia)}: $glycemiaLabelText
             ⏱ ${getString(R.string.received_at)}: $formattedTime
             
             🔵 ${getString(R.string.status)}: $statusText
         """.trimIndent()
+
+        // Sent to watch layout
+        textViewWatchPrefix.text = getString(R.string.sent_to_watch)
+        textViewWatchValue.text = "\"$lastSent\""
     }
 
     // ========================

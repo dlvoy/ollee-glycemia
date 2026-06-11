@@ -100,7 +100,9 @@ class BleService : Service() {
         isInErrorState = false
 
         prefs.edit()
-            .putString("last_bg", formatted.trim())
+            .putString("last_bg", bg)
+            .putString("last_sent", formatted)
+            .putFloat("last_delta", delta?.toFloat() ?: Float.NaN)
             .putLong("last_time", now)
             .apply()
 

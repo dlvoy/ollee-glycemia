@@ -21,4 +21,5 @@
     <string name="notification_reconnecting">🔴 Reconnecting...</string>
     <string name="notification_title">xDrip → Watch</string>
     <string name="ble_service_name">BLE Service</string>
+    <string name="sent_to_watch">Sent to watch: </string>
 </resources>
