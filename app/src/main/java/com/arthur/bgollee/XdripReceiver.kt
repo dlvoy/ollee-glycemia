@@ -30,6 +30,12 @@ class XdripReceiver : BroadcastReceiver() {
                 handleNightscoutBroadcast(context, intent)
             }
 
+            // ─── Compatible broadcast (Modern JSON format) ──────────────────────────
+            // Key: status (String/JSON)
+            "com.eveningoutpost.dexdrip.ExternalStatusChange" -> {
+                handleCompatibleBroadcast(context, intent)
+            }
+
             // ─── xDrip+ native broadcast ─────────────────────────────────────────
             // Keys: com.eveningoutpost.dexdrip.Extras.BgEstimate (Double),
             //       com.eveningoutpost.dexdrip.Extras.BgSlope (Double),
@@ -133,6 +139,49 @@ class XdripReceiver : BroadcastReceiver() {
         Log.d("XDRIP", "🩸 [xDrip] BG=$bg | 📈 slope=$slope → trend=$trend | 📉 delta=$delta")
 
         dispatchToService(context, bg, trend, delta)
+    }
+
+    // ========================
+    // 🩸 COMPATIBLE BROADCAST (JSON)
+    // ========================
+
+    private fun handleCompatibleBroadcast(context: Context, intent: Intent) {
+        val statusJson = intent.getStringExtra("status") ?: run {
+            Log.e("XDRIP", "❌ [Compatible] status JSON string not found")
+            return
+        }
+
+        try {
+            val json = org.json.JSONObject(statusJson)
+            val sgv = json.optDouble("sgv", Double.NaN)
+            if (sgv.isNaN()) {
+                Log.e("XDRIP", "❌ [Compatible] sgv not found or NaN")
+                return
+            }
+
+            val bg = sgv.toInt().toString()
+
+            val delta = if (json.has("delta")) {
+                json.getDouble("delta")
+            } else {
+                null
+            }
+
+            val direction = json.optString("direction", "")
+            val trend = when (direction.lowercase()) {
+                "doubleup", "tripleup" -> "UP2"
+                "up", "singleup", "fortyfiveup" -> "UP"
+                "flat" -> "FLAT"
+                "down", "singledown", "fortyfivedown" -> "DOWN"
+                "doubledown", "tripledown" -> "DOWN2"
+                else -> null
+            }
+
+            Log.d("XDRIP", "🩸 [Compatible] BG=$bg | trend=$trend | 📉 delta=$delta")
+            dispatchToService(context, bg, trend, delta)
+        } catch (e: Exception) {
+            Log.e("XDRIP", "❌ [Compatible] Error parsing JSON status", e)
+        }
     }
 
     // ========================

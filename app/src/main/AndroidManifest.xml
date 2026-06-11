@@ -33,6 +33,7 @@
                 <action android:name="com.eveningoutpost.dexdrip.BgEstimate"/>
                 <action android:name="com.eveningoutpost.dexdrip.BROADCAST"/>
                 <action android:name="org.nightscout.android.broadcast"/>
+                <action android:name="com.eveningoutpost.dexdrip.ExternalStatusChange"/>
             </intent-filter>
         </receiver>
 
