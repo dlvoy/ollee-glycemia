@@ -11,17 +11,17 @@ class XdripReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
 
         if (intent.action != "com.eveningoutpost.dexdrip.BgEstimate") {
-            Log.d("XDRIP", "ACTION ignorée: ${intent.action}")
+            Log.d("XDRIP", "ACTION ignored: ${intent.action}")
             return
         }
 
         val extras = intent.extras ?: run {
-            Log.e("XDRIP", "❌ Pas d'extras")
+            Log.e("XDRIP", "❌ No extras")
             return
         }
 
         // ========================
-        // 🔍 DEBUG (à garder temporairement)
+        // 🔍 DEBUG (to keep temporarily)
         // ========================
         for (key in extras.keySet()) {
             Log.d("XDRIP", "KEY: $key = ${extras.get(key)}")
@@ -38,7 +38,7 @@ class XdripReceiver : BroadcastReceiver() {
             is Int -> bgValue.toString()
             else -> bgValue?.toString()
         } ?: run {
-            Log.e("XDRIP", "❌ BG introuvable")
+            Log.e("XDRIP", "❌ BG not found")
             return
         }
 
@@ -87,7 +87,7 @@ class XdripReceiver : BroadcastReceiver() {
         val serviceIntent = Intent(context, BleService::class.java).apply {
             putExtra("bg", bg)
 
-            // on envoie le trend seulement si dispo
+            // send the trend only if available
             trend?.let {
                 putExtra("trend", it)
             }

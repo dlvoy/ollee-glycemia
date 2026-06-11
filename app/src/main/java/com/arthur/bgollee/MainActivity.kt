@@ -191,14 +191,14 @@ class MainActivity : AppCompatActivity() {
         val adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
 
         if (adapter == null || !adapter.isEnabled) {
-            Toast.makeText(this, "Bluetooth required", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.bluetooth_required), Toast.LENGTH_SHORT).show()
             return
         }
 
         val devices = adapter.bondedDevices
 
         if (devices.isEmpty()) {
-            Toast.makeText(this, "No paired devices", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.no_paired_devices), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -265,14 +265,14 @@ class MainActivity : AppCompatActivity() {
 
         if (results.isNotEmpty() && results.all { it == PackageManager.PERMISSION_GRANTED }) {
 
-            Toast.makeText(this, "Permissions OK", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.permissions_ok), Toast.LENGTH_SHORT).show()
 
-            disableBatteryOptimization() // 🔥 ICI
+            disableBatteryOptimization() // 🔥 HERE
 
             startBleServiceSafe()
 
         } else {
-            Toast.makeText(this, "Permissions denied ❌", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.permissions_denied), Toast.LENGTH_SHORT).show()
         }
     }
 

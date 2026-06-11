@@ -10,4 +10,15 @@
 
     <string name="inactive">Inactif</string>
     <string name="last_data">Dernière donnée reçue</string>
+
+    <string name="bluetooth_required">Bluetooth requis</string>
+    <string name="no_paired_devices">Aucun appareil jumelé</string>
+    <string name="permissions_ok">Permissions OK</string>
+    <string name="permissions_denied">Permissions refusées ❌</string>
+    
+    <string name="notification_initializing">🔄 Initialisation...</string>
+    <string name="notification_connected">🟢 Connecté</string>
+    <string name="notification_reconnecting">🔴 Reconnexion...</string>
+    <string name="notification_title">xDrip → Montre</string>
+    <string name="ble_service_name">Service BLE</string>
 </resources>

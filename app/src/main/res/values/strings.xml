@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="permission_button">Request permissions</string>
-    <string name="select_device" translatable="false">Select watch</string>
-    <string name="no_device" translatable="false">Select a device first</string>
+    <string name="select_device">Select watch</string>
+    <string name="no_device">Select a device first</string>
 
-    <string name="glycemia" translatable="false">Glucose</string>
-    <string name="received_at" translatable="false">Received at</string>
-    <string name="status" translatable="false">Status</string>
+    <string name="glycemia">Glucose</string>
+    <string name="received_at">Received at</string>
+    <string name="status">Status</string>
 
-    <string name="inactive" translatable="false">Inactive</string>
-    <string name="last_data" translatable="false">Last data received</string>
+    <string name="inactive">Inactive</string>
+    <string name="last_data">Last data received</string>
+
+    <string name="bluetooth_required">Bluetooth required</string>
+    <string name="no_paired_devices">No paired devices</string>
+    <string name="permissions_ok">Permissions OK</string>
+    <string name="permissions_denied">Permissions denied ❌</string>
+    
+    <string name="notification_initializing">🔄 Initializing...</string>
+    <string name="notification_connected">🟢 Connected</string>
+    <string name="notification_reconnecting">🔴 Reconnecting...</string>
+    <string name="notification_title">xDrip → Watch</string>
+    <string name="ble_service_name">BLE Service</string>
 </resources>

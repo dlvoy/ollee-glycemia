@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_button">Poproś o uprawnienia</string>
+    <string name="select_device">Wybierz zegarek</string>
+    <string name="no_device">Najpierw wybierz zegarek</string>
+
+    <string name="glycemia">Glikemia</string>
+    <string name="received_at">Otrzymano o</string>
+    <string name="status">Status</string>
+
+    <string name="inactive">Nieaktywny</string>
+    <string name="last_data">Ostatnio odebrane dane</string>
+
+    <string name="bluetooth_required">Wymagany Bluetooth</string>
+    <string name="no_paired_devices">Brak sparowanych urządzeń</string>
+    <string name="permissions_ok">Uprawnienia OK</string>
+    <string name="permissions_denied">Brak uprawnień ❌</string>
+    
+    <string name="notification_initializing">🔄 Inicjalizacja...</string>
+    <string name="notification_connected">🟢 Połączono</string>
+    <string name="notification_reconnecting">🔴 Ponowne łączenie...</string>
+    <string name="notification_title">xDrip → Zegarek</string>
+    <string name="ble_service_name">Usługa BLE</string>
+</resources>

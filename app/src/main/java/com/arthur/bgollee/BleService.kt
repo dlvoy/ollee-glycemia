@@ -48,11 +48,11 @@ class BleService : Service() {
         notificationManager = getSystemService(NotificationManager::class.java)
 
         createNotificationChannel()
-        startForeground(1, createNotification("🔄 Initialisation..."))
+        startForeground(1, createNotification(getString(R.string.notification_initializing)))
 
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
 
-        log("🚀 Service créé")
+        log("🚀 Service created")
 
         Handler(Looper.getMainLooper()).post { connect() }
 
@@ -86,7 +86,7 @@ class BleService : Service() {
     }
 
     // ========================
-    // GESTION BG
+    // BG MANAGEMENT
     // ========================
 
     private fun handleBg(bg: String, trend: String?) {
@@ -132,10 +132,10 @@ class BleService : Service() {
             else -> " "
         }
 
-        // 👉 on met la valeur FULL à droite sur 5 caractères
+        // 👉 we put the FULL value on the right over 5 characters
         val valueAligned = valueStr.take(5).padStart(5, ' ')
 
-        // 👉 1 char flèche + 5 chars valeur = 6 total
+        // 👉 1 arrow char + 5 value chars = 6 total
         return (arrow + valueAligned).take(6)
     }
 
@@ -195,7 +195,7 @@ class BleService : Service() {
                     }
 
                     BluetoothAdapter.STATE_ON -> {
-                        log("🟢 Bluetooth ON → reconnexion")
+                        log("🟢 Bluetooth ON → reconnecting")
                         Handler(Looper.getMainLooper()).postDelayed({
                             connect()
                         }, 1000)
@@ -217,7 +217,7 @@ class BleService : Service() {
         gatt?.close()
         gatt = null
 
-        log("🔗 Connexion à $addr")
+        log("🔗 Connecting to $addr")
 
         isConnecting = true
 
@@ -243,7 +243,7 @@ class BleService : Service() {
                 g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
                 g.discoverServices()
 
-                updateNotification("🟢 Connecté")
+                updateNotification(getString(R.string.notification_connected))
             }
 
             if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -253,7 +253,7 @@ class BleService : Service() {
                 gatt?.close()
                 gatt = null
 
-                updateNotification("🔴 Reconnexion...")
+                updateNotification(getString(R.string.notification_reconnecting))
 
                 Handler(Looper.getMainLooper()).postDelayed({
                     connect()
@@ -271,7 +271,7 @@ class BleService : Service() {
     }
 
     // ========================
-    // ENVOI
+    // SENDING
     // ========================
 
     private fun trySend() {
@@ -315,7 +315,7 @@ class BleService : Service() {
 
         g.writeCharacteristic(charac)
 
-        log("📤 Envoyé → '$bg'")
+        log("📤 Sent → '$bg'")
     }
 
     private fun crc16(data: ByteArray): Int {
@@ -338,7 +338,7 @@ class BleService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     // ========================
-    // NOTIF
+    // NOTIFICATION
     // ========================
 
     private fun createNotification(text: String): Notification {
@@ -350,7 +350,7 @@ class BleService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("xDrip → Watch")
+            .setContentTitle(getString(R.string.notification_title))
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
@@ -361,7 +361,7 @@ class BleService : Service() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "BLE Service",
+            getString(R.string.ble_service_name),
             NotificationManager.IMPORTANCE_LOW
         )
         notificationManager.createNotificationChannel(channel)
