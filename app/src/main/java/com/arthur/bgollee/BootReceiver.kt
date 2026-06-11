@@ -19,10 +19,14 @@ class BootReceiver : BroadcastReceiver() {
                 val serviceIntent = Intent(context, BleService::class.java)
                 serviceIntent.putExtra("device_address", addr)
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(serviceIntent)
-                } else {
-                    context.startService(serviceIntent)
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(serviceIntent)
+                    } else {
+                        context.startService(serviceIntent)
+                    }
+                } catch (e: Exception) {
+                    // Log the error or handle it
                 }
             }
         }

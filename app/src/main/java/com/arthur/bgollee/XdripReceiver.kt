@@ -13,14 +13,9 @@ class XdripReceiver : BroadcastReceiver() {
         val action = intent.action
 
         // ========================
-        // 🔍 DEBUG (to keep temporarily)
+        // 🔍 DEBUG (detailed intent log)
         // ========================
-        val extras = intent.extras
-        if (extras != null) {
-            for (key in extras.keySet()) {
-                Log.d("XDRIP", "[$action] KEY: $key = ${extras.get(key)}")
-            }
-        }
+        logIntent(intent)
 
         when (action) {
 
@@ -128,12 +123,16 @@ class XdripReceiver : BroadcastReceiver() {
             else          -> "FLAT"
         }
 
-        // ── DELTA (plain "delta" key — present in some xDrip+ versions) ──────
+        // ── DELTA (plain "delta" key — or calculated from slope) ──────────────────
         val delta: Double? = when (val d = extras.get("delta")) {
             is Double -> d
             is Float  -> d.toDouble()
             is Int    -> d.toDouble()
-            else      -> null
+            else      -> {
+                // xDrip+ slope is change per millisecond.
+                // Convert to 5-minute delta: slope * 1000 * 60 * 5
+                slope?.let { it * 300000.0 }
+            }
         }
 
         Log.d("XDRIP", "🩸 [xDrip] BG=$bg | 📈 slope=$slope → trend=$trend | 📉 delta=$delta")
@@ -214,6 +213,57 @@ class XdripReceiver : BroadcastReceiver() {
             delta?.let { putExtra("delta", it) }
         }
 
-        ContextCompat.startForegroundService(context, serviceIntent)
+        try {
+            ContextCompat.startForegroundService(context, serviceIntent)
+        } catch (e: Exception) {
+            Log.e("XDRIP", "❌ Failed to start foreground service: ${e.message}")
+            // Fallback: try regular startService if already running or if system allows
+            try {
+                context.startService(serviceIntent)
+            } catch (e2: Exception) {
+                Log.e("XDRIP", "❌ Failed to start service: ${e2.message}")
+            }
+        }
+    }
+
+    private fun logIntent(intent: Intent) {
+        val sb = StringBuilder()
+        sb.append("\n==================================================\n")
+        sb.append("📥 RECEIVED INTENT\n")
+        sb.append("Action:     ${intent.action}\n")
+        sb.append("Component:  ${intent.component?.flattenToString()}\n")
+        sb.append("Package:    ${intent.`package`}\n")
+        sb.append("Data:       ${intent.dataString}\n")
+        sb.append("Type:       ${intent.type}\n")
+        sb.append("Flags:      0x${Integer.toHexString(intent.flags)}\n")
+        intent.categories?.let {
+            sb.append("Categories: ${it.joinToString(", ")}\n")
+        }
+        val extras = intent.extras
+        if (extras != null) {
+            sb.append("Extras:\n")
+            for (key in extras.keySet()) {
+                val value = extras.get(key)
+                val valueStr = when (value) {
+                    is android.os.Bundle -> "Bundle{${value.keySet().associateWith { value.get(it) }}}"
+                    is Array<*> -> value.contentToString()
+                    is IntArray -> value.contentToString()
+                    is LongArray -> value.contentToString()
+                    is FloatArray -> value.contentToString()
+                    is DoubleArray -> value.contentToString()
+                    is BooleanArray -> value.contentToString()
+                    is ByteArray -> value.contentToString()
+                    is ShortArray -> value.contentToString()
+                    is CharArray -> value.contentToString()
+                    else -> value?.toString()
+                }
+                val typeName = value?.javaClass?.simpleName ?: "null"
+                sb.append("  - $key ($typeName) = $valueStr\n")
+            }
+        } else {
+            sb.append("Extras:     null\n")
+        }
+        sb.append("==================================================")
+        Log.d("XDRIP", sb.toString())
     }
 }

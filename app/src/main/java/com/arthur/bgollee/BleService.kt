@@ -3,6 +3,7 @@ package com.arthur.bgollee
 import android.app.*
 import android.bluetooth.*
 import android.content.*
+import android.content.pm.ServiceInfo
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -48,7 +49,15 @@ class BleService : Service() {
         notificationManager = getSystemService(NotificationManager::class.java)
 
         createNotificationChannel()
-        startForeground(1, createNotification(getString(R.string.notification_initializing)))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                1,
+                createNotification(getString(R.string.notification_initializing)),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+            )
+        } else {
+            startForeground(1, createNotification(getString(R.string.notification_initializing)))
+        }
 
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
 

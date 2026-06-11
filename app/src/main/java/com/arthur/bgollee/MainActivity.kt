@@ -18,7 +18,12 @@ import android.app.AlertDialog
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var textView: TextView
+    private lateinit var tableLayout: TableLayout
+    private lateinit var valueGlycemia: TextView
+    private lateinit var valueReceivedAt: TextView
+    private lateinit var valueStatus: TextView
+    private lateinit var valueWatch: TextView
+
     private lateinit var btnPermission: Button
     private lateinit var btnSelectDevice: Button
 
@@ -45,10 +50,6 @@ class MainActivity : AppCompatActivity() {
     // LIFECYCLE
     // ========================
 
-    private lateinit var textViewWatchContainer: LinearLayout
-    private lateinit var textViewWatchPrefix: TextView
-    private lateinit var textViewWatchValue: TextView
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -58,30 +59,52 @@ class MainActivity : AppCompatActivity() {
             setPadding(40, 40, 40, 40)
         }
 
-        textView = TextView(this).apply {
-            textSize = 18f
-            gravity = Gravity.CENTER
+        tableLayout = TableLayout(this).apply {
+            setColumnStretchable(1, true)
+            setPadding(0, 120, 0, 120)
         }
 
-        // Monospace bold value for watch transmission display
-        textViewWatchContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(0, 20, 0, 20)
+        fun createRow(icon: String, label: String): Pair<TableRow, TextView> {
+            val row = TableRow(this).apply {
+                setPadding(0, 10, 0, 10)
+            }
+
+            val labelTv = TextView(this).apply {
+                text = "$icon $label:"
+                textSize = 18f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                gravity = Gravity.END
+                setPadding(0, 0, 20, 0)
+            }
+
+            val valueTv = TextView(this).apply {
+                textSize = 18f
+                gravity = Gravity.START
+            }
+
+            row.addView(labelTv)
+            row.addView(valueTv)
+            return Pair(row, valueTv)
         }
 
-        textViewWatchPrefix = TextView(this).apply {
-            textSize = 18f
-        }
+        val (row1, v1) = createRow("🩸", getString(R.string.glycemia))
+        valueGlycemia = v1
+        tableLayout.addView(row1)
 
-        textViewWatchValue = TextView(this).apply {
-            textSize = 18f
+        val (row2, v2) = createRow("⌚", getString(R.string.received_at))
+        valueReceivedAt = v2
+        tableLayout.addView(row2)
+
+        val (row3, v3) = createRow("🔵", getString(R.string.status))
+        valueStatus = v3
+        tableLayout.addView(row3)
+
+        val (row4, v4) = createRow("⚡", getString(R.string.showing_on_watch))
+        valueWatch = v4.apply {
             typeface = android.graphics.Typeface.MONOSPACE
             paint.isFakeBoldText = true
         }
-
-        textViewWatchContainer.addView(textViewWatchPrefix)
-        textViewWatchContainer.addView(textViewWatchValue)
+        tableLayout.addView(row4)
 
         btnPermission = Button(this).apply {
             text = getString(R.string.permission_button)
@@ -91,8 +114,7 @@ class MainActivity : AppCompatActivity() {
             text = getString(R.string.select_device)
         }
 
-        layout.addView(textView)
-        layout.addView(textViewWatchContainer)
+        layout.addView(tableLayout)
         layout.addView(btnPermission)
         layout.addView(btnSelectDevice)
 
@@ -142,10 +164,14 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, BleService::class.java)
         intent.putExtra("device_address", address)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            startForegroundService(intent)
-        else
-            startService(intent)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                startForegroundService(intent)
+            else
+                startService(intent)
+        } catch (e: Exception) {
+            android.util.Log.e("BGOllee", "Failed to start service: ${e.message}")
+        }
     }
 
     private fun startBleServiceSafe() {
@@ -183,28 +209,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         val deltaStr = if (!deltaFloat.isNaN()) {
-            val roundedDelta = Math.round(deltaFloat)
-            if (roundedDelta >= 0) " $roundedDelta" else "$roundedDelta"
+            String.format("%+.1f", deltaFloat)
         } else {
             ""
         }
 
+        val unit = if (bg != null && (bg.contains(".") || bg.contains(","))) "mmol/L" else "mg/dL"
+
         val glycemiaLabelText = if (deltaStr.isNotEmpty()) {
-            "$bg ($deltaStr)"
+            "$bg ($deltaStr) $unit"
         } else {
-            bg
+            "$bg $unit"
         }
 
-        textView.text = """
-            🩸 ${getString(R.string.glycemia)}: $glycemiaLabelText
-            ⏱ ${getString(R.string.received_at)}: $formattedTime
-            
-            🔵 ${getString(R.string.status)}: $statusText
-        """.trimIndent()
-
-        // Sent to watch layout
-        textViewWatchPrefix.text = getString(R.string.sent_to_watch)
-        textViewWatchValue.text = "\"$lastSent\""
+        valueGlycemia.text = glycemiaLabelText
+        valueReceivedAt.text = formattedTime
+        valueStatus.text = statusText
+        valueWatch.text = "\"$lastSent\""
     }
 
     // ========================
