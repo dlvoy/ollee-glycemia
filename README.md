@@ -62,7 +62,7 @@ Run the following on your local machine:
 
 ```bash
 keytool -genkeypair \
-  -alias my-key-alias \
+  -alias release \
   -keyalg RSA \
   -keysize 2048 \
   -validity 10000 \
@@ -91,7 +91,7 @@ In your forked repository, go to **Settings → Secrets and variables → Action
 |---|---|
 | `KEYSTORE_BASE64` | The full Base64 string from Step 2 |
 | `KEYSTORE_PASSWORD` | The keystore password you chose in Step 1 |
-| `KEY_ALIAS` | The alias you used (e.g. `my-key-alias`) |
+| `KEY_ALIAS` | The alias you used (e.g. `release`) |
 | `KEY_PASSWORD` | The key password you chose in Step 1 |
 
 #### Step 4 – Trigger a build
