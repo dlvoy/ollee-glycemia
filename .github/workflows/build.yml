@@ -26,15 +26,24 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Get Short SHA
+        id: git_sha
+        run: echo "sha=$(git rev-parse --short=6 HEAD)" >> $GITHUB_OUTPUT
+
       # ── Debug build ──────────────────────────────────────────────────────────
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Prepare Debug APK name
+        run: |
+          mkdir -p output/
+          cp app/build/outputs/apk/debug/app-debug.apk output/bgollee-${{ steps.git_sha.outputs.sha }}-debug.apk
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: BGOllee-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: bgollee-${{ steps.git_sha.outputs.sha }}-debug.apk
+          path: output/bgollee-${{ steps.git_sha.outputs.sha }}-debug.apk
           retention-days: 14
 
       # ── Release build ────────────────────────────────────────────────────────
@@ -59,11 +68,20 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon
 
+      - name: Prepare Release APK name
+        run: |
+          mkdir -p output/
+          if [ -f app/build/outputs/apk/release/app-release.apk ]; then
+            cp app/build/outputs/apk/release/app-release.apk output/bgollee-${{ steps.git_sha.outputs.sha }}-release.apk
+          elif [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
+            cp app/build/outputs/apk/release/app-release-unsigned.apk output/bgollee-${{ steps.git_sha.outputs.sha }}-release.apk
+          fi
+
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: BGOllee-release
-          path: app/build/outputs/apk/release/app-release*.apk
+          name: bgollee-${{ steps.git_sha.outputs.sha }}-release.apk
+          path: output/bgollee-${{ steps.git_sha.outputs.sha }}-release.apk
           retention-days: 14
 
       # ── Cleanup ──────────────────────────────────────────────────────────────
