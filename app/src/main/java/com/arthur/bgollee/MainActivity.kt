@@ -226,6 +226,36 @@ class MainActivity : AppCompatActivity() {
         valueReceivedAt.text = formattedTime
         valueStatus.text = statusText
         valueWatch.text = "\"$lastSent\""
+
+        val permsOk = arePermissionsGranted()
+        btnPermission.text = (if (permsOk) "🟢 " else "🔴 ") + getString(R.string.permission_button)
+
+        val deviceConfigured = prefs.getString("device_address", null) != null
+        btnSelectDevice.text = (if (deviceConfigured) "🟢 " else "🔴 ") + getString(R.string.select_device)
+    }
+
+    private fun arePermissionsGranted(): Boolean {
+        val perms = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            perms.add(Manifest.permission.BLUETOOTH_CONNECT)
+            perms.add(Manifest.permission.BLUETOOTH_SCAN)
+        }
+
+        if (Build.VERSION.SDK_INT >= 34) {
+            perms.add(Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            perms.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        return perms.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
     }
 
     // ========================
@@ -260,10 +290,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val devices = adapter.bondedDevices
+        val allDevices = adapter.bondedDevices
+        val devices = allDevices.filter { it.name?.contains("Ollee", ignoreCase = true) == true }
 
         if (devices.isEmpty()) {
-            Toast.makeText(this, getString(R.string.no_paired_devices), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No 'Ollee' devices found", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -273,13 +304,14 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.select_device))
             .setItems(list) { _, which ->
 
-                val device = devices.elementAt(which)
+                val device = devices[which]
 
                 saveDevice(device.address)
 
                 Toast.makeText(this, device.name, Toast.LENGTH_SHORT).show()
 
                 startBleService(device.address)
+                updateUI()
             }
             .show()
     }
@@ -335,9 +367,11 @@ class MainActivity : AppCompatActivity() {
             disableBatteryOptimization() // 🔥 HERE
 
             startBleServiceSafe()
+            updateUI()
 
         } else {
             Toast.makeText(this, getString(R.string.permissions_denied), Toast.LENGTH_SHORT).show()
+            updateUI()
         }
     }
 
