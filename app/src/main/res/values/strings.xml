@@ -22,4 +22,8 @@
     <string name="notification_title">xDrip → Watch</string>
     <string name="ble_service_name">BLE Service</string>
     <string name="showing_on_watch">Showing</string>
+    <string name="provider_label">Źródło glikemii</string>
+    <string name="provider_picker_title">Wybierz źródło glikemii</string>
+    <string name="provider_xdrip">xDrip / Nightscout</string>
+    <string name="provider_constant">Constant (test, 100 mg/dL)</string>
 </resources>

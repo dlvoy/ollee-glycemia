@@ -1,0 +1,9 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "./gradlew": true,
+        "/^bash \\./gradlew assembleDebug$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

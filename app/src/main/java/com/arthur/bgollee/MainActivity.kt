@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnPermission: Button
     private lateinit var btnSelectDevice: Button
+    private lateinit var btnSelectProvider: Button
 
     private var currentStatus: String = ""
 
@@ -131,14 +132,20 @@ class MainActivity : AppCompatActivity() {
             text = getString(R.string.select_device)
         }
 
+        btnSelectProvider = Button(this).apply {
+            text = getString(R.string.provider_label)
+        }
+
         layout.addView(tableLayout)
         layout.addView(btnPermission)
         layout.addView(btnSelectDevice)
+        layout.addView(btnSelectProvider)
 
         setContentView(layout)
 
         btnPermission.setOnClickListener { requestPermissions() }
         btnSelectDevice.setOnClickListener { showPairedDevices() }
+        btnSelectProvider.setOnClickListener { showProviderPicker() }
 
         updateUI()
 
@@ -249,6 +256,17 @@ class MainActivity : AppCompatActivity() {
 
         val deviceConfigured = prefs.getString("device_address", null) != null
         btnSelectDevice.text = (if (deviceConfigured) "🟢 " else "🔴 ") + getString(R.string.select_device)
+
+        val selectedProvider = GlycemiaProviderManager.getSelected(this)
+        btnSelectProvider.text = getString(R.string.provider_label) + ": " + providerDisplayName(selectedProvider)
+    }
+
+    private fun providerDisplayName(provider: GlycemiaProvider): String {
+        return when (provider.id) {
+            "xdrip" -> getString(R.string.provider_xdrip)
+            "constant" -> getString(R.string.provider_constant)
+            else -> provider.displayName
+        }
     }
 
     private fun arePermissionsGranted(): Boolean {
@@ -300,7 +318,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
+        val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter
 
         if (adapter == null || !adapter.isEnabled) {
             Toast.makeText(this, getString(R.string.bluetooth_required), Toast.LENGTH_SHORT).show()
@@ -328,6 +346,35 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, device.name, Toast.LENGTH_SHORT).show()
 
                 startBleService(device.address)
+                updateUI()
+            }
+            .show()
+    }
+
+    private fun showProviderPicker() {
+        val providers = GlycemiaProviderManager.allProviders
+        val items = providers.map { providerDisplayName(it) }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.provider_picker_title))
+            .setItems(items) { _, which ->
+                val provider = providers[which]
+                GlycemiaProviderManager.setSelected(this, provider.id)
+
+                val intent = Intent(this, BleService::class.java).apply {
+                    action = BleService.ACTION_SWITCH_PROVIDER
+                }
+
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("BGOllee", "Failed to switch provider: ${e.message}")
+                }
+
                 updateUI()
             }
             .show()

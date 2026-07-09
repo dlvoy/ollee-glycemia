@@ -24,10 +24,12 @@ class BleService : Service() {
 
     private var lastSent: String? = null
     private var isInErrorState = false
+    private var currentProvider: GlycemiaProvider? = null
 
     companion object {
         const val CHANNEL_ID = "ble_service_channel"
         private const val TIMEOUT_MS = 15 * 60 * 1000L
+        const val ACTION_SWITCH_PROVIDER = "com.arthur.bgollee.SWITCH_PROVIDER"
 
         val SERVICE_UUID =
             UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
@@ -63,17 +65,29 @@ class BleService : Service() {
 
         log("🚀 Service created")
 
+        currentProvider = GlycemiaProviderManager.getSelected(this).also {
+            it.start(this, ::onGlycemiaReading)
+        }
+
         Handler(Looper.getMainLooper()).post { connect() }
 
         startTimeoutWatcher()
     }
 
     override fun onDestroy() {
+        currentProvider?.stop(this)
         super.onDestroy()
         unregisterReceiver(btReceiver)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_SWITCH_PROVIDER) {
+            currentProvider?.stop(this)
+            currentProvider = GlycemiaProviderManager.getSelected(this).also {
+                it.start(this, ::onGlycemiaReading)
+            }
+            return START_STICKY
+        }
 
         val bg = intent?.getStringExtra("bg")
         val trend = intent?.getStringExtra("trend")
@@ -99,23 +113,27 @@ class BleService : Service() {
     // BG MANAGEMENT
     // ========================
 
+    private fun onGlycemiaReading(reading: GlycemiaReading) {
+        prefs.edit()
+            .putString("last_bg", reading.bg)
+            .putFloat("last_delta", reading.delta?.toFloat() ?: Float.NaN)
+            .putLong("last_time", reading.timestamp)
+            .apply()
+
+        handleBg(reading.bg, reading.trend, reading.delta)
+
+        sendBroadcast(Intent("BG_UPDATED"))
+    }
+
     private fun handleBg(bg: String, trend: String?, delta: Double? = null) {
-
-        val now = System.currentTimeMillis()
-
         val formatted = formatBg(bg, trend, delta)
 
         pendingBg = formatted
         isInErrorState = false
 
         prefs.edit()
-            .putString("last_bg", bg)
             .putString("last_sent", formatted)
-            .putFloat("last_delta", delta?.toFloat() ?: Float.NaN)
-            .putLong("last_time", now)
             .apply()
-
-        sendBroadcast(Intent("BG_UPDATED"))
 
         trySend()
     }
@@ -339,10 +357,20 @@ class BleService : Service() {
             (crc and 0xFF).toByte()
         ) + payload
 
-        charac.value = packet
-        charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-
-        g.writeCharacteristic(charac)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            g.writeCharacteristic(
+                charac,
+                packet,
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            run {
+                charac.value = packet
+                charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                g.writeCharacteristic(charac)
+            }
+        }
 
         log("📤 Sent → '$bg'")
     }
