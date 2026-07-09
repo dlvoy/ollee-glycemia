@@ -4,6 +4,10 @@
         "/^bash \\./gradlew assembleDebug$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^bash \\./gradlew testDebugUnitTest --tests com\\.arthur\\.bgollee\\.synthetic\\.SgvSyntheticGeneratorTest$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

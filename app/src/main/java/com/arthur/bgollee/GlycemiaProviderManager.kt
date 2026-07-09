@@ -8,7 +8,8 @@ object GlycemiaProviderManager {
 
     val allProviders: List<GlycemiaProvider> = listOf(
         XdripProvider(),
-        ConstantProvider()
+        ConstantProvider(),
+        VirtualHumanProvider()
     )
 
     fun getSelected(context: Context): GlycemiaProvider {

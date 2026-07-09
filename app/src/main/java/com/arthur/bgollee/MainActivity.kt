@@ -2,10 +2,12 @@ package com.arthur.bgollee
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.Gravity
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -13,7 +15,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.text.SimpleDateFormat
 import java.util.*
-import android.app.AlertDialog
 
 
 class MainActivity : AppCompatActivity() {
@@ -23,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var valueReceivedAt: TextView
     private lateinit var valueStatus: TextView
     private lateinit var valueWatch: TextView
+    private lateinit var valueProviderConfig: TextView
 
     private lateinit var btnPermission: Button
     private lateinit var btnSelectDevice: Button
@@ -124,6 +126,10 @@ class MainActivity : AppCompatActivity() {
         }
         tableLayout.addView(row4)
 
+        val (row5, v5) = createRow("⚙", getString(R.string.provider_config_label))
+        valueProviderConfig = v5
+        tableLayout.addView(row5)
+
         btnPermission = Button(this).apply {
             text = getString(R.string.permission_button)
         }
@@ -146,6 +152,15 @@ class MainActivity : AppCompatActivity() {
         btnPermission.setOnClickListener { requestPermissions() }
         btnSelectDevice.setOnClickListener { showPairedDevices() }
         btnSelectProvider.setOnClickListener { showProviderPicker() }
+        btnSelectProvider.setOnLongClickListener {
+            val provider = GlycemiaProviderManager.getSelected(this)
+            if (provider is ConfigurableGlycemiaProvider) {
+                showProviderConfigDialog(provider)
+            } else {
+                Toast.makeText(this, getString(R.string.provider_not_configurable), Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
 
         updateUI()
 
@@ -259,12 +274,18 @@ class MainActivity : AppCompatActivity() {
 
         val selectedProvider = GlycemiaProviderManager.getSelected(this)
         btnSelectProvider.text = getString(R.string.provider_label) + ": " + providerDisplayName(selectedProvider)
+        valueProviderConfig.text = if (selectedProvider is ConfigurableGlycemiaProvider) {
+            selectedProvider.getConfigSummary(this)
+        } else {
+            getString(R.string.provider_config_none)
+        }
     }
 
     private fun providerDisplayName(provider: GlycemiaProvider): String {
         return when (provider.id) {
             "xdrip" -> getString(R.string.provider_xdrip)
             "constant" -> getString(R.string.provider_constant)
+            "virtual_human" -> getString(R.string.provider_virtual_human)
             else -> provider.displayName
         }
     }
@@ -360,24 +381,123 @@ class MainActivity : AppCompatActivity() {
             .setItems(items) { _, which ->
                 val provider = providers[which]
                 GlycemiaProviderManager.setSelected(this, provider.id)
+                restartSelectedProvider()
+                updateUI()
 
-                val intent = Intent(this, BleService::class.java).apply {
-                    action = BleService.ACTION_SWITCH_PROVIDER
+                if (provider is ConfigurableGlycemiaProvider) {
+                    showProviderConfigDialog(provider)
                 }
+            }
+            .show()
+    }
 
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(intent)
-                    } else {
-                        startService(intent)
+    private fun showProviderConfigDialog(provider: ConfigurableGlycemiaProvider) {
+        val spec = provider.getConfigSpec(this)
+        val savedValues = provider.getSavedConfig(this)
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(40, 24, 40, 0)
+        }
+        val viewsByKey = mutableMapOf<String, Any>()
+
+        spec.fields.forEach { field ->
+            val label = TextView(this).apply {
+                text = field.label
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+            }
+            container.addView(label)
+
+            when (field.type) {
+                ProviderConfigField.FieldType.CHOICE -> {
+                    val spinner = Spinner(this)
+                    val optionLabels = field.options.map { it.label }
+                    val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, optionLabels).apply {
+                        setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                     }
-                } catch (e: Exception) {
-                    android.util.Log.e("BGOllee", "Failed to switch provider: ${e.message}")
+                    spinner.adapter = adapter
+                    val selectedValue = savedValues[field.key] ?: field.defaultValue
+                    val selectedIndex = field.options.indexOfFirst { it.value == selectedValue }.coerceAtLeast(0)
+                    spinner.setSelection(selectedIndex)
+                    viewsByKey[field.key] = spinner
+                    container.addView(spinner)
                 }
 
+                ProviderConfigField.FieldType.INTEGER,
+                ProviderConfigField.FieldType.LONG,
+                ProviderConfigField.FieldType.TEXT -> {
+                    val input = EditText(this).apply {
+                        setText(savedValues[field.key] ?: field.defaultValue)
+                        inputType = when (field.type) {
+                            ProviderConfigField.FieldType.INTEGER -> InputType.TYPE_CLASS_NUMBER
+                            ProviderConfigField.FieldType.LONG -> InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED
+                            else -> InputType.TYPE_CLASS_TEXT
+                        }
+                    }
+                    viewsByKey[field.key] = input
+                    container.addView(input)
+                }
+            }
+
+            field.helperText?.let { helperText ->
+                val helper = TextView(this).apply {
+                    text = helperText
+                    textSize = 12f
+                }
+                container.addView(helper)
+            }
+        }
+
+        val scrollView = ScrollView(this).apply {
+            addView(container)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(spec.title)
+            .setView(scrollView)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.provider_config_save) { _, _ ->
+                val values = mutableMapOf<String, String>()
+                spec.fields.forEach { field ->
+                    val value = when (field.type) {
+                        ProviderConfigField.FieldType.CHOICE -> {
+                            val spinner = viewsByKey[field.key] as Spinner
+                            val option = field.options[spinner.selectedItemPosition]
+                            option.value
+                        }
+
+                        ProviderConfigField.FieldType.INTEGER,
+                        ProviderConfigField.FieldType.LONG,
+                        ProviderConfigField.FieldType.TEXT -> {
+                            val input = viewsByKey[field.key] as EditText
+                            input.text.toString().trim()
+                        }
+                    }
+                    values[field.key] = if (field.optional) value else value.ifEmpty { field.defaultValue }
+                }
+
+                provider.saveConfig(this, values)
+                restartSelectedProvider()
                 updateUI()
             }
             .show()
+    }
+
+    private fun restartSelectedProvider() {
+        val intent = Intent(this, BleService::class.java).apply {
+            action = BleService.ACTION_SWITCH_PROVIDER
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("BGOllee", "Failed to switch provider: ${e.message}")
+        }
     }
 
     private fun saveDevice(address: String) {

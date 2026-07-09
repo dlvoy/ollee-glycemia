@@ -26,4 +26,29 @@
     <string name="provider_picker_title">Wybierz źródło glikemii</string>
     <string name="provider_xdrip">xDrip / Nightscout</string>
     <string name="provider_constant">Constant (test, 100 mg/dL)</string>
+    <string name="provider_virtual_human">Wirtualny pacjent (symulacja)</string>
+    <string name="provider_not_configurable">Ten provider nie ma konfiguracji</string>
+    <string name="provider_config_save">Zapisz</string>
+    <string name="provider_config_label">Konfiguracja providera</string>
+    <string name="provider_config_none">Brak</string>
+    <string name="provider_constant_config_title">Konfiguracja Constant Provider</string>
+    <string name="provider_constant_value_label">Stała wartość glikemii (mg/dL)</string>
+    <string name="provider_constant_value_helper">Zakres 40-400 mg/dL.</string>
+    <string name="provider_constant_interval_label">Częstotliwość emisji</string>
+    <string name="provider_interval_30s">Co 30 sekund</string>
+    <string name="provider_interval_1m">Co minutę</string>
+    <string name="provider_interval_5m">Co 5 minut</string>
+    <string name="provider_interval_random_5_20">Losowo między 5 a 20 minut</string>
+    <string name="provider_constant_summary_format">%1$d mg/dL, %2$s</string>
+    <string name="provider_virtual_human_config_title">Konfiguracja Wirtualnego pacjenta</string>
+    <string name="provider_virtual_human_scenario_label">Scenariusz</string>
+    <string name="provider_virtual_human_scenario_auto">Automatyczny</string>
+    <string name="provider_virtual_human_scenario_fasting">Stabilny / fasting</string>
+    <string name="provider_virtual_human_scenario_post_meal">Wzrost po posiłku</string>
+    <string name="provider_virtual_human_scenario_overnight">Nocny dryf</string>
+    <string name="provider_virtual_human_scenario_hypo">Powrót z hipoglikemii</string>
+    <string name="provider_virtual_human_seed_label">Seed generatora</string>
+    <string name="provider_virtual_human_seed_helper">Opcjonalny. Puste pole = losowy przebieg przy każdym starcie.</string>
+    <string name="provider_virtual_human_seed_random">losowy</string>
+    <string name="provider_virtual_human_summary_format">%1$s, seed: %2$s</string>
 </resources>
