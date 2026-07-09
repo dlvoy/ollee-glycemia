@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val PREF_GRAPH_RANGE_HOURS = "graph_range_hours"
-        private const val DEFAULT_GRAPH_RANGE_HOURS = 4
+        private const val DEFAULT_GRAPH_RANGE_HOURS = 2
     }
 
     private lateinit var tableLayout: TableLayout
@@ -52,12 +52,14 @@ class MainActivity : AppCompatActivity() {
     private val bgReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             updateUI()
+            graphView.refresh()
         }
     }
 
     private val historyReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             graphView.refresh()
+            updateUI()
         }
     }
 
@@ -240,13 +242,15 @@ class MainActivity : AppCompatActivity() {
     // ========================
 
     private fun startBleService(address: String) {
-        if (!BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
-            Toast.makeText(this, getString(R.string.ble_permissions_required), Toast.LENGTH_SHORT).show()
-            return
-        }
+        startBleServiceWithIntent(
+            Intent(this, BleService::class.java).apply {
+                putExtra("device_address", address)
+            }
+        )
+    }
 
+    private fun startBleServiceWithIntent(intent: Intent) {
         val intent = Intent(this, BleService::class.java)
-        intent.putExtra("device_address", address)
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -259,15 +263,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startBleServiceSafe() {
-        if (!BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
-            return
-        }
-
-        val addr = getSharedPreferences("data", MODE_PRIVATE)
-            .getString("device_address", null)
+        val prefs = getSharedPreferences("data", MODE_PRIVATE)
+        val addr = prefs.getString("device_address", null)
+        val selectedProvider = GlycemiaProviderManager.getSelected(this)
 
         if (addr != null) {
             startBleService(addr)
+        } else if (selectedProvider.id != "xdrip") {
+            startBleServiceWithIntent(Intent(this, BleService::class.java))
         } else {
             Toast.makeText(this, getString(R.string.no_device), Toast.LENGTH_SHORT).show()
         }
@@ -534,11 +537,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun restartSelectedProvider() {
-        if (!BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
-            Toast.makeText(this, getString(R.string.ble_permissions_required), Toast.LENGTH_SHORT).show()
-            return
-        }
-
         val intent = Intent(this, BleService::class.java).apply {
             action = BleService.ACTION_SWITCH_PROVIDER
         }
@@ -556,6 +554,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showGraphOptionsMenu() {
         val ranges = listOf(
+            getString(R.string.graph_range_2h) to 2,
             getString(R.string.graph_range_3h) to 3,
             getString(R.string.graph_range_4h) to 4,
             getString(R.string.graph_range_6h) to 6,
@@ -596,7 +595,7 @@ class MainActivity : AppCompatActivity() {
     private fun loadGraphRangeHours(): Int {
         return getSharedPreferences("data", MODE_PRIVATE)
             .getInt(PREF_GRAPH_RANGE_HOURS, DEFAULT_GRAPH_RANGE_HOURS)
-            .coerceIn(3, 24)
+            .coerceIn(2, 24)
     }
 
     private fun saveGraphRangeHours(hours: Int) {

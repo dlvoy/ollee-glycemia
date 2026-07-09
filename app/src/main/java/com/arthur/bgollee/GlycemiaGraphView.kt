@@ -8,6 +8,9 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -16,14 +19,21 @@ class GlycemiaGraphView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
-    private var displayRangeHours: Int = 4
+    companion object {
+        private const val TARGET_MIN_MGDL = 70f
+        private const val TARGET_MAX_MGDL = 180f
+        private const val TARGET_VISIBLE_RATIO = 0.8f
+    }
+
+    private var displayRangeHours: Int = 2
 
     private val density = resources.displayMetrics.density
     private val cardRect = RectF()
-    private val contentLeft = 40f * density
+    private val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val contentLeft = 50f * density
     private val contentTop = 20f * density
     private val contentRight = 16f * density
-    private val contentBottom = 28f * density
+    private val contentBottom = 36f * density
     private val dotRadius = 4f * density
 
     private val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -38,10 +48,9 @@ class GlycemiaGraphView @JvmOverloads constructor(
     }
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#E0E0E0")
+        color = Color.parseColor("#ECECEC")
         style = Paint.Style.STROKE
         strokeWidth = 1f * density
-        pathEffect = DashPathEffect(floatArrayOf(4f * density, 4f * density), 0f)
     }
 
     private val targetLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -54,6 +63,28 @@ class GlycemiaGraphView @JvmOverloads constructor(
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#6B6B6B")
         textSize = 11f * density
+    }
+
+    private val axisLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#6B6B6B")
+        textSize = 10f * density
+        textAlign = Paint.Align.CENTER
+    }
+
+    private val rightAlignedLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#6B6B6B")
+        textSize = 11f * density
+        textAlign = Paint.Align.RIGHT
+    }
+
+    private val yAxisLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#6B6B6B")
+        textSize = 10f * density
+    }
+
+    private val targetLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#7A7A7A")
+        textSize = 10f * density
     }
 
     private val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -119,7 +150,7 @@ class GlycemiaGraphView @JvmOverloads constructor(
 
     fun setDisplayRange(hours: Int) {
         displayRangeHours = hours.coerceIn(1, 24)
-        invalidate()
+        postInvalidateOnAnimation()
     }
 
     fun getDisplayRangeHours(): Int {
@@ -127,18 +158,35 @@ class GlycemiaGraphView @JvmOverloads constructor(
     }
 
     fun refresh() {
-        invalidate()
+        postInvalidateOnAnimation()
     }
 
     private fun computeYRange(entries: List<GlycemiaHistoryEntry>): Pair<Float, Float> {
-        if (entries.isEmpty()) return 40f to 200f
+        val targetRange = TARGET_MAX_MGDL - TARGET_MIN_MGDL
+        val totalPreferredRange = targetRange / TARGET_VISIBLE_RATIO
+        val targetPadding = (totalPreferredRange - targetRange) / 2f
+
+        val preferredMin = TARGET_MIN_MGDL - targetPadding
+        val preferredMax = TARGET_MAX_MGDL + targetPadding
+
+        if (entries.isEmpty()) {
+            return preferredMin to preferredMax
+        }
 
         val values = entries.map { it.valueMgDl.toFloat() }
-        val minValue = values.minOrNull() ?: 40f
-        val maxValue = values.maxOrNull() ?: 200f
-        val range = (maxValue - minValue).coerceAtLeast(20f)
-        val margin = range * 0.1f
-        return (minValue - margin).coerceAtLeast(40f) to (maxValue + margin).coerceAtMost(400f)
+        val minValue = values.minOrNull() ?: TARGET_MIN_MGDL
+        val maxValue = values.maxOrNull() ?: TARGET_MAX_MGDL
+
+        val requiredMin = minOf(minValue, TARGET_MIN_MGDL)
+        val requiredMax = maxOf(maxValue, TARGET_MAX_MGDL)
+        val resolvedRange = maxOf(totalPreferredRange, requiredMax - requiredMin)
+
+        val lowestAllowedMin = requiredMax - resolvedRange
+        val highestAllowedMin = requiredMin
+        val minY = preferredMin.coerceIn(lowestAllowedMin, highestAllowedMin).coerceAtLeast(0f)
+        val maxY = minY + resolvedRange
+
+        return minY to maxY
     }
 
     private fun currentRangeStart(): Long {
@@ -170,8 +218,17 @@ class GlycemiaGraphView @JvmOverloads constructor(
         val horizontalEnd = ceil(maxY / 10f).toInt() * 10
         for (value in horizontalStart..horizontalEnd step 10) {
             val y = mapValueToY(value.toFloat(), minY, maxY, plotTop, plotBottom)
-            val paint = if (value == 70 || value == 180) targetLinePaint else gridPaint
+            val paint = if (value == TARGET_MIN_MGDL.toInt() || value == TARGET_MAX_MGDL.toInt()) targetLinePaint else gridPaint
             canvas.drawLine(plotLeft, y, plotRight, y, paint)
+        }
+
+        if (TARGET_MIN_MGDL.toInt() !in horizontalStart..horizontalEnd) {
+            val y = mapValueToY(TARGET_MIN_MGDL, minY, maxY, plotTop, plotBottom)
+            canvas.drawLine(plotLeft, y, plotRight, y, targetLinePaint)
+        }
+        if (TARGET_MAX_MGDL.toInt() !in horizontalStart..horizontalEnd) {
+            val y = mapValueToY(TARGET_MAX_MGDL, minY, maxY, plotTop, plotBottom)
+            canvas.drawLine(plotLeft, y, plotRight, y, targetLinePaint)
         }
     }
 
@@ -184,19 +241,55 @@ class GlycemiaGraphView @JvmOverloads constructor(
         minY: Float,
         maxY: Float
     ) {
-        canvas.drawText(maxY.toInt().toString(), 6f * density, plotTop + 4f * density, labelPaint)
-        canvas.drawText(minY.toInt().toString(), 6f * density, plotBottom, labelPaint)
+        val yValues = linkedSetOf<Int>()
+        val horizontalStart = floor(minY / 20f).toInt() * 20
+        val horizontalEnd = ceil(maxY / 20f).toInt() * 20
+        for (value in horizontalStart..horizontalEnd step 20) {
+            yValues.add(value)
+        }
+        yValues.add(TARGET_MIN_MGDL.toInt())
+        yValues.add(TARGET_MAX_MGDL.toInt())
+
+        yValues
+            .filter { it.toFloat() in minY..maxY }
+            .sorted()
+            .forEach { value ->
+                val y = mapValueToY(value.toFloat(), minY, maxY, plotTop, plotBottom)
+                val paint = if (value == TARGET_MIN_MGDL.toInt() || value == TARGET_MAX_MGDL.toInt()) targetLabelPaint else yAxisLabelPaint
+                canvas.drawText(value.toString(), 6f * density, y + 4f * density, paint)
+            }
+
+        val now = System.currentTimeMillis()
+        val rangeStart = now - displayRangeHours * 60L * 60L * 1000L
+        val verticalStepMs = 15L * 60L * 1000L
+        val firstVertical = ((rangeStart + verticalStepMs - 1) / verticalStepMs) * verticalStepMs
+        var vertical = firstVertical
+        var lastLabelX = Float.NEGATIVE_INFINITY
+        val minLabelSpacing = 40f * density
+        while (vertical <= now) {
+            val x = mapTimestampToX(vertical, plotLeft, plotRight)
+            if (x - lastLabelX >= minLabelSpacing) {
+                canvas.drawText(
+                    timeFormatter.format(Date(vertical)),
+                    x,
+                    height - 8f * density,
+                    axisLabelPaint
+                )
+                lastLabelX = x
+            }
+            vertical += verticalStepMs
+        }
 
         canvas.drawText(
             context.getString(R.string.graph_now_label),
-            plotRight - 20f * density,
-            height - 8f * density,
-            labelPaint
+            plotRight - 4f * density,
+            plotTop + labelPaint.textSize,
+            rightAlignedLabelPaint
         )
         canvas.drawText(
             context.getString(R.string.graph_hours_label, displayRangeHours),
             plotLeft,
-            height - 8f * density,
+            plotTop + labelPaint.textSize,
             labelPaint
         )
     }

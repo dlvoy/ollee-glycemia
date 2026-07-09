@@ -51,14 +51,19 @@ class BleService : Service() {
         notificationManager = getSystemService(NotificationManager::class.java)
 
         createNotificationChannel()
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-            BlePermissionHelper.canStartConnectedDeviceForegroundService(this)
-        ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val foregroundServiceType = if (
+                BlePermissionHelper.canStartConnectedDeviceForegroundService(this)
+            ) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            }
+
             startForeground(
                 1,
                 createNotification(getString(R.string.notification_initializing)),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                foregroundServiceType
             )
         } else {
             startForeground(1, createNotification(getString(R.string.notification_initializing)))
@@ -268,6 +273,10 @@ class BleService : Service() {
     }
 
     private fun connect() {
+        if (!BlePermissionHelper.hasBluetoothRuntimeAccess(this)) {
+            log("Bluetooth permissions missing, skipping BLE connection")
+            return
+        }
 
         if (isConnecting) return
 
@@ -302,8 +311,10 @@ class BleService : Service() {
                 servicesReady = false
                 gatt = g
 
-                g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
-                g.discoverServices()
+                if (BlePermissionHelper.hasBluetoothRuntimeAccess(this@BleService)) {
+                    g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+                    g.discoverServices()
+                }
 
                 updateNotification(getString(R.string.notification_connected))
             }

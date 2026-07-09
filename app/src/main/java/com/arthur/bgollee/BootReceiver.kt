@@ -13,11 +13,12 @@ class BootReceiver : BroadcastReceiver() {
 
             val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
             val addr = prefs.getString("device_address", null)
+            val selectedProvider = prefs.getString(GlycemiaProviderManager.PREF_KEY, GlycemiaProviderManager.DEFAULT_ID)
 
-            if (addr != null && BlePermissionHelper.canStartConnectedDeviceForegroundService(context)) {
+            if (addr != null || selectedProvider != GlycemiaProviderManager.DEFAULT_ID) {
 
                 val serviceIntent = Intent(context, BleService::class.java)
-                serviceIntent.putExtra("device_address", addr)
+                addr?.let { serviceIntent.putExtra("device_address", it) }
 
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

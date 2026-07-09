@@ -52,6 +52,7 @@
     <string name="provider_virtual_human_seed_random">losowy</string>
     <string name="provider_virtual_human_summary_format">%1$s, seed: %2$s</string>
     <string name="ble_permissions_required">Nadaj uprawnienia Bluetooth, aby uruchomić serwis.</string>
+    <string name="graph_range_2h">2 godziny</string>
     <string name="graph_range_3h">3 godziny</string>
     <string name="graph_range_4h">4 godziny</string>
     <string name="graph_range_6h">6 godzin</string>
