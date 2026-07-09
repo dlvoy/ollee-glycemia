@@ -14,7 +14,7 @@ class BootReceiver : BroadcastReceiver() {
             val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
             val addr = prefs.getString("device_address", null)
 
-            if (addr != null) {
+            if (addr != null && BlePermissionHelper.canStartConnectedDeviceForegroundService(context)) {
 
                 val serviceIntent = Intent(context, BleService::class.java)
                 serviceIntent.putExtra("device_address", addr)

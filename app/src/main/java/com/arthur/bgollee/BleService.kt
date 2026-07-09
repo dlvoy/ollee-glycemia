@@ -51,7 +51,10 @@ class BleService : Service() {
         notificationManager = getSystemService(NotificationManager::class.java)
 
         createNotificationChannel()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            BlePermissionHelper.canStartConnectedDeviceForegroundService(this)
+        ) {
             startForeground(
                 1,
                 createNotification(getString(R.string.notification_initializing)),
@@ -119,6 +122,18 @@ class BleService : Service() {
             .putFloat("last_delta", reading.delta?.toFloat() ?: Float.NaN)
             .putLong("last_time", reading.timestamp)
             .apply()
+
+        reading.bg.toIntOrNull()?.let { valueMgDl ->
+            GlycemiaHistoryStore.append(
+                context = this,
+                entry = GlycemiaHistoryEntry(
+                    timestampMs = reading.timestamp,
+                    valueMgDl = valueMgDl,
+                    delta = reading.delta ?: 0.0
+                )
+            )
+            sendBroadcast(Intent("GLYCEMIA_HISTORY_UPDATED"))
+        }
 
         handleBg(reading.bg, reading.trend, reading.delta)
 

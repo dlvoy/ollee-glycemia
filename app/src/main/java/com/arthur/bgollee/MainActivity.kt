@@ -19,7 +19,13 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        private const val PREF_GRAPH_RANGE_HOURS = "graph_range_hours"
+        private const val DEFAULT_GRAPH_RANGE_HOURS = 4
+    }
+
     private lateinit var tableLayout: TableLayout
+    private lateinit var graphView: GlycemiaGraphView
     private lateinit var valueGlycemia: TextView
     private lateinit var valueReceivedAt: TextView
     private lateinit var valueStatus: TextView
@@ -49,6 +55,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val historyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            graphView.refresh()
+        }
+    }
+
     // ========================
     // LIFECYCLE
     // ========================
@@ -57,15 +69,20 @@ class MainActivity : AppCompatActivity() {
         setTheme(R.style.Theme_BleTest)
         super.onCreate(savedInstanceState)
 
+        val scrollView = ScrollView(this).apply {
+            isFillViewport = true
+        }
+
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+            gravity = Gravity.CENTER_HORIZONTAL
             setPadding(40, 40, 40, 40)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
         }
+        scrollView.addView(layout)
 
         val logo = ImageView(this).apply {
             setImageResource(R.drawable.olleexdrip)
@@ -79,9 +96,24 @@ class MainActivity : AppCompatActivity() {
         }
         layout.addView(logo)
 
+        graphView = GlycemiaGraphView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                (180 * resources.displayMetrics.density).toInt()
+            ).apply {
+                bottomMargin = (16 * resources.displayMetrics.density).toInt()
+            }
+            setDisplayRange(loadGraphRangeHours())
+            setOnLongClickListener {
+                showGraphOptionsMenu()
+                true
+            }
+        }
+        layout.addView(graphView)
+
         tableLayout = TableLayout(this).apply {
             setColumnStretchable(1, true)
-            setPadding(0, 240, 0, 40)
+            setPadding(0, 24, 0, 40)
         }
 
         fun createRow(icon: String, label: String): Pair<TableRow, TextView> {
@@ -147,7 +179,7 @@ class MainActivity : AppCompatActivity() {
         layout.addView(btnSelectDevice)
         layout.addView(btnSelectProvider)
 
-        setContentView(layout)
+        setContentView(scrollView)
 
         btnPermission.setOnClickListener { requestPermissions() }
         btnSelectDevice.setOnClickListener { showPairedDevices() }
@@ -182,17 +214,25 @@ class MainActivity : AppCompatActivity() {
             IntentFilter("BG_UPDATED"),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+
+        ContextCompat.registerReceiver(
+            this, historyReceiver,
+            IntentFilter("GLYCEMIA_HISTORY_UPDATED"),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     override fun onStop() {
         super.onStop()
         unregisterReceiver(statusReceiver)
         unregisterReceiver(bgReceiver)
+        unregisterReceiver(historyReceiver)
     }
 
     override fun onResume() {
         super.onResume()
         updateUI()
+        graphView.refresh()
     }
 
     // ========================
@@ -200,6 +240,11 @@ class MainActivity : AppCompatActivity() {
     // ========================
 
     private fun startBleService(address: String) {
+        if (!BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
+            Toast.makeText(this, getString(R.string.ble_permissions_required), Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val intent = Intent(this, BleService::class.java)
         intent.putExtra("device_address", address)
 
@@ -214,6 +259,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startBleServiceSafe() {
+        if (!BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
+            return
+        }
+
         val addr = getSharedPreferences("data", MODE_PRIVATE)
             .getString("device_address", null)
 
@@ -485,6 +534,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun restartSelectedProvider() {
+        if (!BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
+            Toast.makeText(this, getString(R.string.ble_permissions_required), Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val intent = Intent(this, BleService::class.java).apply {
             action = BleService.ACTION_SWITCH_PROVIDER
         }
@@ -498,6 +552,58 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             android.util.Log.e("BGOllee", "Failed to switch provider: ${e.message}")
         }
+    }
+
+    private fun showGraphOptionsMenu() {
+        val ranges = listOf(
+            getString(R.string.graph_range_3h) to 3,
+            getString(R.string.graph_range_4h) to 4,
+            getString(R.string.graph_range_6h) to 6,
+            getString(R.string.graph_range_12h) to 12,
+            getString(R.string.graph_range_24h) to 24
+        )
+        val labels = ranges.map { it.first }.toTypedArray()
+        val currentIndex = ranges.indexOfFirst { it.second == graphView.getDisplayRangeHours() }.coerceAtLeast(0)
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.graph_options_title))
+            .setSingleChoiceItems(labels, currentIndex) { dialog, which ->
+                val selectedHours = ranges[which].second
+                saveGraphRangeHours(selectedHours)
+                graphView.setDisplayRange(selectedHours)
+                dialog.dismiss()
+            }
+            .setNeutralButton(R.string.graph_clear_history) { _, _ ->
+                confirmClearHistory()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun confirmClearHistory() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.graph_clear_confirm_title))
+            .setMessage(getString(R.string.graph_clear_confirm_message))
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                GlycemiaHistoryStore.clear(this)
+                graphView.refresh()
+                Toast.makeText(this, getString(R.string.graph_cleared), Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun loadGraphRangeHours(): Int {
+        return getSharedPreferences("data", MODE_PRIVATE)
+            .getInt(PREF_GRAPH_RANGE_HOURS, DEFAULT_GRAPH_RANGE_HOURS)
+            .coerceIn(3, 24)
+    }
+
+    private fun saveGraphRangeHours(hours: Int) {
+        getSharedPreferences("data", MODE_PRIVATE)
+            .edit()
+            .putInt(PREF_GRAPH_RANGE_HOURS, hours)
+            .apply()
     }
 
     private fun saveDevice(address: String) {
