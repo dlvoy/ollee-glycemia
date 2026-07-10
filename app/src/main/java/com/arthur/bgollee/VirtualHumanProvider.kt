@@ -13,7 +13,7 @@ import kotlin.random.Random
 class VirtualHumanProvider : ConfigurableGlycemiaProvider {
 
     override val id: String = "virtual_human"
-    override val displayName: String = "Wirtualny pacjent (symulacja)"
+    override val displayName: String = "Wirtualny pacjent"
 
     private val handler = Handler(Looper.getMainLooper())
     private val generator = SgvSyntheticGenerator()

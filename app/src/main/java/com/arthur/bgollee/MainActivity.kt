@@ -1,546 +1,41 @@
 package com.arthur.bgollee
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.app.AlertDialog
-import android.content.*
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
-import android.view.Gravity
-import android.widget.*
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.text.SimpleDateFormat
-import java.util.*
+import android.Manifest
+import android.content.pm.PackageManager
+import com.arthur.bgollee.ui.nav.AppNavHost
+import com.arthur.bgollee.ui.theme.OlleeTheme
 
-
+/**
+ * Entry point. Sets the Compose content tree via [setContent], auto-starts
+ * the BLE service, and delegates all navigation/state concerns to
+ * [AppNavHost] and [AppState].
+ */
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        private const val PREF_GRAPH_RANGE_HOURS = "graph_range_hours"
-        private const val DEFAULT_GRAPH_RANGE_HOURS = 2
-    }
-
-    private lateinit var tableLayout: TableLayout
-    private lateinit var graphView: GlycemiaGraphView
-    private lateinit var valueGlycemia: TextView
-    private lateinit var valueReceivedAt: TextView
-    private lateinit var valueStatus: TextView
-    private lateinit var valueWatch: TextView
-    private lateinit var valueProviderConfig: TextView
-
-    private lateinit var btnPermission: Button
-    private lateinit var btnSelectDevice: Button
-    private lateinit var btnSelectProvider: Button
-
-    private var currentStatus: String = ""
-
-    // ========================
-    // RECEIVERS
-    // ========================
-
-    private val statusReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            currentStatus = intent.getStringExtra("status") ?: ""
-            updateUI()
-        }
-    }
-
-    private val bgReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            updateUI()
-            graphView.refresh()
-        }
-    }
-
-    private val historyReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            graphView.refresh()
-            updateUI()
-        }
-    }
-
-    // ========================
-    // LIFECYCLE
-    // ========================
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_BleTest)
         super.onCreate(savedInstanceState)
 
-        val scrollView = ScrollView(this).apply {
-            isFillViewport = true
-        }
-
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(40, 40, 40, 40)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        scrollView.addView(layout)
-
-        val logo = ImageView(this).apply {
-            setImageResource(R.drawable.olleexdrip)
-            val params = LinearLayout.LayoutParams(
-                (200 * resources.displayMetrics.density).toInt(),
-                (100 * resources.displayMetrics.density).toInt()
-            )
-            params.setMargins(0, 0, 0, 40)
-            layoutParams = params
-            scaleType = ImageView.ScaleType.FIT_CENTER
-        }
-        layout.addView(logo)
-
-        graphView = GlycemiaGraphView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                (180 * resources.displayMetrics.density).toInt()
-            ).apply {
-                bottomMargin = (16 * resources.displayMetrics.density).toInt()
-            }
-            setDisplayRange(loadGraphRangeHours())
-            setOnLongClickListener {
-                showGraphOptionsMenu()
-                true
+        setContent {
+            OlleeTheme {
+                AppNavHost()
             }
         }
-        layout.addView(graphView)
 
-        tableLayout = TableLayout(this).apply {
-            setColumnStretchable(1, true)
-            setPadding(0, 24, 0, 40)
-        }
-
-        fun createRow(icon: String, label: String): Pair<TableRow, TextView> {
-            val row = TableRow(this).apply {
-                setPadding(0, 10, 0, 10)
-            }
-
-            val labelTv = TextView(this).apply {
-                text = "$icon $label:"
-                textSize = 18f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                gravity = Gravity.END
-                setPadding(0, 0, 20, 0)
-            }
-
-            val valueTv = TextView(this).apply {
-                textSize = 18f
-                gravity = Gravity.START
-            }
-
-            row.addView(labelTv)
-            row.addView(valueTv)
-            return Pair(row, valueTv)
-        }
-
-        val (row1, v1) = createRow("🩸", getString(R.string.glycemia))
-        valueGlycemia = v1
-        tableLayout.addView(row1)
-
-        val (row2, v2) = createRow("⌚", getString(R.string.received_at))
-        valueReceivedAt = v2
-        tableLayout.addView(row2)
-
-        val (row3, v3) = createRow("🔵", getString(R.string.status))
-        valueStatus = v3
-        tableLayout.addView(row3)
-
-        val (row4, v4) = createRow("⚡", getString(R.string.showing_on_watch))
-        valueWatch = v4.apply {
-            typeface = android.graphics.Typeface.MONOSPACE
-            paint.isFakeBoldText = true
-        }
-        tableLayout.addView(row4)
-
-        val (row5, v5) = createRow("⚙", getString(R.string.provider_config_label))
-        valueProviderConfig = v5
-        tableLayout.addView(row5)
-
-        btnPermission = Button(this).apply {
-            text = getString(R.string.permission_button)
-        }
-
-        btnSelectDevice = Button(this).apply {
-            text = getString(R.string.select_device)
-        }
-
-        btnSelectProvider = Button(this).apply {
-            text = getString(R.string.provider_label)
-        }
-
-        layout.addView(tableLayout)
-        layout.addView(btnPermission)
-        layout.addView(btnSelectDevice)
-        layout.addView(btnSelectProvider)
-
-        setContentView(scrollView)
-
-        btnPermission.setOnClickListener { requestPermissions() }
-        btnSelectDevice.setOnClickListener { showPairedDevices() }
-        btnSelectProvider.setOnClickListener { showProviderPicker() }
-        btnSelectProvider.setOnLongClickListener {
-            val provider = GlycemiaProviderManager.getSelected(this)
-            if (provider is ConfigurableGlycemiaProvider) {
-                showProviderConfigDialog(provider)
-            } else {
-                Toast.makeText(this, getString(R.string.provider_not_configurable), Toast.LENGTH_SHORT).show()
-            }
-            true
-        }
-
-        updateUI()
-
-        // ✅ AUTO START SERVICE
         startBleServiceSafe()
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        ContextCompat.registerReceiver(
-            this, statusReceiver,
-            IntentFilter("BLE_STATUS"),
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
-
-        ContextCompat.registerReceiver(
-            this, bgReceiver,
-            IntentFilter("BG_UPDATED"),
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
-
-        ContextCompat.registerReceiver(
-            this, historyReceiver,
-            IntentFilter("GLYCEMIA_HISTORY_UPDATED"),
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
-    }
-
-    override fun onStop() {
-        super.onStop()
-        unregisterReceiver(statusReceiver)
-        unregisterReceiver(bgReceiver)
-        unregisterReceiver(historyReceiver)
     }
 
     override fun onResume() {
         super.onResume()
-        updateUI()
-        graphView.refresh()
-    }
-
-    // ========================
-    // BLE SERVICE
-    // ========================
-
-    private fun startBleService(address: String) {
-        startBleServiceWithIntent(
-            Intent(this, BleService::class.java).apply {
-                putExtra("device_address", address)
-            }
-        )
-    }
-
-    private fun startBleServiceWithIntent(intent: Intent) {
-        val intent = Intent(this, BleService::class.java)
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                startForegroundService(intent)
-            else
-                startService(intent)
-        } catch (e: Exception) {
-            android.util.Log.e("BGOllee", "Failed to start service: ${e.message}")
+        // Sync the watch list in case it changed while the app was not running
+        val intent = android.content.Intent(this, BleService::class.java).apply {
+            action = BleService.ACTION_SYNC_WATCHES
         }
-    }
-
-    private fun startBleServiceSafe() {
-        val prefs = getSharedPreferences("data", MODE_PRIVATE)
-        val addr = prefs.getString("device_address", null)
-        val selectedProvider = GlycemiaProviderManager.getSelected(this)
-
-        if (addr != null) {
-            startBleService(addr)
-        } else if (selectedProvider.id != "xdrip") {
-            startBleServiceWithIntent(Intent(this, BleService::class.java))
-        } else {
-            Toast.makeText(this, getString(R.string.no_device), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // ========================
-    // UI
-    // ========================
-
-    private fun updateUI() {
-        val prefs = getSharedPreferences("data", MODE_PRIVATE)
-
-        val bg = prefs.getString("last_bg", "--")
-        val deltaFloat = prefs.getFloat("last_delta", Float.NaN)
-        val lastSent = prefs.getString("last_sent", "      ") // 6 chars default
-        val time = prefs.getLong("last_time", 0)
-
-        val formattedTime =
-            if (time != 0L)
-                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
-            else "--"
-
-        val statusText = when {
-            currentStatus.isNotEmpty() -> currentStatus
-            bg != "--" -> getString(R.string.last_data)
-            else -> getString(R.string.inactive)
-        }
-
-        val deltaStr = if (!deltaFloat.isNaN()) {
-            String.format("%+.1f", deltaFloat)
-        } else {
-            ""
-        }
-
-        val unit = if (bg != null && (bg.contains(".") || bg.contains(","))) "mmol/L" else "mg/dL"
-
-        val glycemiaLabelText = if (deltaStr.isNotEmpty()) {
-            "$bg ($deltaStr) $unit"
-        } else {
-            "$bg $unit"
-        }
-
-        valueGlycemia.text = glycemiaLabelText
-        valueReceivedAt.text = formattedTime
-        valueStatus.text = statusText
-        valueWatch.text = "\"$lastSent\""
-
-        val permsOk = arePermissionsGranted()
-        btnPermission.text = (if (permsOk) "🟢 " else "🔴 ") + getString(R.string.permission_button)
-
-        val deviceConfigured = prefs.getString("device_address", null) != null
-        btnSelectDevice.text = (if (deviceConfigured) "🟢 " else "🔴 ") + getString(R.string.select_device)
-
-        val selectedProvider = GlycemiaProviderManager.getSelected(this)
-        btnSelectProvider.text = getString(R.string.provider_label) + ": " + providerDisplayName(selectedProvider)
-        valueProviderConfig.text = if (selectedProvider is ConfigurableGlycemiaProvider) {
-            selectedProvider.getConfigSummary(this)
-        } else {
-            getString(R.string.provider_config_none)
-        }
-    }
-
-    private fun providerDisplayName(provider: GlycemiaProvider): String {
-        return when (provider.id) {
-            "xdrip" -> getString(R.string.provider_xdrip)
-            "constant" -> getString(R.string.provider_constant)
-            "virtual_human" -> getString(R.string.provider_virtual_human)
-            else -> provider.displayName
-        }
-    }
-
-    private fun arePermissionsGranted(): Boolean {
-        val perms = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            perms.add(Manifest.permission.BLUETOOTH_CONNECT)
-            perms.add(Manifest.permission.BLUETOOTH_SCAN)
-        }
-
-        if (Build.VERSION.SDK_INT >= 34) {
-            perms.add(Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            perms.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-
-        return perms.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    // ========================
-    // DEVICE SELECTION
-    // ========================
-
-    private fun disableBatteryOptimization() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-
-            val intent = Intent(
-                android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-            )
-
-            intent.data = android.net.Uri.parse("package:$packageName")
-
-            startActivity(intent)
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun showPairedDevices() {
-
-        if (!hasBluetoothPermission()) {
-            Toast.makeText(this, getString(R.string.permission_button), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val adapter = getSystemService(android.bluetooth.BluetoothManager::class.java)?.adapter
-
-        if (adapter == null || !adapter.isEnabled) {
-            Toast.makeText(this, getString(R.string.bluetooth_required), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val allDevices = adapter.bondedDevices
-        val devices = allDevices.filter { it.name?.contains("Ollee", ignoreCase = true) == true }
-
-        if (devices.isEmpty()) {
-            Toast.makeText(this, "No 'Ollee' devices found", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val list = devices.map { "${it.name} - ${it.address}" }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.select_device))
-            .setItems(list) { _, which ->
-
-                val device = devices[which]
-
-                saveDevice(device.address)
-
-                Toast.makeText(this, device.name, Toast.LENGTH_SHORT).show()
-
-                startBleService(device.address)
-                updateUI()
-            }
-            .show()
-    }
-
-    private fun showProviderPicker() {
-        val providers = GlycemiaProviderManager.allProviders
-        val items = providers.map { providerDisplayName(it) }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.provider_picker_title))
-            .setItems(items) { _, which ->
-                val provider = providers[which]
-                GlycemiaProviderManager.setSelected(this, provider.id)
-                restartSelectedProvider()
-                updateUI()
-
-                if (provider is ConfigurableGlycemiaProvider) {
-                    showProviderConfigDialog(provider)
-                }
-            }
-            .show()
-    }
-
-    private fun showProviderConfigDialog(provider: ConfigurableGlycemiaProvider) {
-        val spec = provider.getConfigSpec(this)
-        val savedValues = provider.getSavedConfig(this)
-
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(40, 24, 40, 0)
-        }
-        val viewsByKey = mutableMapOf<String, Any>()
-
-        spec.fields.forEach { field ->
-            val label = TextView(this).apply {
-                text = field.label
-                textSize = 16f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-            }
-            container.addView(label)
-
-            when (field.type) {
-                ProviderConfigField.FieldType.CHOICE -> {
-                    val spinner = Spinner(this)
-                    val optionLabels = field.options.map { it.label }
-                    val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, optionLabels).apply {
-                        setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                    }
-                    spinner.adapter = adapter
-                    val selectedValue = savedValues[field.key] ?: field.defaultValue
-                    val selectedIndex = field.options.indexOfFirst { it.value == selectedValue }.coerceAtLeast(0)
-                    spinner.setSelection(selectedIndex)
-                    viewsByKey[field.key] = spinner
-                    container.addView(spinner)
-                }
-
-                ProviderConfigField.FieldType.INTEGER,
-                ProviderConfigField.FieldType.LONG,
-                ProviderConfigField.FieldType.TEXT -> {
-                    val input = EditText(this).apply {
-                        setText(savedValues[field.key] ?: field.defaultValue)
-                        inputType = when (field.type) {
-                            ProviderConfigField.FieldType.INTEGER -> InputType.TYPE_CLASS_NUMBER
-                            ProviderConfigField.FieldType.LONG -> InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED
-                            else -> InputType.TYPE_CLASS_TEXT
-                        }
-                    }
-                    viewsByKey[field.key] = input
-                    container.addView(input)
-                }
-            }
-
-            field.helperText?.let { helperText ->
-                val helper = TextView(this).apply {
-                    text = helperText
-                    textSize = 12f
-                }
-                container.addView(helper)
-            }
-        }
-
-        val scrollView = ScrollView(this).apply {
-            addView(container)
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(spec.title)
-            .setView(scrollView)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.provider_config_save) { _, _ ->
-                val values = mutableMapOf<String, String>()
-                spec.fields.forEach { field ->
-                    val value = when (field.type) {
-                        ProviderConfigField.FieldType.CHOICE -> {
-                            val spinner = viewsByKey[field.key] as Spinner
-                            val option = field.options[spinner.selectedItemPosition]
-                            option.value
-                        }
-
-                        ProviderConfigField.FieldType.INTEGER,
-                        ProviderConfigField.FieldType.LONG,
-                        ProviderConfigField.FieldType.TEXT -> {
-                            val input = viewsByKey[field.key] as EditText
-                            input.text.toString().trim()
-                        }
-                    }
-                    values[field.key] = if (field.optional) value else value.ifEmpty { field.defaultValue }
-                }
-
-                provider.saveConfig(this, values)
-                restartSelectedProvider()
-                updateUI()
-            }
-            .show()
-    }
-
-    private fun restartSelectedProvider() {
-        val intent = Intent(this, BleService::class.java).apply {
-            action = BleService.ACTION_SWITCH_PROVIDER
-        }
-
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
@@ -548,128 +43,29 @@ class MainActivity : AppCompatActivity() {
                 startService(intent)
             }
         } catch (e: Exception) {
-            android.util.Log.e("BGOllee", "Failed to switch provider: ${e.message}")
+            android.util.Log.e("MainActivity", "Failed to sync watches: ${e.message}")
         }
     }
 
-    private fun showGraphOptionsMenu() {
-        val ranges = listOf(
-            getString(R.string.graph_range_2h) to 2,
-            getString(R.string.graph_range_3h) to 3,
-            getString(R.string.graph_range_4h) to 4,
-            getString(R.string.graph_range_6h) to 6,
-            getString(R.string.graph_range_12h) to 12,
-            getString(R.string.graph_range_24h) to 24
-        )
-        val labels = ranges.map { it.first }.toTypedArray()
-        val currentIndex = ranges.indexOfFirst { it.second == graphView.getDisplayRangeHours() }.coerceAtLeast(0)
+    private fun startBleServiceSafe() {
+        val prefs = getSharedPreferences("data", MODE_PRIVATE)
+        val hasWatches = WatchStore.getAll(this).isNotEmpty()
+        val selectedProvider = GlycemiaProviderManager.getSelected(this)
 
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.graph_options_title))
-            .setSingleChoiceItems(labels, currentIndex) { dialog, which ->
-                val selectedHours = ranges[which].second
-                saveGraphRangeHours(selectedHours)
-                graphView.setDisplayRange(selectedHours)
-                dialog.dismiss()
+        if (hasWatches || selectedProvider.id != "xdrip") {
+            startBleServiceWithIntent(android.content.Intent(this, BleService::class.java))
+        }
+    }
+
+    private fun startBleServiceWithIntent(intent: android.content.Intent) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
             }
-            .setNeutralButton(R.string.graph_clear_history) { _, _ ->
-                confirmClearHistory()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun confirmClearHistory() {
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.graph_clear_confirm_title))
-            .setMessage(getString(R.string.graph_clear_confirm_message))
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                GlycemiaHistoryStore.clear(this)
-                graphView.refresh()
-                Toast.makeText(this, getString(R.string.graph_cleared), Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun loadGraphRangeHours(): Int {
-        return getSharedPreferences("data", MODE_PRIVATE)
-            .getInt(PREF_GRAPH_RANGE_HOURS, DEFAULT_GRAPH_RANGE_HOURS)
-            .coerceIn(2, 24)
-    }
-
-    private fun saveGraphRangeHours(hours: Int) {
-        getSharedPreferences("data", MODE_PRIVATE)
-            .edit()
-            .putInt(PREF_GRAPH_RANGE_HOURS, hours)
-            .apply()
-    }
-
-    private fun saveDevice(address: String) {
-        getSharedPreferences("data", MODE_PRIVATE)
-            .edit()
-            .putString("device_address", address)
-            .apply()
-    }
-
-    // ========================
-    // PERMISSIONS
-    // ========================
-
-    private fun requestPermissions() {
-
-        val perms = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-
-        // BLE Android 12+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            perms.add(Manifest.permission.BLUETOOTH_CONNECT)
-            perms.add(Manifest.permission.BLUETOOTH_SCAN)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to start service: ${e.message}")
         }
-
-        // Android 14+
-        if (Build.VERSION.SDK_INT >= 34) {
-            perms.add(Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE)
-        }
-
-        // 🔔 Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            perms.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-
-        ActivityCompat.requestPermissions(this, perms.toTypedArray(), 1)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        results: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, results)
-
-        if (results.isNotEmpty() && results.all { it == PackageManager.PERMISSION_GRANTED }) {
-
-            Toast.makeText(this, getString(R.string.permissions_ok), Toast.LENGTH_SHORT).show()
-
-            disableBatteryOptimization() // 🔥 HERE
-
-            startBleServiceSafe()
-            updateUI()
-
-        } else {
-            Toast.makeText(this, getString(R.string.permissions_denied), Toast.LENGTH_SHORT).show()
-            updateUI()
-        }
-    }
-
-    private fun hasBluetoothPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        else true
     }
 }

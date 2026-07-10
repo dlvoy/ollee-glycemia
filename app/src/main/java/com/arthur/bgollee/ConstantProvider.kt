@@ -9,7 +9,7 @@ import kotlin.random.Random
 class ConstantProvider : ConfigurableGlycemiaProvider {
 
     override val id: String = "constant"
-    override val displayName: String = "Constant (test, 100 mg/dL)"
+    override val displayName: String = "Constant"
 
     private var callback: ((GlycemiaReading) -> Unit)? = null
     private val handler = Handler(Looper.getMainLooper())

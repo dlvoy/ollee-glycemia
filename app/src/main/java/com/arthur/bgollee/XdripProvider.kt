@@ -8,7 +8,7 @@ import org.json.JSONObject
 class XdripProvider : GlycemiaProvider {
 
     override val id: String = "xdrip"
-    override val displayName: String = "xDrip / Nightscout"
+    override val displayName: String = "xDrip"
 
     override fun start(context: Context, onReading: (GlycemiaReading) -> Unit) {
         setCallback(onReading)

@@ -1,41 +1,33 @@
 package com.arthur.bgollee
 
 import android.app.*
-import android.bluetooth.*
+import android.bluetooth.BluetoothAdapter
 import android.content.*
 import android.content.pm.ServiceInfo
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import java.util.*
 
+/**
+ * Manages the BLE link to every paired watch (see [WatchStore]). Each watch
+ * gets its own [WatchConnection] so one being out of range never blocks
+ * delivery to the others; every glycemia reading is fanned out to all
+ * currently-known connections.
+ */
 class BleService : Service() {
 
     private lateinit var notificationManager: NotificationManager
-    private var gatt: BluetoothGatt? = null
-    private var deviceAddress: String? = null
     private lateinit var prefs: SharedPreferences
 
-    private var isConnecting = false
-    private var isConnected = false
-    private var servicesReady = false
-
-    private var pendingBg: String? = null
-
-    private var lastSent: String? = null
-    private var isInErrorState = false
+    private val connections = mutableMapOf<String, WatchConnection>()
     private var currentProvider: GlycemiaProvider? = null
+    private var isInErrorState = false
 
     companion object {
         const val CHANNEL_ID = "ble_service_channel"
         private const val TIMEOUT_MS = 15 * 60 * 1000L
         const val ACTION_SWITCH_PROVIDER = "com.arthur.bgollee.SWITCH_PROVIDER"
-
-        val SERVICE_UUID =
-            UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
-
-        val CHAR_UUID =
-            UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
+        const val ACTION_SYNC_WATCHES = "com.arthur.bgollee.SYNC_WATCHES"
     }
 
     // ========================
@@ -46,75 +38,103 @@ class BleService : Service() {
         super.onCreate()
 
         prefs = getSharedPreferences("data", MODE_PRIVATE)
-        deviceAddress = prefs.getString("device_address", null)
-
         notificationManager = getSystemService(NotificationManager::class.java)
 
         createNotificationChannel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val foregroundServiceType = if (
-                BlePermissionHelper.canStartConnectedDeviceForegroundService(this)
-            ) {
+            val foregroundServiceType = if (BlePermissionHelper.canStartConnectedDeviceForegroundService(this)) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
             } else {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             }
-
-            startForeground(
-                1,
-                createNotification(getString(R.string.notification_initializing)),
-                foregroundServiceType
-            )
+            startForeground(1, createNotification(getString(R.string.notification_initializing)), foregroundServiceType)
         } else {
             startForeground(1, createNotification(getString(R.string.notification_initializing)))
         }
 
         registerReceiver(btReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
 
-        log("🚀 Service created")
+        log("Service created")
 
         currentProvider = GlycemiaProviderManager.getSelected(this).also {
             it.start(this, ::onGlycemiaReading)
         }
 
-        Handler(Looper.getMainLooper()).post { connect() }
-
+        syncConnectionsWithStore()
         startTimeoutWatcher()
     }
 
     override fun onDestroy() {
         currentProvider?.stop(this)
+        connections.values.forEach { it.teardown() }
+        connections.clear()
         super.onDestroy()
         unregisterReceiver(btReceiver)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_SWITCH_PROVIDER) {
-            currentProvider?.stop(this)
-            currentProvider = GlycemiaProviderManager.getSelected(this).also {
-                it.start(this, ::onGlycemiaReading)
+        when (intent?.action) {
+            ACTION_SWITCH_PROVIDER -> {
+                currentProvider?.stop(this)
+                currentProvider = GlycemiaProviderManager.getSelected(this).also {
+                    it.start(this, ::onGlycemiaReading)
+                }
+                return START_STICKY
             }
-            return START_STICKY
+
+            ACTION_SYNC_WATCHES -> {
+                syncConnectionsWithStore()
+                return START_STICKY
+            }
         }
 
-        val bg = intent?.getStringExtra("bg")
-        val trend = intent?.getStringExtra("trend")
-        val delta = if (intent?.hasExtra("delta") == true) intent.getDoubleExtra("delta", Double.NaN).takeUnless { it.isNaN() } else null
-
-        intent?.getStringExtra("device_address")?.let {
-            deviceAddress = it
-            prefs.edit().putString("device_address", it).apply()
-        }
-
-        if (bg != null) {
-            handleBg(bg, trend, delta)
-        }
-
-        if (gatt == null && !isConnecting) {
-            connect()
+        // Back-compat: a caller may still pass a bare device address (legacy
+        // single-device flow) - fold it into the watch list instead.
+        intent?.getStringExtra("device_address")?.let { address ->
+            WatchStore.add(this, address)
+            syncConnectionsWithStore()
         }
 
         return START_STICKY
+    }
+
+    // ========================
+    // WATCH CONNECTION MANAGEMENT
+    // ========================
+
+    private fun syncConnectionsWithStore() {
+        val paired = WatchStore.getAll(this)
+        val pairedAddresses = paired.map { it.address }.toSet()
+
+        connections.keys.filterNot { it in pairedAddresses }.forEach { address ->
+            connections.remove(address)?.teardown()
+        }
+
+        val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
+
+        paired.forEachIndexed { index, watch ->
+            val existing = connections[watch.address]
+            if (existing != null) {
+                existing.updateWatch(watch)
+            } else {
+                val connection = WatchConnection(this, watch, ::onConnectionStateChanged)
+                connections[watch.address] = connection
+                connection.connect(staggerIndex = index)
+                lastSent?.let { connection.submitReading(it) }
+            }
+        }
+
+        publishStatuses()
+        updateNotification()
+    }
+
+    private fun onConnectionStateChanged(connection: WatchConnection, state: WatchConnState) {
+        publishStatuses()
+        updateNotification()
+    }
+
+    private fun publishStatuses() {
+        AppState.publishWatchStatuses(connections.values.map { WatchStatus(it.watch, it.state) })
     }
 
     // ========================
@@ -148,14 +168,13 @@ class BleService : Service() {
     private fun handleBg(bg: String, trend: String?, delta: Double? = null) {
         val formatted = formatBg(bg, trend, delta)
 
-        pendingBg = formatted
         isInErrorState = false
 
         prefs.edit()
             .putString("last_sent", formatted)
             .apply()
 
-        trySend()
+        connections.values.forEach { it.submitReading(formatted) }
     }
 
     private fun formatBg(bg: String?, trend: String?, delta: Double? = null): String {
@@ -174,10 +193,8 @@ class BleService : Service() {
                 .toIntOrNull() ?: return "Err   "
             val clampedMgdl = mgdl.coerceIn(0, 999)
 
-            // Left-pad glucose into exactly 3 chars (values ≥1000 are already clamped to 999)
             val glucoseStr = clampedMgdl.toString().padStart(3, ' ')
 
-            // Delta: round, clamp to [-99, 99], left-pad into exactly 3 chars
             val deltaStr = if (delta != null) {
                 val deltaInt = Math.round(delta).toInt().coerceIn(-99, 99)
                 deltaInt.toString().padStart(3, ' ')
@@ -185,7 +202,7 @@ class BleService : Service() {
                 "   "
             }
 
-            return glucoseStr + deltaStr  // exactly 6 chars
+            return glucoseStr + deltaStr
         }
 
         // ========================
@@ -201,7 +218,6 @@ class BleService : Service() {
             else -> " "
         }
 
-        // 👉 1 arrow char + 5 value chars = 6 total
         val valueAligned = valueStr.take(5).padStart(5, ' ')
         return (arrow + valueAligned).take(6)
     }
@@ -223,12 +239,12 @@ class BleService : Service() {
                 if (now - lastTime > TIMEOUT_MS) {
 
                     if (!isInErrorState) {
-                        log("⏱ Timeout → ERROR")
+                        log("Timeout -> ERROR")
 
-                        pendingBg = "Err   "
                         isInErrorState = true
 
-                        trySend()
+                        prefs.edit().putString("last_sent", "Err   ").apply()
+                        connections.values.forEach { it.submitReading("Err   ") }
                     }
                 }
 
@@ -240,7 +256,7 @@ class BleService : Service() {
     }
 
     // ========================
-    // BLUETOOTH
+    // BLUETOOTH ADAPTER STATE
     // ========================
 
     private val btReceiver = object : BroadcastReceiver() {
@@ -248,174 +264,24 @@ class BleService : Service() {
 
             if (intent.action == BluetoothAdapter.ACTION_STATE_CHANGED) {
 
-                when (intent.getIntExtra(
-                    BluetoothAdapter.EXTRA_STATE,
-                    BluetoothAdapter.ERROR
-                )) {
+                when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
 
                     BluetoothAdapter.STATE_OFF -> {
-                        log("🔴 Bluetooth OFF")
-                        isConnected = false
-                        servicesReady = false
-                        gatt?.close()
-                        gatt = null
+                        log("Bluetooth OFF")
+                        connections.values.forEach { it.disconnectSoft() }
+                        publishStatuses()
+                        updateNotification()
                     }
 
                     BluetoothAdapter.STATE_ON -> {
-                        log("🟢 Bluetooth ON → reconnecting")
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            connect()
-                        }, 1000)
+                        log("Bluetooth ON -> reconnecting")
+                        connections.values.forEachIndexed { index, connection ->
+                            connection.connect(staggerIndex = index)
+                        }
                     }
                 }
             }
         }
-    }
-
-    private fun connect() {
-        if (!BlePermissionHelper.hasBluetoothRuntimeAccess(this)) {
-            log("Bluetooth permissions missing, skipping BLE connection")
-            return
-        }
-
-        if (isConnecting) return
-
-        val addr = deviceAddress ?: return
-
-        val manager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val device = manager.adapter.getRemoteDevice(addr)
-
-        gatt?.close()
-        gatt = null
-
-        log("🔗 Connecting to $addr")
-
-        isConnecting = true
-
-        gatt = device.connectGatt(
-            this,
-            false,
-            gattCallback,
-            BluetoothDevice.TRANSPORT_LE
-        )
-    }
-
-    private val gattCallback = object : BluetoothGattCallback() {
-
-        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
-
-            isConnecting = false
-
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                isConnected = true
-                servicesReady = false
-                gatt = g
-
-                if (BlePermissionHelper.hasBluetoothRuntimeAccess(this@BleService)) {
-                    g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
-                    g.discoverServices()
-                }
-
-                updateNotification(getString(R.string.notification_connected))
-            }
-
-            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                isConnected = false
-                servicesReady = false
-
-                gatt?.close()
-                gatt = null
-
-                updateNotification(getString(R.string.notification_reconnecting))
-
-                Handler(Looper.getMainLooper()).postDelayed({
-                    connect()
-                }, 3000)
-            }
-        }
-
-        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
-            servicesReady = true
-
-            Handler(Looper.getMainLooper()).postDelayed({
-                trySend()
-            }, 1000)
-        }
-    }
-
-    // ========================
-    // SENDING
-    // ========================
-
-    private fun trySend() {
-
-        val bg = pendingBg ?: return
-
-        if (!isConnected || !servicesReady) return
-
-        if (bg == lastSent) return
-
-        sendToWatch(bg)
-
-        lastSent = bg
-        pendingBg = null
-    }
-
-    private fun sendToWatch(bg: String) {
-
-        val g = gatt ?: return
-
-        val service = g.getService(SERVICE_UUID) ?: return
-        val charac = service.getCharacteristic(CHAR_UUID) ?: return
-
-        val payload = byteArrayOf(
-            0x02, 0x2f
-        ) + bg.toByteArray(Charsets.US_ASCII)
-
-        val crc = crc16(payload)
-
-        val packet = byteArrayOf(
-            0x00,
-            (payload.size + 4).toByte(),
-            0xaa.toByte(),
-            0x55,
-            (crc shr 8).toByte(),
-            (crc and 0xFF).toByte()
-        ) + payload
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            g.writeCharacteristic(
-                charac,
-                packet,
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            run {
-                charac.value = packet
-                charac.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                g.writeCharacteristic(charac)
-            }
-        }
-
-        log("📤 Sent → '$bg'")
-    }
-
-    private fun crc16(data: ByteArray): Int {
-        var crc = 0xFFFF
-
-        for (b in data) {
-            crc = crc xor ((b.toInt() and 0xFF) shl 8)
-
-            repeat(8) {
-                crc = if ((crc and 0x8000) != 0)
-                    (crc shl 1) xor 0x1021
-                else crc shl 1
-
-                crc = crc and 0xFFFF
-            }
-        }
-        return crc
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -450,7 +316,13 @@ class BleService : Service() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun updateNotification(text: String) {
+    private fun updateNotification() {
+        val text = if (connections.isEmpty()) {
+            getString(R.string.notification_no_watches)
+        } else {
+            val synced = connections.values.count { it.state == WatchConnState.SYNCED }
+            getString(R.string.notification_watch_status_format, synced, connections.size)
+        }
         notificationManager.notify(1, createNotification(text))
     }
 
