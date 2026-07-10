@@ -27,7 +27,7 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 
 1. **Download the APK**
    - Download the latest APK from the [Releases](https://github.com/dlvoy/ollee-glycemia/releases/) section
-   - Or build it yourself (see Building section below)
+   - Or build it yourself, see [BUILDING.md](BUILDING.md)
 
 2. **Install and Open**
    - Install the APK on your Android phone
@@ -86,81 +86,11 @@ If Bluetooth is disconnected (the watch appears offline or the Bluetooth indicat
 1. **Long-press the bottom-right button twice** on your watch
 2. This will re-enable Bluetooth and resync the latest glucose data
 
-## Building
+## Building & Releasing
 
-### Build Locally
+For local build instructions, versioning, and CI details, see [BUILDING.md](BUILDING.md).
 
-```bash
-./gradlew build
-```
-
-To build a debug APK:
-```bash
-./gradlew assembleDebug
-```
-
-To build a release APK (unsigned):
-```bash
-./gradlew assembleRelease
-```
-
-### Building with GitHub Actions
-
-This repository includes automated builds via GitHub Actions. Every push and pull request triggers a build that produces both debug and release APKs.
-
-#### Getting Pre-built APKs
-
-1. Go to the **Actions** tab in the repository
-2. Click the latest **Build APK** workflow run
-3. Under **Artifacts**, download:
-   - `app-debug.apk` — always available
-   - `app-release.apk` — available if signing is configured
-
-#### Signing Releases (Optional)
-
-To automatically sign release APKs in GitHub Actions:
-
-**Step 1: Create a signing keystore** (if you don't have one)
-
-```bash
-keytool -genkeypair \
-  -alias release \
-  -keyalg RSA \
-  -keysize 2048 \
-  -validity 10000 \
-  -keystore release.keystore
-```
-
-You'll be prompted for a keystore password and key password (can be the same).
-
-**Step 2: Encode the keystore to Base64**
-
-```bash
-# macOS / Linux
-base64 -i release.keystore | tr -d '\n'
-
-# Windows (PowerShell)
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.keystore"))
-```
-
-Copy the entire Base64 string.
-
-**Step 3: Add GitHub Secrets**
-
-In your repository, go to **Settings → Secrets and variables → Actions** and create these four secrets:
-
-| Secret | Value |
-|--------|-------|
-| `KEYSTORE_BASE64` | The Base64 string from Step 2 |
-| `KEYSTORE_PASSWORD` | The keystore password from Step 1 |
-| `KEY_ALIAS` | The alias used (e.g., `release`) |
-| `KEY_PASSWORD` | The key password from Step 1 |
-
-**Step 4: Trigger a build**
-
-Push a commit or manually trigger **Actions → Build APK → Run workflow**. The signed release APK will be available in Artifacts.
-
-⚠️ **Keep your keystore safe.** Never commit `release.keystore` to the repository.
+For how to cut a new tagged release (and configure the release GitHub Action), see [RELEASING.md](RELEASING.md).
 
 ## Troubleshooting
 

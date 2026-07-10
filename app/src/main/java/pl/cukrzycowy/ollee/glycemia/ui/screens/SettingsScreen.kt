@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import pl.cukrzycowy.ollee.glycemia.BuildConfig
 import pl.cukrzycowy.ollee.glycemia.R
 import pl.cukrzycowy.ollee.glycemia.ui.components.FullScreenScaffold
 import pl.cukrzycowy.ollee.glycemia.ui.components.SectionLabel
@@ -112,7 +113,9 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
 
         SectionLabel(text = stringResource(R.string.settings_about), modifier = Modifier.fillMaxWidth())
-        Text(stringResource(R.string.settings_version, "1.0"))
+        Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))
+        Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
+        Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
     }
 }
 

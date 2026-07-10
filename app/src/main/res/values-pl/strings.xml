@@ -74,6 +74,8 @@
     <string name="settings_permissions">Uprawnienia</string>
     <string name="settings_about">O aplikacji</string>
     <string name="settings_version">Wersja: %s</string>
+    <string name="settings_build_commit">Commit: %s</string>
+    <string name="settings_build_date">Zbudowano: %s</string>
     <string name="perm_bluetooth_connect">Połączenie Bluetooth</string>
     <string name="perm_bluetooth_scan">Skanowanie Bluetooth</string>
     <string name="perm_post_notifications">Powiadomienia</string>

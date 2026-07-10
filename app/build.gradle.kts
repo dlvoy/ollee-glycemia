@@ -1,7 +1,40 @@
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Semantic version (MAJOR.MINOR.PATCH). Override per-build with -PappVersionName=X.Y.Z,
+// which is how the release GitHub Action derives it from the pushed `vX.Y.Z` tag.
+val appVersionName: String = (project.findProperty("appVersionName") as String?) ?: "1.0.0"
+
+fun versionCodeFromSemver(version: String): Int {
+    val (major, minor, patch) = version.split(".")
+        .map { it.toIntOrNull() ?: 0 }
+        .let { Triple(it.getOrElse(0) { 0 }, it.getOrElse(1) { 0 }, it.getOrElse(2) { 0 }) }
+    return major * 10_000 + minor * 100 + patch
+}
+
+fun gitCommitHash(): String {
+    return try {
+        val process = ProcessBuilder("git", "rev-parse", "--short=10", "HEAD")
+            .directory(rootDir)
+            .redirectErrorStream(true)
+            .start()
+        val hash = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        hash.ifBlank { "unknown" }
+    } catch (e: Exception) {
+        "unknown"
+    }
+}
+
+val appBuildTime: String = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
+    .withZone(ZoneOffset.UTC)
+    .format(Instant.now())
 
 android {
     namespace = "pl.cukrzycowy.ollee.glycemia"
@@ -15,8 +48,11 @@ android {
         applicationId = "pl.cukrzycowy.ollee.glycemia"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = versionCodeFromSemver(appVersionName)
+        versionName = appVersionName
+
+        buildConfigField("String", "GIT_COMMIT_HASH", "\"${gitCommitHash()}\"")
+        buildConfigField("String", "BUILD_TIME", "\"$appBuildTime\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,6 +92,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests.isIncludeAndroidResources = true

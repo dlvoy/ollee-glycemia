@@ -74,6 +74,8 @@
     <string name="settings_permissions">Permissions</string>
     <string name="settings_about">About</string>
     <string name="settings_version">Version: %s</string>
+    <string name="settings_build_commit">Commit: %s</string>
+    <string name="settings_build_date">Built: %s</string>
     <string name="perm_bluetooth_connect">Bluetooth Connection</string>
     <string name="perm_bluetooth_scan">Bluetooth Scanning</string>
     <string name="perm_post_notifications">Notifications</string>
