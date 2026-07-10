@@ -21,5 +21,99 @@
     <string name="notification_reconnecting">🔴 Ponowne łączenie...</string>
     <string name="notification_title">xDrip → Zegarek</string>
     <string name="ble_service_name">Usługa BLE</string>
-    <string name="showing_on_watch">Wyświetlane </string>
+    <string name="showing_on_watch">Wyświetlane</string>
+    <string name="notification_no_watches">Brak sparowanych zegarków</string>
+    <string name="notification_watch_status_format">%1$d/%2$d zegarków zsynchronizowanych</string>
+
+    <string name="provider_label">Źródło glikemii</string>
+    <string name="provider_picker_title">Wybierz źródło glikemii</string>
+    <string name="provider_xdrip">xDrip</string>
+    <string name="provider_constant">Stała</string>
+    <string name="provider_virtual_human">Wirtualny pacjent</string>
+    <string name="provider_not_configurable">To źródło nie ma konfiguracji</string>
+    <string name="provider_config_save">Zapisz</string>
+    <string name="provider_config_label">Konfiguracja źródła</string>
+    <string name="provider_config_none">Brak</string>
+    <string name="provider_constant_config_title">Stała wartość</string>
+    <string name="provider_constant_value_label">Stała wartość glikemii (mg/dL)</string>
+    <string name="provider_constant_value_helper">Zakres 40-400 mg/dL.</string>
+    <string name="provider_constant_interval_label">Częstotliwość emisji</string>
+    <string name="provider_interval_30s">Co 30 sekund</string>
+    <string name="provider_interval_1m">Co minutę</string>
+    <string name="provider_interval_5m">Co 5 minut</string>
+    <string name="provider_interval_random_5_20">Losowo między 5 a 20 minut</string>
+    <string name="provider_constant_summary_format">%1$d mg/dL, %2$s</string>
+    <string name="provider_virtual_human_config_title">Wirtualny pacjent</string>
+    <string name="provider_virtual_human_scenario_label">Scenariusz</string>
+    <string name="provider_virtual_human_scenario_auto">Automatyczny</string>
+    <string name="provider_virtual_human_scenario_fasting">Stabilny / fasting</string>
+    <string name="provider_virtual_human_scenario_post_meal">Wzrost po posiłku</string>
+    <string name="provider_virtual_human_scenario_overnight">Nocny dryf</string>
+    <string name="provider_virtual_human_scenario_hypo">Powrót z hipoglikemii</string>
+    <string name="provider_virtual_human_seed_label">Seed generatora</string>
+    <string name="provider_virtual_human_seed_helper">Opcjonalny. Puste pole = losowy przebieg przy każdym starcie.</string>
+    <string name="provider_virtual_human_seed_random">losowy</string>
+    <string name="provider_virtual_human_summary_format">%1$s, seed: %2$s</string>
+    <string name="ble_permissions_required">Nadaj uprawnienia Bluetooth, aby uruchomić serwis.</string>
+    <string name="graph_range_2h">2 godziny</string>
+    <string name="graph_range_3h">3 godziny</string>
+    <string name="graph_range_4h">4 godziny</string>
+    <string name="graph_range_6h">6 godzin</string>
+    <string name="graph_range_12h">12 godzin</string>
+    <string name="graph_range_24h">24 godziny</string>
+    <string name="graph_options_title">Opcje wykresu</string>
+    <string name="graph_clear_history">Wyczyść historię</string>
+    <string name="graph_clear_confirm_title">Potwierdź czyszczenie</string>
+    <string name="graph_clear_confirm_message">Czy na pewno chcesz usunąć całą historię glikemii?</string>
+    <string name="graph_cleared">Historia wyczyszczona</string>
+    <string name="graph_empty">Brak danych historycznych</string>
+    <string name="graph_now_label">teraz</string>
+    <string name="graph_hours_label">-%1$dh</string>
+
+    <string name="settings_title">Ustawienia</string>
+    <string name="settings_permissions">Uprawnienia</string>
+    <string name="settings_about">O aplikacji</string>
+    <string name="settings_version">Wersja: %s</string>
+    <string name="perm_bluetooth_connect">Połączenie Bluetooth</string>
+    <string name="perm_bluetooth_scan">Skanowanie Bluetooth</string>
+    <string name="perm_post_notifications">Powiadomienia</string>
+    <string name="perm_access_fine_location">Dokładna lokalizacja</string>
+    <string name="perm_access_coarse_location">Przybliżona lokalizacja</string>
+    <string name="perm_foreground_service_connected_device">Usługa pierwszoplanowa</string>
+
+    <string name="initializing">Inicjalizacja...</string>
+    <string name="glycemia_sources">Źródła glikemii</string>
+    <string name="glycemia_history">Historia glikemii</string>
+    <string name="watches">Zegarki</string>
+    <string name="pair_watch">Sparuj zegarek Ollee</string>
+    <string name="no_paired_watches">Brak sparowanych zegarków</string>
+    <string name="select_provider">Wybierz źródło</string>
+    <string name="graph_range">Zakres wykresu</string>
+    <string name="close">Zamknij</string>
+    <string name="switch_provider">Zmień źródło</string>
+    <string name="configure">Konfiguruj</string>
+    <string name="rename">Zmień nazwę</string>
+    <string name="remove">Usuń</string>
+
+    <string name="pair_watch_title">Sparuj zegarek Ollee</string>
+    <string name="no_ollee_watches">Nie znaleziono zegarków Ollee. Najpierw sparuj jeden w ustawieniach Bluetooth.</string>
+    <string name="watch_paired">Sparowany</string>
+    <string name="watch_new">Nowy</string>
+
+    <string name="provider_status_awaiting">Oczekuję</string>
+    <string name="provider_status_current">Aktualna</string>
+    <string name="provider_status_late">Spóźniona</string>
+    <string name="provider_status_stale">Stara</string>
+    <string name="provider_status_no_data">Brak danych</string>
+
+    <string name="banner_initializing">Inicjalizacja...</string>
+    <string name="banner_permissions_required">Wymagane uprawnienia</string>
+    <string name="banner_no_glycemia">Brak glikemii</string>
+    <string name="banner_connected">Połączono</string>
+    <string name="banner_watches_synced">%1$d/%2$d zegarków zsynchronizowanych</string>
+
+    <string name="battery_optimization_title">Optymalizacja baterii</string>
+    <string name="battery_optimization_disable">Wyłącz optymalizację baterii</string>
+    <string name="battery_optimization_disabled">Optymalizacja baterii wyłączona ✓</string>
+    <string name="battery_optimization_description">Aplikacja musi być wyłączona z optymalizacji baterii, aby działać niezawodnie w tle</string>
 </resources>

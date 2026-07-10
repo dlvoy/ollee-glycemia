@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="permission_button">Demander permissions</string>
+    <string name="permission_button">Demander des permissions</string>
     <string name="select_device">Choisir la montre</string>
-    <string name="no_device">Choisis une montre</string>
+    <string name="no_device">Sélectionner une montre en premier</string>
 
     <string name="glycemia">Glycémie</string>
     <string name="received_at">Reçue à</string>
@@ -15,11 +15,105 @@
     <string name="no_paired_devices">Aucun appareil jumelé</string>
     <string name="permissions_ok">Permissions OK</string>
     <string name="permissions_denied">Permissions refusées ❌</string>
-    
+
     <string name="notification_initializing">🔄 Initialisation...</string>
     <string name="notification_connected">🟢 Connecté</string>
     <string name="notification_reconnecting">🔴 Reconnexion...</string>
+    <string name="notification_no_watches">Aucune montre jumelée</string>
+    <string name="notification_watch_status_format">%1$d/%2$d montres synchronisées</string>
     <string name="notification_title">xDrip → Montre</string>
     <string name="ble_service_name">Service BLE</string>
-    <string name="showing_on_watch">Montre</string>
+    <string name="showing_on_watch">Affiché</string>
+
+    <string name="provider_label">Source de glycémie</string>
+    <string name="provider_picker_title">Sélectionner la source de glycémie</string>
+    <string name="provider_xdrip">xDrip</string>
+    <string name="provider_constant">Constant</string>
+    <string name="provider_virtual_human">Patient virtuel</string>
+    <string name="provider_not_configurable">Cette source n\'a pas de paramètres configurables</string>
+    <string name="provider_config_save">Enregistrer</string>
+    <string name="provider_config_label">Configuration de la source</string>
+    <string name="provider_config_none">Aucun</string>
+    <string name="provider_constant_config_title">Valeur constante</string>
+    <string name="provider_constant_value_label">Valeur de glycémie constante (mg/dL)</string>
+    <string name="provider_constant_value_helper">Plage 40-400 mg/dL.</string>
+    <string name="provider_constant_interval_label">Fréquence d\'émission</string>
+    <string name="provider_interval_30s">Toutes les 30 secondes</string>
+    <string name="provider_interval_1m">Chaque minute</string>
+    <string name="provider_interval_5m">Tous les 5 minutes</string>
+    <string name="provider_interval_random_5_20">Aléatoire entre 5 et 20 minutes</string>
+    <string name="provider_constant_summary_format">%1$d mg/dL, %2$s</string>
+    <string name="provider_virtual_human_config_title">Patient virtuel</string>
+    <string name="provider_virtual_human_scenario_label">Scénario</string>
+    <string name="provider_virtual_human_scenario_auto">Automatique</string>
+    <string name="provider_virtual_human_scenario_fasting">Stable / À jeun</string>
+    <string name="provider_virtual_human_scenario_post_meal">Augmentation postprandiale</string>
+    <string name="provider_virtual_human_scenario_overnight">Dérive nocturne</string>
+    <string name="provider_virtual_human_scenario_hypo">Récupération d\'hypoglycémie</string>
+    <string name="provider_virtual_human_seed_label">Graine du générateur</string>
+    <string name="provider_virtual_human_seed_helper">Optionnel. Laissez vide = motif aléatoire à chaque démarrage.</string>
+    <string name="provider_virtual_human_seed_random">aléatoire</string>
+    <string name="provider_virtual_human_summary_format">%1$s, graine: %2$s</string>
+    <string name="ble_permissions_required">Accorder les permissions Bluetooth pour exécuter le service.</string>
+    <string name="graph_range_2h">2 heures</string>
+    <string name="graph_range_3h">3 heures</string>
+    <string name="graph_range_4h">4 heures</string>
+    <string name="graph_range_6h">6 heures</string>
+    <string name="graph_range_12h">12 heures</string>
+    <string name="graph_range_24h">24 heures</string>
+    <string name="graph_options_title">Options du graphique</string>
+    <string name="graph_clear_history">Effacer l\'historique</string>
+    <string name="graph_clear_confirm_title">Confirmer l\'effacement</string>
+    <string name="graph_clear_confirm_message">Êtes-vous sûr de vouloir supprimer tout l\'historique de glycémie?</string>
+    <string name="graph_cleared">Historique effacé</string>
+    <string name="graph_empty">Aucune donnée historique</string>
+    <string name="graph_now_label">maintenant</string>
+    <string name="graph_hours_label">-%1$dh</string>
+
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_about">À propos</string>
+    <string name="settings_version">Version : %s</string>
+    <string name="perm_bluetooth_connect">Connexion Bluetooth</string>
+    <string name="perm_bluetooth_scan">Analyse Bluetooth</string>
+    <string name="perm_post_notifications">Notifications</string>
+    <string name="perm_access_fine_location">Localisation précise</string>
+    <string name="perm_access_coarse_location">Localisation approximative</string>
+    <string name="perm_foreground_service_connected_device">Service au premier plan</string>
+
+    <string name="initializing">Initialisation...</string>
+    <string name="glycemia_sources">Sources de glycémie</string>
+    <string name="glycemia_history">Historique de glycémie</string>
+    <string name="watches">Montres</string>
+    <string name="pair_watch">Jumeler la montre Ollee</string>
+    <string name="no_paired_watches">Aucune montre jumelée</string>
+    <string name="select_provider">Sélectionner la source</string>
+    <string name="graph_range">Plage du graphique</string>
+    <string name="close">Fermer</string>
+    <string name="switch_provider">Changer la source</string>
+    <string name="configure">Configurer</string>
+    <string name="rename">Renommer</string>
+    <string name="remove">Supprimer</string>
+
+    <string name="pair_watch_title">Jumeler la montre Ollee</string>
+    <string name="no_ollee_watches">Aucune montre Ollee trouvée. Jumelez-en une via les paramètres Bluetooth en premier.</string>
+    <string name="watch_paired">Jumelée</string>
+    <string name="watch_new">Nouveau</string>
+
+    <string name="provider_status_awaiting">En attente</string>
+    <string name="provider_status_current">Actuelle</string>
+    <string name="provider_status_late">Retardée</string>
+    <string name="provider_status_stale">Ancienne</string>
+    <string name="provider_status_no_data">Pas de données</string>
+
+    <string name="banner_initializing">Initialisation...</string>
+    <string name="banner_permissions_required">Permissions requises</string>
+    <string name="banner_no_glycemia">Pas de glycémie</string>
+    <string name="banner_connected">Connecté</string>
+    <string name="banner_watches_synced">%1$d/%2$d montres synchronisées</string>
+
+    <string name="battery_optimization_title">Optimisation de la batterie</string>
+    <string name="battery_optimization_disable">Désactiver l\'optimisation de la batterie</string>
+    <string name="battery_optimization_disabled">Optimisation de la batterie désactivée ✓</string>
+    <string name="battery_optimization_description">L\'application doit être exclue de l\'optimisation de la batterie pour fonctionner de manière fiable en arrière-plan</string>
 </resources>

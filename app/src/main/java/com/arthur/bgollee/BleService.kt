@@ -28,6 +28,7 @@ class BleService : Service() {
         private const val TIMEOUT_MS = 15 * 60 * 1000L
         const val ACTION_SWITCH_PROVIDER = "com.arthur.bgollee.SWITCH_PROVIDER"
         const val ACTION_SYNC_WATCHES = "com.arthur.bgollee.SYNC_WATCHES"
+        const val ACTION_SEND_CLEAR_GLYCEMIA = "com.arthur.bgollee.SEND_CLEAR_GLYCEMIA"
     }
 
     // ========================
@@ -84,6 +85,11 @@ class BleService : Service() {
 
             ACTION_SYNC_WATCHES -> {
                 syncConnectionsWithStore()
+                return START_STICKY
+            }
+
+            ACTION_SEND_CLEAR_GLYCEMIA -> {
+                sendClearGlycemiaToAllWatches()
                 return START_STICKY
             }
         }
@@ -220,6 +226,11 @@ class BleService : Service() {
 
         val valueAligned = valueStr.take(5).padStart(5, ' ')
         return (arrow + valueAligned).take(6)
+    }
+
+    private fun sendClearGlycemiaToAllWatches() {
+        val clearValue = "--- --"
+        connections.values.forEach { it.submitReading(clearValue) }
     }
 
     // ========================

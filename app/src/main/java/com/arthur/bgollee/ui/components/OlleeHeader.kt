@@ -78,15 +78,12 @@ fun OlleeHeader(
                         contentDescription = "Settings - permissions required",
                         tint = OlleeColors.StatusNegative
                     )
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(14.dp)
-                            .background(OlleeColors.StatusNegative, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "!", color = OlleeColors.OnStatusColor, fontSize = 9.sp)
-                    }
+                    Text(
+                        text = "!",
+                        color = OlleeColors.StatusNegative,
+                        fontSize = 10.sp,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    )
                 }
             }
         }

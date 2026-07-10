@@ -14,7 +14,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import com.arthur.bgollee.R
 import com.arthur.bgollee.WatchStore
 import com.arthur.bgollee.ui.components.FullScreenScaffold
 import com.arthur.bgollee.ui.components.RichSelectorRow
@@ -40,13 +42,13 @@ fun WatchPairingScreen(onBack: () -> Unit) {
         }
     }
 
-    FullScreenScaffold(title = "Pair Ollee Watch", onBack = onBack) {
+    FullScreenScaffold(title = stringResource(R.string.pair_watch_title), onBack = onBack) {
         if (bondedDevices.value.isEmpty()) {
-            Text("No Ollee watches found. Please pair one via Bluetooth settings first.")
+            Text(stringResource(R.string.no_ollee_watches))
         } else {
             bondedDevices.value.forEach { device ->
                 val alreadyPaired = WatchStore.getAll(context).any { it.address == device.address }
-                val status = if (alreadyPaired) "Paired" else "New"
+                val status = if (alreadyPaired) stringResource(R.string.watch_paired) else stringResource(R.string.watch_new)
                 RichSelectorRow(
                     title = device.name ?: "Unknown",
                     subtitle = "$status  ·  ${device.address}",

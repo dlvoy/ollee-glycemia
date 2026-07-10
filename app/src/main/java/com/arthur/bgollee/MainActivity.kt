@@ -49,6 +49,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun startBleServiceSafe() {
         val prefs = getSharedPreferences("data", MODE_PRIVATE)
+        if (prefs.getLong("provider_switch_time", 0L) == 0L) {
+            prefs.edit().putLong("provider_switch_time", System.currentTimeMillis()).apply()
+        }
         val hasWatches = WatchStore.getAll(this).isNotEmpty()
         val selectedProvider = GlycemiaProviderManager.getSelected(this)
 

@@ -19,7 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import com.arthur.bgollee.ConfigurableGlycemiaProvider
+import com.arthur.bgollee.R
 import com.arthur.bgollee.GlycemiaProviderManager
 import com.arthur.bgollee.ProviderConfigField
 import com.arthur.bgollee.ui.components.FullScreenScaffold
@@ -35,8 +37,8 @@ fun ProviderConfigScreen(providerId: String, onBack: () -> Unit) {
     val provider = GlycemiaProviderManager.allProviders.find { it.id == providerId }
 
     if (provider !is ConfigurableGlycemiaProvider) {
-        FullScreenScaffold(title = "Provider settings", onBack = onBack) {
-            Text("This provider has no configurable settings.")
+        FullScreenScaffold(title = stringResource(R.string.provider_config_label), onBack = onBack) {
+            Text(stringResource(R.string.provider_not_configurable))
         }
         return
     }
@@ -108,7 +110,7 @@ fun ProviderConfigScreen(providerId: String, onBack: () -> Unit) {
             }
 
             PillButton(
-                text = "Save",
+                text = stringResource(R.string.provider_config_save),
                 style = PillButtonStyle.PRIMARY,
                 onClick = {
                     provider.saveConfig(context, fieldValues)
