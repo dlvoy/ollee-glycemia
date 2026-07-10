@@ -2,6 +2,7 @@ package pl.cukrzycowy.ollee.glycemia.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -22,7 +23,8 @@ enum class StatusBannerTone { POSITIVE, NEGATIVE, WARNING, NEUTRAL }
 fun StatusBanner(
     text: String,
     tone: StatusBannerTone,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     val visible = text.isNotBlank()
     AnimatedVisibility(visible = visible) {
@@ -34,14 +36,17 @@ fun StatusBanner(
         }
         val contentColor: Color = if (tone == StatusBannerTone.NEUTRAL) OlleeColors.TextPrimary else OlleeColors.OnStatusColor
 
+        val bannerModifier = modifier
+            .fillMaxWidth()
+            .background(background)
+            .padding(vertical = OlleeSpacing.sm, horizontal = OlleeSpacing.lg)
+            .let { m -> if (onClick != null) m.clickable(onClick = onClick) else m }
+
         Text(
             text = text,
             color = contentColor,
             textAlign = TextAlign.Center,
-            modifier = modifier
-                .fillMaxWidth()
-                .background(background)
-                .padding(vertical = OlleeSpacing.sm, horizontal = OlleeSpacing.lg)
+            modifier = bannerModifier
         )
     }
 }

@@ -29,6 +29,7 @@ class BleService : Service() {
         const val ACTION_SWITCH_PROVIDER = "pl.cukrzycowy.ollee.glycemia.SWITCH_PROVIDER"
         const val ACTION_SYNC_WATCHES = "pl.cukrzycowy.ollee.glycemia.SYNC_WATCHES"
         const val ACTION_SEND_CLEAR_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.SEND_CLEAR_GLYCEMIA"
+        const val ACTION_RESEND_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.RESEND_GLYCEMIA"
     }
 
     // ========================
@@ -90,6 +91,11 @@ class BleService : Service() {
 
             ACTION_SEND_CLEAR_GLYCEMIA -> {
                 sendClearGlycemiaToAllWatches()
+                return START_STICKY
+            }
+
+            ACTION_RESEND_GLYCEMIA -> {
+                resendGlycemiaToAllWatches()
                 return START_STICKY
             }
         }
@@ -181,6 +187,8 @@ class BleService : Service() {
             .apply()
 
         connections.values.forEach { it.submitReading(formatted) }
+        publishStatuses()
+        sendBroadcast(Intent("GLYCEMIA_UPDATED"))
     }
 
     private fun formatBg(bg: String?, trend: String?, delta: Double? = null): String {
@@ -231,6 +239,15 @@ class BleService : Service() {
     private fun sendClearGlycemiaToAllWatches() {
         val clearValue = "--- --"
         connections.values.forEach { it.submitReading(clearValue) }
+        publishStatuses()
+    }
+
+    private fun resendGlycemiaToAllWatches() {
+        val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
+        if (lastSent != null) {
+            connections.values.forEach { it.submitReading(lastSent) }
+            publishStatuses()
+        }
     }
 
     // ========================
@@ -256,6 +273,7 @@ class BleService : Service() {
 
                         prefs.edit().putString("last_sent", "Err   ").apply()
                         connections.values.forEach { it.submitReading("Err   ") }
+                        publishStatuses()
                     }
                 }
 

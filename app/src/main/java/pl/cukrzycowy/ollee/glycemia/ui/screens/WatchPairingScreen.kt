@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.content.Intent
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import pl.cukrzycowy.ollee.glycemia.R
 import pl.cukrzycowy.ollee.glycemia.WatchStore
+import pl.cukrzycowy.ollee.glycemia.BleService
 import pl.cukrzycowy.ollee.glycemia.ui.components.FullScreenScaffold
 import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeColors
 import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeShapes
@@ -79,6 +82,7 @@ fun WatchPairingScreen(onBack: () -> Unit) {
                         .clickable {
                             WatchStore.add(context, device.address)
                             refreshWatchListInPairing(context)
+                            triggerWatchSync(context)
                             onBack()
                         },
                     verticalAlignment = Alignment.CenterVertically,
@@ -126,4 +130,20 @@ private fun refreshWatchListInPairing(context: android.content.Context) {
     }
 
     pl.cukrzycowy.ollee.glycemia.AppState.publishWatchStatuses(updatedStatuses)
+}
+
+private fun triggerWatchSync(context: android.content.Context) {
+    try {
+        val intent = Intent(context, BleService::class.java).apply {
+            action = BleService.ACTION_SYNC_WATCHES
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            @Suppress("DEPRECATION")
+            context.startService(intent)
+        }
+    } catch (e: Exception) {
+        android.util.Log.e("WatchPairingScreen", "Failed to trigger watch sync: ${e.message}")
+    }
 }

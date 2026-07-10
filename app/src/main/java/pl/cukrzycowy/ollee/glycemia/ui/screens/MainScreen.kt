@@ -1,10 +1,14 @@
 package pl.cukrzycowy.ollee.glycemia.ui.screens
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -159,30 +163,53 @@ fun MainScreen(nav: AppNavController) {
     var previousStatus by remember { mutableStateOf(providerStatus.status) }
 
     LaunchedEffect(Unit) {
-        while (true) {
-            delay(2000)
-            val newLastBg = prefs.getString("last_bg", "--") ?: "--"
-            val newLastDelta = prefs.getFloat("last_delta", Float.NaN)
-            val newLastTime = prefs.getLong("last_time", 0L)
+        val glycemiaReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == "GLYCEMIA_UPDATED") {
+                    val newLastBg = prefs.getString("last_bg", "--") ?: "--"
+                    val newLastDelta = prefs.getFloat("last_delta", Float.NaN)
+                    val newLastTime = prefs.getLong("last_time", 0L)
 
-            if (newLastTime != lastTime || newLastBg != lastBg) {
-                lastBg = newLastBg
-                lastDelta = newLastDelta
-                lastTime = newLastTime
-                refreshGraphTrigger++
-            }
-
-            val newStatus = calculateProviderStatus(context, newLastTime)
-            if (newStatus.status != providerStatus.status) {
-                previousStatus = providerStatus.status
-                providerStatus = newStatus
-                if ((previousStatus == ProviderDataStatus.CURRENT || previousStatus == ProviderDataStatus.LATE) &&
-                    (newStatus.status == ProviderDataStatus.STALE || newStatus.status == ProviderDataStatus.NO_DATA || newStatus.status == ProviderDataStatus.AWAITING)) {
-                    sendClearGlycemiaToWatches(context)
+                    if (newLastBg != lastBg || newLastTime != lastTime) {
+                        lastBg = newLastBg
+                        lastDelta = newLastDelta
+                        lastTime = newLastTime
+                        refreshGraphTrigger++
+                    }
                 }
             }
+        }
 
-            syncWatchListWithStore(context)
+        context.registerReceiver(glycemiaReceiver, IntentFilter("GLYCEMIA_UPDATED"), Context.RECEIVER_NOT_EXPORTED)
+
+        try {
+            while (true) {
+                delay(2000)
+                val newLastBg = prefs.getString("last_bg", "--") ?: "--"
+                val newLastDelta = prefs.getFloat("last_delta", Float.NaN)
+                val newLastTime = prefs.getLong("last_time", 0L)
+
+                if (newLastTime != lastTime || newLastBg != lastBg) {
+                    lastBg = newLastBg
+                    lastDelta = newLastDelta
+                    lastTime = newLastTime
+                    refreshGraphTrigger++
+                }
+
+                val newStatus = calculateProviderStatus(context, newLastTime)
+                if (newStatus.status != providerStatus.status) {
+                    previousStatus = providerStatus.status
+                    providerStatus = newStatus
+                    if ((previousStatus == ProviderDataStatus.CURRENT || previousStatus == ProviderDataStatus.LATE) &&
+                        (newStatus.status == ProviderDataStatus.STALE || newStatus.status == ProviderDataStatus.NO_DATA || newStatus.status == ProviderDataStatus.AWAITING)) {
+                        sendClearGlycemiaToWatches(context)
+                    }
+                }
+
+                syncWatchListWithStore(context)
+            }
+        } finally {
+            context.unregisterReceiver(glycemiaReceiver)
         }
     }
 
@@ -200,6 +227,12 @@ fun MainScreen(nav: AppNavController) {
                 GlycemiaProviderManager.setSelected(context, newProviderId)
                 selectedProvider = GlycemiaProviderManager.getSelected(context)
                 showProviderPicker = false
+
+                // Reset UI to show "Initializing..."
+                lastBg = "--"
+                lastDelta = Float.NaN
+                lastTime = 0L
+
                 // Restart service with new provider
                 val intent = Intent(context, pl.cukrzycowy.ollee.glycemia.BleService::class.java).apply {
                     action = pl.cukrzycowy.ollee.glycemia.BleService.ACTION_SWITCH_PROVIDER
@@ -214,6 +247,23 @@ fun MainScreen(nav: AppNavController) {
                 } catch (e: Exception) {
                     Log.e("MainScreen", "Failed to restart service: ${e.message}")
                 }
+
+                // Resend glycemia to watches after a short delay
+                Handler(Looper.getMainLooper()).postDelayed({
+                    val resendIntent = Intent(context, pl.cukrzycowy.ollee.glycemia.BleService::class.java).apply {
+                        action = pl.cukrzycowy.ollee.glycemia.BleService.ACTION_RESEND_GLYCEMIA
+                    }
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            context.startForegroundService(resendIntent)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            context.startService(resendIntent)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MainScreen", "Failed to resend glycemia: ${e.message}")
+                    }
+                }, 100)
             },
             onDismiss = { showProviderPicker = false }
         )
@@ -230,10 +280,11 @@ fun MainScreen(nav: AppNavController) {
                 .padding(horizontal = OlleeSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(OlleeSpacing.lg)
         ) {
-            val (bannerText, bannerTone) = getBannerState(permsOk, providerStatus, watchStatuses)
+            val (bannerText, bannerTone, bannerOnClick) = getBannerState(permsOk, providerStatus, watchStatuses, nav)
             StatusBanner(
                 text = bannerText,
                 tone = bannerTone,
+                onClick = bannerOnClick,
                 modifier = Modifier.padding(bottom = OlleeSpacing.sm)
             )
 
@@ -314,9 +365,19 @@ fun MainScreen(nav: AppNavController) {
                 expanded = graphExpanded,
                 onToggle = { graphExpanded = it }
             ) {
+                val graphViewRef = remember { mutableStateOf<GlycemiaGraphView?>(null) }
+
+                LaunchedEffect(refreshGraphTrigger, selectedGraphRange) {
+                    graphViewRef.value?.let { view ->
+                        view.setDisplayRange(selectedGraphRange)
+                        view.invalidate()
+                    }
+                }
+
                 AndroidView(
                     factory = { ctx ->
                         GlycemiaGraphView(ctx).apply {
+                            graphViewRef.value = this
                             setDisplayRange(selectedGraphRange)
                             setOnLongClickListener {
                                 showGraphOptions = true
@@ -621,43 +682,51 @@ private fun sendClearGlycemiaToWatches(context: Context) {
 private fun getBannerState(
     permsOk: Boolean,
     providerStatus: ProviderDataStatusInfo,
-    watchStatuses: List<WatchStatus>
-): Pair<String, StatusBannerTone> {
+    watchStatuses: List<WatchStatus>,
+    nav: AppNavController
+): Triple<String, StatusBannerTone, (() -> Unit)?> {
     return when {
-        !permsOk -> Pair(
+        !permsOk -> Triple(
             stringResource(R.string.banner_permissions_required),
-            StatusBannerTone.NEGATIVE
+            StatusBannerTone.NEGATIVE,
+            { nav.navigate(Route.Settings) }
         )
-        providerStatus.status == ProviderDataStatus.NO_DATA -> Pair(
+        watchStatuses.isEmpty() -> Triple(
+            stringResource(R.string.banner_no_watch_paired),
+            StatusBannerTone.NEGATIVE,
+            { nav.navigate(Route.WatchPairing) }
+        )
+        providerStatus.status == ProviderDataStatus.NO_DATA -> Triple(
             stringResource(R.string.banner_no_glycemia),
-            StatusBannerTone.NEGATIVE
+            StatusBannerTone.NEGATIVE,
+            null
         )
-        providerStatus.status == ProviderDataStatus.STALE -> Pair(
+        providerStatus.status == ProviderDataStatus.STALE -> Triple(
             stringResource(R.string.banner_no_glycemia),
-            StatusBannerTone.NEGATIVE
-        )
-        watchStatuses.isEmpty() -> Pair(
-            stringResource(R.string.banner_initializing),
-            StatusBannerTone.POSITIVE
+            StatusBannerTone.NEGATIVE,
+            null
         )
         watchStatuses.all { it.state == WatchConnState.SYNCED } -> {
             val count = watchStatuses.size
-            Pair(
+            Triple(
                 stringResource(R.string.banner_watches_synced, count, count),
-                StatusBannerTone.POSITIVE
+                StatusBannerTone.POSITIVE,
+                null
             )
         }
         watchStatuses.any { it.state == WatchConnState.SYNCED } -> {
             val synced = watchStatuses.count { it.state == WatchConnState.SYNCED }
             val total = watchStatuses.size
-            Pair(
+            Triple(
                 stringResource(R.string.banner_watches_synced, synced, total),
-                StatusBannerTone.POSITIVE
+                StatusBannerTone.POSITIVE,
+                null
             )
         }
-        else -> Pair(
+        else -> Triple(
             stringResource(R.string.banner_initializing),
-            StatusBannerTone.POSITIVE
+            StatusBannerTone.POSITIVE,
+            null
         )
     }
 }

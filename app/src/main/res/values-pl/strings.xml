@@ -108,6 +108,7 @@
 
     <string name="banner_initializing">Inicjalizacja...</string>
     <string name="banner_permissions_required">Wymagane uprawnienia</string>
+    <string name="banner_no_watch_paired">Brak sparowanego zegarka</string>
     <string name="banner_no_glycemia">Brak glikemii</string>
     <string name="banner_connected">Połączono</string>
     <string name="banner_watches_synced">%1$d/%2$d zegarków zsynchronizowanych</string>
