@@ -140,7 +140,7 @@ class BleService : Service() {
     }
 
     private fun publishStatuses() {
-        AppState.publishWatchStatuses(connections.values.map { WatchStatus(it.watch, it.state, it.lastSyncTimeMs, it.lastConnectionAttemptTimeMs) })
+        AppState.publishWatchStatuses(connections.values.map { WatchStatus(it.watch, it.state, it.lastSyncTimeMs, it.lastConnectionAttemptTimeMs, it.lastSentValue) })
     }
 
     // ========================

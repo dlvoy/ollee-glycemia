@@ -61,6 +61,9 @@ class WatchConnection(
     var lastConnectionAttemptTimeMs: Long = 0L
         private set
 
+    var lastSentValue: String = ""
+        private set
+
     private val handler = Handler(Looper.getMainLooper())
     private var gatt: BluetoothGatt? = null
     private var isConnecting = false
@@ -220,6 +223,7 @@ class WatchConnection(
                 }
             }
             lastSyncTimeMs = System.currentTimeMillis()
+            lastSentValue = bg
             log("Sent to ${watch.address} -> '$bg'")
             true
         } catch (e: SecurityException) {

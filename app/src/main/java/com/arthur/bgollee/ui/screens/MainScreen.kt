@@ -73,6 +73,7 @@ import com.arthur.bgollee.ui.theme.OlleeColors
 import com.arthur.bgollee.ui.theme.OlleeShapes
 import com.arthur.bgollee.ui.theme.OlleeSpacing
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 
 enum class ProviderDataStatus {
@@ -344,11 +345,14 @@ fun MainScreen(nav: AppNavController) {
                 var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
 
                 watchStatuses.forEach { status ->
-                    val stateColor = when (status.state) {
-                        WatchConnState.SYNCED -> Color(0xFF00AA00)
-                        WatchConnState.CONNECTING -> Color(0xFF0099CC)
-                        WatchConnState.OFFLINE -> Color(0xFF999999)
-                        WatchConnState.ERROR -> Color(0xFFCC0000)
+                    val isStaleData = status.state == WatchConnState.SYNCED && (status.lastSentValue == "--- --" || status.lastSentValue == "Err   ")
+                    val stateColor = when {
+                        isStaleData -> Color(0xFF999999)
+                        status.state == WatchConnState.SYNCED -> Color(0xFF00AA00)
+                        status.state == WatchConnState.CONNECTING -> Color(0xFF0099CC)
+                        status.state == WatchConnState.OFFLINE -> Color(0xFF999999)
+                        status.state == WatchConnState.ERROR -> Color(0xFFCC0000)
+                        else -> Color(0xFF999999)
                     }
                     val stateLabel = when (status.state) {
                         WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
@@ -440,6 +444,15 @@ fun MainScreen(nav: AppNavController) {
                                         color = OlleeColors.TextSecondary,
                                         fontSize = 12.sp
                                     )
+                                    if (status.lastSentValue.isNotEmpty()) {
+                                        Text(
+                                            text = "\"${status.lastSentValue}\"",
+                                            color = OlleeColors.TextSecondary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
                                 }
                             }
 
