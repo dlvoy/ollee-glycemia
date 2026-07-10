@@ -7,7 +7,7 @@
       "request": "launch",
       "preLaunchTasks": ["buildIfNeeded"],
       "device": "emulator",
-      "activity": "com.arthur.bgollee.MainActivity"
+      "activity": "pl.cukrzycowy.ollee.glycemia.MainActivity"
     }
   ],
   "tasks": [

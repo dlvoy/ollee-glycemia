@@ -1,4 +1,4 @@
-package com.arthur.bgollee.synthetic
+package pl.cukrzycowy.ollee.glycemia.synthetic
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals

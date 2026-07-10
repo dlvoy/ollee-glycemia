@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.arthur.bgollee">
+    package="pl.cukrzycowy.ollee.glycemia">
 
 <!-- Permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
@@ -14,14 +14,14 @@
 
     <application
         android:allowBackup="true"
-        android:label="BG Ollee"
+        android:label="Ollee Glycemia"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
-            android:name="com.arthur.bgollee.MainActivity"
+            android:name="pl.cukrzycowy.ollee.glycemia.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.App.Splash">
             <intent-filter>
@@ -31,7 +31,7 @@
         </activity>
 
         <receiver
-            android:name="com.arthur.bgollee.XdripReceiver"
+            android:name="pl.cukrzycowy.ollee.glycemia.XdripReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.eveningoutpost.dexdrip.BgEstimate"/>
@@ -42,7 +42,7 @@
         </receiver>
 
         <receiver
-            android:name="com.arthur.bgollee.BootReceiver"
+            android:name="pl.cukrzycowy.ollee.glycemia.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
@@ -50,7 +50,7 @@
         </receiver>
 
         <service
-            android:name="com.arthur.bgollee.BleService"
+            android:name="pl.cukrzycowy.ollee.glycemia.BleService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice|dataSync"/>
 

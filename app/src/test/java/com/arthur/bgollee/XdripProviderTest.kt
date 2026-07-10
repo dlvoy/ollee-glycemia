@@ -1,4 +1,4 @@
-package com.arthur.bgollee
+package pl.cukrzycowy.ollee.glycemia
 
 import android.content.Intent
 import org.junit.Assert.assertEquals

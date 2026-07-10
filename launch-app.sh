@@ -31,6 +31,6 @@ echo ""
 echo "▶️ Launching app..."
 
 # Launch the main activity
-adb -s "$DEVICE" shell am start -n com.arthur.bgollee/.MainActivity
+adb -s "$DEVICE" shell am start -n pl.cukrzycowy.ollee.glycemia/.MainActivity
 
 echo "✅ App launched on $DEVICE"

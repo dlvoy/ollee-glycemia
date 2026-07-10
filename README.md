@@ -1,6 +1,6 @@
-# BGOllee
+# Ollee Glycemia
 
-BGOllee is an APK that collects glucose data from xDrip (or GLucoDataHandler) and sends it to an Ollee Watch.
+Ollee Glycemia is an APK that collects glucose data from xDrip (or GLucoDataHandler) and sends it to an Ollee Watch.
 
 ## Disclaimer
 
@@ -21,14 +21,14 @@ For xDrip
 <pre>- Open the xDrip app
 - Go to Settings → Inter-app settings
 - Enable "Broadcast data locally" and "Send BG data to other apps"
-- Tap on "Identify Receiver" and enter com.arthur.bgollee (without quotation marks; separate with a space if other apps are already listed)
+- Tap on "Identify Receiver" and enter pl.cukrzycowy.ollee.glycemia (without quotation marks; separate with a space if other apps are already listed)
 </pre>
 
 For GlucoDataHandler
 <pre>- Open the GlucoDataHandler
 - Go to Settings -> Transfer Values -> Enable "Local Applications" and click on it 
 - Enable "Send xDrip+ Broadcast" 
-- Identify xDrip+ broadcast receivers -> Choose "BG Ollee"
+- Identify xDrip+ broadcast receivers -> Choose "Ollee Glycemia"
 </pre>
 
 
@@ -46,7 +46,7 @@ After each workflow run, the APKs are available as build artifacts:
 
 1. Go to the **Actions** tab of your forked repository.
 2. Click the latest **Build APK** run.
-3. Under **Artifacts**, download `BGOllee-debug` or `BGOllee-release`.
+3. Under **Artifacts**, download `app-debug.apk` or `app-release.apk`.
 
 The debug APK is always produced. The release APK is signed only when signing secrets are configured (see below); otherwise it is produced unsigned.
 
