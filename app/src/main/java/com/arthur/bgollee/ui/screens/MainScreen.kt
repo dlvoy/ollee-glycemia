@@ -140,9 +140,9 @@ fun MainScreen(nav: AppNavController) {
     val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
 
     val permsOk = arePermissionsGranted(context)
-    val lastBg = prefs.getString("last_bg", "--") ?: "--"
-    val lastDelta = prefs.getFloat("last_delta", Float.NaN)
-    val lastTime = prefs.getLong("last_time", 0L)
+    var lastBg by remember { mutableStateOf(prefs.getString("last_bg", "--") ?: "--") }
+    var lastDelta by remember { mutableStateOf(prefs.getFloat("last_delta", Float.NaN)) }
+    var lastTime by remember { mutableStateOf(prefs.getLong("last_time", 0L)) }
     val timeStr = formatExactTime(lastTime)
 
     var selectedProvider by remember { mutableStateOf(GlycemiaProviderManager.getSelected(context)) }
@@ -159,7 +159,18 @@ fun MainScreen(nav: AppNavController) {
     LaunchedEffect(Unit) {
         while (true) {
             delay(2000)
-            val newStatus = calculateProviderStatus(context, prefs.getLong("last_time", 0L))
+            val newLastBg = prefs.getString("last_bg", "--") ?: "--"
+            val newLastDelta = prefs.getFloat("last_delta", Float.NaN)
+            val newLastTime = prefs.getLong("last_time", 0L)
+
+            if (newLastTime != lastTime || newLastBg != lastBg) {
+                lastBg = newLastBg
+                lastDelta = newLastDelta
+                lastTime = newLastTime
+                refreshGraphTrigger++
+            }
+
+            val newStatus = calculateProviderStatus(context, newLastTime)
             if (newStatus.status != providerStatus.status) {
                 previousStatus = providerStatus.status
                 providerStatus = newStatus
@@ -222,7 +233,7 @@ fun MainScreen(nav: AppNavController) {
                 modifier = Modifier.padding(bottom = OlleeSpacing.sm)
             )
 
-            SectionLabel(text = stringResource(R.string.glycemia_sources))
+            SectionLabel(text = stringResource(R.string.glycemia_source))
 
             Row(
                 modifier = Modifier
@@ -310,8 +321,8 @@ fun MainScreen(nav: AppNavController) {
                         }
                     },
                     update = { view ->
-                        refreshGraphTrigger
                         view.setDisplayRange(selectedGraphRange)
+                        view.invalidate()
                     },
                     modifier = Modifier
                         .fillMaxWidth()

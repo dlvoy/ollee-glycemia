@@ -82,7 +82,7 @@
     <string name="perm_foreground_service_connected_device">Foreground Service</string>
 
     <string name="initializing">Initializing...</string>
-    <string name="glycemia_sources">Glycemia Sources</string>
+    <string name="glycemia_source">Glycemia Source</string>
     <string name="glycemia_history">Glycemia History</string>
     <string name="watches">Watches</string>
     <string name="pair_watch">Pair Ollee Watch</string>

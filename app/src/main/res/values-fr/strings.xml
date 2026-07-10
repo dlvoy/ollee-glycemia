@@ -82,7 +82,7 @@
     <string name="perm_foreground_service_connected_device">Service au premier plan</string>
 
     <string name="initializing">Initialisation...</string>
-    <string name="glycemia_sources">Sources de glycémie</string>
+    <string name="glycemia_source">Source de glycémie</string>
     <string name="glycemia_history">Historique de glycémie</string>
     <string name="watches">Montres</string>
     <string name="pair_watch">Jumeler la montre Ollee</string>

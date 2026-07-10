@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "android-build-if-changed",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "./gradlew",
+                "assembleDebug"
+            ],
+            "isBackground": false,
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

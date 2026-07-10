@@ -4,14 +4,15 @@
     // Aby uzyskać więcej informacji, odwiedź stronę: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
+
         {
             "type": "android",
             "request": "launch",
             "name": "Android launch",
             "appSrcRoot": "${workspaceRoot}/app/src/main",
             "apkFile": "${workspaceRoot}/app/build/outputs/apk/debug/app-debug.apk",
-            "adbPort": 5037
+            "adbPort": 5037,
+            "preLaunchTask": "android-build-if-changed"
         },
         {
             "type": "android",

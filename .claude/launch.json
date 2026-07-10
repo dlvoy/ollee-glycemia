@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "launches": [
+    {
+      "name": "Android Debug Build",
+      "type": "android",
+      "request": "launch",
+      "preLaunchTasks": ["buildIfNeeded"],
+      "device": "emulator",
+      "activity": "com.arthur.bgollee.MainActivity"
+    }
+  ],
+  "tasks": [
+    {
+      "name": "buildIfNeeded",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-c",
+        "GRADLE_BUILD_TIMESTAMP=$(find app/src -type f -name '*.kt' -o -name '*.xml' -o -name '*.gradle' | xargs stat -f '%m' 2>/dev/null | sort -n | tail -1); BUILD_CACHE=.gradle_build_cache; if [ -f $BUILD_CACHE ]; then LAST_BUILD=$(cat $BUILD_CACHE); if [ \"$GRADLE_BUILD_TIMESTAMP\" -gt \"$LAST_BUILD\" ]; then bash ./gradlew assembleDebug && echo $GRADLE_BUILD_TIMESTAMP > $BUILD_CACHE; fi; else bash ./gradlew assembleDebug && echo $GRADLE_BUILD_TIMESTAMP > $BUILD_CACHE; fi"
+      ]
+    }
+  ]
+}
