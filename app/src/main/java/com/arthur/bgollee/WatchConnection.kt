@@ -55,6 +55,12 @@ class WatchConnection(
             onStateChanged(this, value)
         }
 
+    var lastSyncTimeMs: Long = 0L
+        private set
+
+    var lastConnectionAttemptTimeMs: Long = 0L
+        private set
+
     private val handler = Handler(Looper.getMainLooper())
     private var gatt: BluetoothGatt? = null
     private var isConnecting = false
@@ -124,6 +130,7 @@ class WatchConnection(
 
         log("Connecting to ${watch.address}")
         isConnecting = true
+        lastConnectionAttemptTimeMs = System.currentTimeMillis()
         state = WatchConnState.CONNECTING
 
         gatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
@@ -212,6 +219,7 @@ class WatchConnection(
                     g.writeCharacteristic(charac)
                 }
             }
+            lastSyncTimeMs = System.currentTimeMillis()
             log("Sent to ${watch.address} -> '$bg'")
             true
         } catch (e: SecurityException) {

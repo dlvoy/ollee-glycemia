@@ -116,4 +116,16 @@
     <string name="battery_optimization_disable">Disable Battery Optimization</string>
     <string name="battery_optimization_disabled">Battery optimization disabled ✓</string>
     <string name="battery_optimization_description">The app needs to be excluded from battery optimization to run reliably in the background</string>
+
+    <string name="watch_state_synced">Synced</string>
+    <string name="watch_state_connecting">Connecting</string>
+    <string name="watch_state_offline">Offline</string>
+    <string name="watch_state_error">Error</string>
+    <string name="watch_delete_confirm_title">Remove Watch</string>
+    <string name="watch_delete_confirm_message">Are you sure you want to remove this watch?</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="watch_status_paired">Paired</string>
+    <string name="watch_status_new">New</string>
 </resources>

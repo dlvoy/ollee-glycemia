@@ -9,5 +9,7 @@ enum class WatchConnState {
 
 data class WatchStatus(
     val watch: PairedWatch,
-    val state: WatchConnState
+    val state: WatchConnState,
+    val lastSyncTimeMs: Long = 0L,
+    val lastConnectionAttemptTimeMs: Long = 0L
 )

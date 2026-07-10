@@ -23,15 +23,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,8 +63,6 @@ import com.arthur.bgollee.ui.components.FoldableSection
 import com.arthur.bgollee.ui.components.OlleeHeader
 import com.arthur.bgollee.ui.components.PillButton
 import com.arthur.bgollee.ui.components.PillButtonStyle
-import com.arthur.bgollee.ui.components.RichSelectorRow
-import com.arthur.bgollee.ui.components.RowActionIcon
 import com.arthur.bgollee.ui.components.SectionLabel
 import com.arthur.bgollee.ui.components.SimpleSelector
 import com.arthur.bgollee.ui.components.StatusBanner
@@ -70,7 +72,6 @@ import com.arthur.bgollee.ui.nav.Route
 import com.arthur.bgollee.ui.theme.OlleeColors
 import com.arthur.bgollee.ui.theme.OlleeShapes
 import com.arthur.bgollee.ui.theme.OlleeSpacing
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 
@@ -179,6 +180,8 @@ fun MainScreen(nav: AppNavController) {
                     sendClearGlycemiaToWatches(context)
                 }
             }
+
+            syncWatchListWithStore(context)
         }
     }
 
@@ -336,33 +339,169 @@ fun MainScreen(nav: AppNavController) {
             if (watchStatuses.isEmpty()) {
                 Text(stringResource(R.string.no_paired_watches), color = OlleeColors.TextSecondary)
             } else {
-                var firstSyncedSeen = false
-                watchStatuses.forEach { status ->
-                    val stateStr = when (status.state) {
-                        WatchConnState.SYNCED -> "Synced"
-                        WatchConnState.OFFLINE -> "Offline"
-                        WatchConnState.CONNECTING -> "Connecting..."
-                        WatchConnState.ERROR -> "Error"
-                    }
-                    val isSynced = status.state == WatchConnState.SYNCED
-                    val shouldHighlight = isSynced && !firstSyncedSeen
-                    if (isSynced) firstSyncedSeen = true
+                var editingWatchId by remember { mutableStateOf<String?>(null) }
+                var editingWatchName by remember { mutableStateOf("") }
+                var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
 
-                    RichSelectorRow(
-                        title = status.watch.name,
-                        subtitle = "$stateStr  ·  ${status.watch.address}",
-                        highlighted = shouldHighlight,
-                        trailingActions = {
-                            RowActionIcon(
-                                icon = Icons.Filled.Edit,
-                                contentDescription = stringResource(R.string.rename),
-                                onClick = { /* Phase 5: edit dialog */ }
+                watchStatuses.forEach { status ->
+                    val stateColor = when (status.state) {
+                        WatchConnState.SYNCED -> Color(0xFF00AA00)
+                        WatchConnState.CONNECTING -> Color(0xFF0099CC)
+                        WatchConnState.OFFLINE -> Color(0xFF999999)
+                        WatchConnState.ERROR -> Color(0xFFCC0000)
+                    }
+                    val stateLabel = when (status.state) {
+                        WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
+                        WatchConnState.CONNECTING -> stringResource(R.string.watch_state_connecting)
+                        WatchConnState.OFFLINE -> stringResource(R.string.watch_state_offline)
+                        WatchConnState.ERROR -> stringResource(R.string.watch_state_error)
+                    }
+
+                    if (editingWatchId == status.watch.address) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(OlleeColors.SurfaceCard, OlleeShapes.Pill)
+                                .border(1.5.dp, stateColor, OlleeShapes.Pill)
+                                .padding(horizontal = OlleeSpacing.xl, vertical = OlleeSpacing.md),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.md)
+                        ) {
+                            TextField(
+                                value = editingWatchName,
+                                onValueChange = { editingWatchName = it },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp)
                             )
-                            RowActionIcon(
-                                icon = Icons.Filled.Delete,
-                                contentDescription = stringResource(R.string.remove),
-                                onClick = { /* Phase 5: remove watch */ }
-                            )
+                            IconButton(
+                                onClick = {
+                                    com.arthur.bgollee.WatchStore.rename(context, status.watch.address, editingWatchName)
+                                    editingWatchId = null
+                                    refreshWatchList(context)
+                                },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Done,
+                                    contentDescription = stringResource(R.string.confirm),
+                                    tint = Color(0xFF00AA00)
+                                )
+                            }
+                            IconButton(
+                                onClick = { editingWatchId = null },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.cancel),
+                                    tint = Color(0xFF999999)
+                                )
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(OlleeColors.SurfaceCard, OlleeShapes.Pill)
+                                .border(1.5.dp, stateColor, OlleeShapes.Pill)
+                                .padding(horizontal = OlleeSpacing.xl, vertical = OlleeSpacing.md),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.md)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = status.watch.name,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = OlleeColors.TextPrimary,
+                                    lineHeight = 22.sp
+                                )
+                                Row(
+                                    modifier = Modifier.padding(top = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)
+                                ) {
+                                    Text(
+                                        text = stateLabel,
+                                        color = stateColor,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    val detailText = when {
+                                        status.state == WatchConnState.SYNCED && status.lastSyncTimeMs > 0 ->
+                                            "@ " + formatExactTime(status.lastSyncTimeMs)
+                                        status.state == WatchConnState.CONNECTING && status.lastConnectionAttemptTimeMs > 0 ->
+                                            "@ " + formatExactTime(status.lastConnectionAttemptTimeMs)
+                                        else -> status.watch.address
+                                    }
+                                    Text(
+                                        text = detailText,
+                                        color = OlleeColors.TextSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.xs),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { showDeleteConfirm = status.watch.address },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = stringResource(R.string.remove),
+                                        tint = OlleeColors.TextPrimary
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        editingWatchId = status.watch.address
+                                        editingWatchName = status.watch.name
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = stringResource(R.string.rename),
+                                        tint = OlleeColors.TextPrimary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (showDeleteConfirm != null) {
+                    val watchToDelete = watchStatuses.find { it.watch.address == showDeleteConfirm }?.watch
+                    val deleteMessage = if (watchToDelete != null) {
+                        "${watchToDelete.name}\n${watchToDelete.address}"
+                    } else {
+                        showDeleteConfirm ?: ""
+                    }
+
+                    AlertDialog(
+                        onDismissRequest = { showDeleteConfirm = null },
+                        title = { Text(stringResource(R.string.watch_delete_confirm_title)) },
+                        text = { Text(deleteMessage) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    com.arthur.bgollee.WatchStore.remove(context, showDeleteConfirm!!)
+                                    showDeleteConfirm = null
+                                    refreshWatchList(context)
+                                }
+                            ) {
+                                Text(stringResource(R.string.delete))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteConfirm = null }) {
+                                Text(stringResource(R.string.cancel))
+                            }
                         }
                     )
                 }
@@ -524,6 +663,37 @@ private fun formatExactTime(timestampMs: Long): String {
     if (timestampMs == 0L) return "--"
     val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
     return sdf.format(java.util.Date(timestampMs))
+}
+
+private fun refreshWatchList(context: Context) {
+    val watches = com.arthur.bgollee.WatchStore.getAll(context)
+    val currentStatuses = AppState.watchStatuses.value
+
+    val updatedStatuses = watches.map { watch ->
+        currentStatuses.find { it.watch.address == watch.address }?.copy(watch = watch)
+            ?: WatchStatus(watch = watch, state = WatchConnState.OFFLINE)
+    }
+
+    AppState.publishWatchStatuses(updatedStatuses)
+}
+
+private fun syncWatchListWithStore(context: Context) {
+    val storeWatches = com.arthur.bgollee.WatchStore.getAll(context)
+    val currentStatuses = AppState.watchStatuses.value
+
+    val needsSync = storeWatches.size != currentStatuses.size ||
+        storeWatches.any { storeWatch ->
+            val currentWatch = currentStatuses.find { it.watch.address == storeWatch.address }?.watch
+            currentWatch == null || currentWatch.name != storeWatch.name
+        }
+
+    if (needsSync) {
+        val updatedStatuses = storeWatches.map { watch ->
+            currentStatuses.find { it.watch.address == watch.address }?.copy(watch = watch)
+                ?: WatchStatus(watch = watch, state = WatchConnState.OFFLINE)
+        }
+        AppState.publishWatchStatuses(updatedStatuses)
+    }
 }
 
 private fun arePermissionsGranted(context: Context): Boolean {

@@ -17,6 +17,38 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "android-build-show-device",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "build-and-select.sh"
+            ],
+            "isBackground": false,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "android-build-and-launch",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "build-and-launch.sh"
+            ],
+            "isBackground": false,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }

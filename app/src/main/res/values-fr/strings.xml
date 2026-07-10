@@ -116,4 +116,16 @@
     <string name="battery_optimization_disable">Désactiver l\'optimisation de la batterie</string>
     <string name="battery_optimization_disabled">Optimisation de la batterie désactivée ✓</string>
     <string name="battery_optimization_description">L\'application doit être exclue de l\'optimisation de la batterie pour fonctionner de manière fiable en arrière-plan</string>
+
+    <string name="watch_state_synced">Synchronisé</string>
+    <string name="watch_state_connecting">Connexion</string>
+    <string name="watch_state_offline">Hors ligne</string>
+    <string name="watch_state_error">Erreur</string>
+    <string name="watch_delete_confirm_title">Supprimer la montre</string>
+    <string name="watch_delete_confirm_message">Êtes-vous sûr de vouloir supprimer cette montre ?</string>
+    <string name="confirm">Confirmer</string>
+    <string name="cancel">Annuler</string>
+    <string name="delete">Supprimer</string>
+    <string name="watch_status_paired">Jumelée</string>
+    <string name="watch_status_new">Nouvelle</string>
 </resources>
