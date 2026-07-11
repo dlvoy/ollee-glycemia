@@ -124,11 +124,24 @@
     <string name="watch_state_connecting">Łączenie</string>
     <string name="watch_state_offline">Offline</string>
     <string name="watch_state_error">Błąd</string>
+    <string name="watch_state_paused">Pauza</string>
+    <string name="watch_state_stopped">Stop</string>
     <string name="watch_delete_confirm_title">Usuń zegarek</string>
     <string name="watch_delete_confirm_message">Czy na pewno chcesz usunąć ten zegarek?</string>
+    <string name="watch_pause_confirm_title">Pauzuj zegarek</string>
+    <string name="watch_pause_confirm_message">Zapauzować ten zegarek? Nie będzie odbierać aktualizacji glikemii do czasu wznowienia.</string>
+    <string name="watch_stop_confirm_title">Zatrzymaj zegarek</string>
+    <string name="watch_stop_confirm_message">Zatrzymać ten zegarek? Nie będzie odbierać aktualizacji glikemii do czasu wznowienia.</string>
+    <string name="watch_action_resume">Wznów</string>
+    <string name="watch_action_pause">Pauzuj</string>
+    <string name="watch_action_stop">Zatrzymaj</string>
     <string name="confirm">Potwierdź</string>
     <string name="cancel">Anuluj</string>
     <string name="delete">Usuń</string>
+    <string name="sync">Synchronizuj</string>
     <string name="watch_status_paired">Sparowany</string>
     <string name="watch_status_new">Nowy</string>
+    <string name="settings_watch_labels">Etykiety zegarka</string>
+    <string name="settings_pause_label">Etykieta pauzy (max. 6 znaków)</string>
+    <string name="settings_stop_label">Etykieta zatrzymania (max. 6 znaków)</string>
 </resources>

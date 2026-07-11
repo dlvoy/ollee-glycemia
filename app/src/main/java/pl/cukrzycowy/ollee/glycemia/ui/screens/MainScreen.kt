@@ -503,8 +503,9 @@ fun MainScreen(nav: AppNavController) {
                                 .border(1.5.dp, stateColor, OlleeShapes.Pill)
                                 .padding(horizontal = OlleeSpacing.xl, vertical = OlleeSpacing.md)
                                 .combinedClickable(
-                                    enabled = clickEnabled,
+                                    enabled = true,
                                     onClick = {
+                                        if (!clickEnabled) return@combinedClickable
                                         if (activityState != WatchActivityState.ACTIVE) {
                                             val intent = Intent(context, BleService::class.java).apply {
                                                 action = BleService.ACTION_SET_WATCH_ACTIVITY
@@ -565,6 +566,7 @@ fun MainScreen(nav: AppNavController) {
                                         fontSize = 13.sp
                                     )
                                     val detailText = when {
+                                        activityState != WatchActivityState.ACTIVE || status.lastSentValue.isNotEmpty() -> ""
                                         status.isOfflineByTimeout && status.watch.lastSuccessfulSyncTimeMs > 0 ->
                                             "@ " + formatExactTime(status.watch.lastSuccessfulSyncTimeMs)
                                         status.state == WatchConnState.SYNCED && status.lastSyncTimeMs > 0 ->
@@ -706,7 +708,7 @@ fun MainScreen(nav: AppNavController) {
                 if (showPauseConfirm != null) {
                     val watchToPause = watchStatuses.find { it.watch.address == showPauseConfirm }?.watch
                     val pauseMessage = if (watchToPause != null) {
-                        "${watchToPause.name}\n${watchToPause.address}"
+                        "${stringResource(R.string.watch_pause_confirm_message)}\n\n${watchToPause.name}\n${watchToPause.address}"
                     } else {
                         showPauseConfirm ?: ""
                     }
@@ -751,7 +753,7 @@ fun MainScreen(nav: AppNavController) {
                 if (showStopConfirm != null) {
                     val watchToStop = watchStatuses.find { it.watch.address == showStopConfirm }?.watch
                     val stopMessage = if (watchToStop != null) {
-                        "${watchToStop.name}\n${watchToStop.address}"
+                        "${stringResource(R.string.watch_stop_confirm_message)}\n\n${watchToStop.name}\n${watchToStop.address}"
                     } else {
                         showStopConfirm ?: ""
                     }

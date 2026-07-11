@@ -142,6 +142,6 @@
     <string name="watch_status_paired">Paired</string>
     <string name="watch_status_new">New</string>
     <string name="settings_watch_labels">Watch Labels</string>
-    <string name="settings_pause_label">Pause label (max 5 chars)</string>
-    <string name="settings_stop_label">Stop label (max 5 chars)</string>
+    <string name="settings_pause_label">Pause label (max 6 chars)</string>
+    <string name="settings_stop_label">Stop label (max 6 chars)</string>
 </resources>

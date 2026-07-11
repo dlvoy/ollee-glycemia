@@ -416,7 +416,7 @@ class BleService : Service() {
             WatchActivityState.STOPPED -> WatchActivityLabelStore.getStopLabel(this)
             WatchActivityState.ACTIVE -> ""
         }
-        return label.take(5).padEnd(6, ' ')
+        return label.take(6).padEnd(6, ' ')
     }
 
     private fun setWatchActivity(watchAddress: String, newState: WatchActivityState) {

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
@@ -13,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeColors
+import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeSpacing
 
 /**
  * Collapsible section: a [SectionLabel]-style header with a chevron that
@@ -43,7 +45,9 @@ fun FoldableSection(
             )
         }
         AnimatedVisibility(visible = expanded) {
-            content()
+            Column(modifier = Modifier.padding(top = OlleeSpacing.md)) {
+                content()
+            }
         }
     }
 }

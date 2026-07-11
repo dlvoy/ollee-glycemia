@@ -124,11 +124,24 @@
     <string name="watch_state_connecting">Connexion</string>
     <string name="watch_state_offline">Hors ligne</string>
     <string name="watch_state_error">Erreur</string>
+    <string name="watch_state_paused">En pause</string>
+    <string name="watch_state_stopped">Arrêtée</string>
     <string name="watch_delete_confirm_title">Supprimer la montre</string>
     <string name="watch_delete_confirm_message">Êtes-vous sûr de vouloir supprimer cette montre ?</string>
+    <string name="watch_pause_confirm_title">Mettre en pause la montre</string>
+    <string name="watch_pause_confirm_message">Mettre en pause cette montre ? Elle ne recevra pas les mises à jour de glycémie jusqu\'à la reprise.</string>
+    <string name="watch_stop_confirm_title">Arrêter la montre</string>
+    <string name="watch_stop_confirm_message">Arrêter cette montre ? Elle ne recevra pas les mises à jour de glycémie jusqu\'à la reprise.</string>
+    <string name="watch_action_resume">Reprendre</string>
+    <string name="watch_action_pause">Pause</string>
+    <string name="watch_action_stop">Arrêter</string>
     <string name="confirm">Confirmer</string>
     <string name="cancel">Annuler</string>
     <string name="delete">Supprimer</string>
+    <string name="sync">Synchroniser</string>
     <string name="watch_status_paired">Jumelée</string>
     <string name="watch_status_new">Nouvelle</string>
+    <string name="settings_watch_labels">Étiquettes de la montre</string>
+    <string name="settings_pause_label">Étiquette de pause (max. 6 caractères)</string>
+    <string name="settings_stop_label">Étiquette d\'arrêt (max. 6 caractères)</string>
 </resources>

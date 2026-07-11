@@ -30,6 +30,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import pl.cukrzycowy.ollee.glycemia.BuildConfig
 import pl.cukrzycowy.ollee.glycemia.R
+import pl.cukrzycowy.ollee.glycemia.ui.components.FoldableSection
 import pl.cukrzycowy.ollee.glycemia.ui.components.FullScreenScaffold
 import pl.cukrzycowy.ollee.glycemia.ui.components.SectionLabel
 import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeColors
@@ -47,108 +48,154 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
     }
 
-    FullScreenScaffold(title = stringResource(R.string.settings_title), onBack = onBack) {
-        SectionLabel(text = stringResource(R.string.settings_permissions))
+    val perms = listOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.POST_NOTIFICATIONS
+    )
 
-        val perms = listOf(
-            Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.POST_NOTIFICATIONS
-        )
+    val allPermissionsGranted = perms.all { perm ->
+        ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+    }
 
-        perms.forEach { perm ->
-            val label = getPermissionLabel(perm)
-            refreshTrigger
-            val hasPermission = ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
-            val buttonColor = if (hasPermission) Color(0xFF00AA00) else Color(0xFFCC0000)
-            Button(
-                onClick = {
-                    if (hasPermission) {
-                        openAppSettings(context)
-                    } else {
-                        requestPermission(context, perm)
-                    }
-                    refreshTrigger++
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = buttonColor,
-                    contentColor = Color.White
-                )
-            ) {
-                Text(text = (if (hasPermission) "✓ " else "✗ ") + label)
-            }
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    val isIgnoringBatteryOptimization = powerManager.isIgnoringBatteryOptimizations(context.packageName)
+
+    var permissionsExpanded by remember { mutableStateOf(!allPermissionsGranted) }
+    var batteryExpanded by remember { mutableStateOf(!isIgnoringBatteryOptimization) }
+    var watchLabelsExpanded by remember { mutableStateOf(true) }
+    var aboutExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(allPermissionsGranted) {
+        if (allPermissionsGranted) {
+            permissionsExpanded = false
         }
+    }
 
-        SectionLabel(text = stringResource(R.string.battery_optimization_title))
-
-        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        val isIgnoringBatteryOptimization = powerManager.isIgnoringBatteryOptimizations(context.packageName)
-
+    LaunchedEffect(isIgnoringBatteryOptimization) {
         if (isIgnoringBatteryOptimization) {
-            Button(
-                onClick = {
-                    openAppSettings(context)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00AA00),
-                    contentColor = Color.White
-                )
-            ) {
-                Text(stringResource(R.string.battery_optimization_disabled))
-            }
-        } else {
-            Text(stringResource(R.string.battery_optimization_description))
-            Button(
-                onClick = {
-                    requestIgnoreBatteryOptimization(context)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFCC8800),
-                    contentColor = Color.White
-                )
-            ) {
-                Text(stringResource(R.string.battery_optimization_disable))
+            batteryExpanded = false
+        }
+    }
+
+    FullScreenScaffold(title = stringResource(R.string.settings_title), onBack = onBack) {
+        FoldableSection(
+            title = stringResource(R.string.settings_permissions),
+            expanded = permissionsExpanded,
+            onToggle = { permissionsExpanded = it }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                perms.forEach { perm ->
+                    val label = getPermissionLabel(perm)
+                    refreshTrigger
+                    val hasPermission = ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+                    val buttonColor = if (hasPermission) Color(0xFF00AA00) else Color(0xFFCC0000)
+                    Button(
+                        onClick = {
+                            if (hasPermission) {
+                                openAppSettings(context)
+                            } else {
+                                requestPermission(context, perm)
+                            }
+                            refreshTrigger++
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = buttonColor,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(text = (if (hasPermission) "✓ " else "✗ ") + label)
+                    }
+                }
             }
         }
 
-        SectionLabel(text = stringResource(R.string.settings_watch_labels), modifier = Modifier.fillMaxWidth())
-
-        var pauseLabel by remember { mutableStateOf(WatchActivityLabelStore.getPauseLabel(context)) }
-        var stopLabel by remember { mutableStateOf(WatchActivityLabelStore.getStopLabel(context)) }
-
-        OutlinedTextField(
-            value = pauseLabel,
-            onValueChange = {
-                if (it.length <= 5) {
-                    pauseLabel = it
-                    WatchActivityLabelStore.setPauseLabel(context, it)
+        FoldableSection(
+            title = stringResource(R.string.battery_optimization_title),
+            expanded = batteryExpanded,
+            onToggle = { batteryExpanded = it }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                if (isIgnoringBatteryOptimization) {
+                    Button(
+                        onClick = {
+                            openAppSettings(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF00AA00),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(stringResource(R.string.battery_optimization_disabled))
+                    }
+                } else {
+                    Text(stringResource(R.string.battery_optimization_description))
+                    Button(
+                        onClick = {
+                            requestIgnoreBatteryOptimization(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFCC8800),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(stringResource(R.string.battery_optimization_disable))
+                    }
                 }
-            },
-            label = { Text(stringResource(R.string.settings_pause_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+            }
+        }
 
-        OutlinedTextField(
-            value = stopLabel,
-            onValueChange = {
-                if (it.length <= 5) {
-                    stopLabel = it
-                    WatchActivityLabelStore.setStopLabel(context, it)
-                }
-            },
-            label = { Text(stringResource(R.string.settings_stop_label)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+        FoldableSection(
+            title = stringResource(R.string.settings_watch_labels),
+            expanded = watchLabelsExpanded,
+            onToggle = { watchLabelsExpanded = it }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                var pauseLabel by remember { mutableStateOf(WatchActivityLabelStore.getPauseLabel(context)) }
+                var stopLabel by remember { mutableStateOf(WatchActivityLabelStore.getStopLabel(context)) }
 
-        SectionLabel(text = stringResource(R.string.settings_about), modifier = Modifier.fillMaxWidth())
-        Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))
-        Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
-        Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+                OutlinedTextField(
+                    value = pauseLabel,
+                    onValueChange = {
+                        if (it.length <= 6) {
+                            pauseLabel = it
+                            WatchActivityLabelStore.setPauseLabel(context, it)
+                        }
+                    },
+                    label = { Text(stringResource(R.string.settings_pause_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = stopLabel,
+                    onValueChange = {
+                        if (it.length <= 6) {
+                            stopLabel = it
+                            WatchActivityLabelStore.setStopLabel(context, it)
+                        }
+                    },
+                    label = { Text(stringResource(R.string.settings_stop_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        }
+
+        FoldableSection(
+            title = stringResource(R.string.settings_about),
+            expanded = aboutExpanded,
+            onToggle = { aboutExpanded = it }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))
+                Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
+                Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+            }
+        }
     }
 }
 
