@@ -566,14 +566,16 @@ fun MainScreen(nav: AppNavController) {
                                         fontSize = 13.sp
                                     )
                                     val detailText = when {
-                                        activityState != WatchActivityState.ACTIVE || status.lastSentValue.isNotEmpty() -> ""
+                                        activityState != WatchActivityState.ACTIVE -> ""
                                         status.isOfflineByTimeout && status.watch.lastSuccessfulSyncTimeMs > 0 ->
                                             "@ " + formatExactTime(status.watch.lastSuccessfulSyncTimeMs)
                                         status.state == WatchConnState.SYNCED && status.lastSyncTimeMs > 0 ->
                                             "@ " + formatExactTime(status.lastSyncTimeMs)
                                         status.state == WatchConnState.CONNECTING && status.lastSyncTimeMs > 0 ->
                                             "since @ " + formatExactTime(status.lastSyncTimeMs)
-                                        status.state == WatchConnState.ERROR -> ""
+                                        status.lastSentValue.isNotEmpty() -> ""
+                                        status.state == WatchConnState.OFFLINE -> status.watch.address
+                                        status.state == WatchConnState.ERROR -> status.watch.address
                                         else -> status.watch.address
                                     }
                                     Text(
