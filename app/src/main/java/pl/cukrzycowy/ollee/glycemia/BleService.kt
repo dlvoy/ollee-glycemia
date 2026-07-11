@@ -30,6 +30,8 @@ class BleService : Service() {
         const val ACTION_SYNC_WATCHES = "pl.cukrzycowy.ollee.glycemia.SYNC_WATCHES"
         const val ACTION_SEND_CLEAR_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.SEND_CLEAR_GLYCEMIA"
         const val ACTION_RESEND_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.RESEND_GLYCEMIA"
+        const val ACTION_MANUAL_SYNC_WATCH = "pl.cukrzycowy.ollee.glycemia.MANUAL_SYNC_WATCH"
+        const val EXTRA_WATCH_ADDRESS = "watch_address"
     }
 
     // ========================
@@ -98,6 +100,14 @@ class BleService : Service() {
                 resendGlycemiaToAllWatches()
                 return START_STICKY
             }
+
+            ACTION_MANUAL_SYNC_WATCH -> {
+                val watchAddress = intent?.getStringExtra(EXTRA_WATCH_ADDRESS)
+                if (watchAddress != null) {
+                    manualSyncWatch(watchAddress)
+                }
+                return START_STICKY
+            }
         }
 
         // Back-compat: a caller may still pass a bare device address (legacy
@@ -146,7 +156,19 @@ class BleService : Service() {
     }
 
     private fun publishStatuses() {
-        AppState.publishWatchStatuses(connections.values.map { WatchStatus(it.watch, it.state, it.lastSyncTimeMs, it.lastConnectionAttemptTimeMs, it.lastSentValue) })
+        val now = System.currentTimeMillis()
+        AppState.publishWatchStatuses(connections.values.map { connection ->
+            val isOfflineByTimeout = connection.watch.lastSuccessfulSyncTimeMs == 0L ||
+                (now - connection.watch.lastSuccessfulSyncTimeMs) > (10 * 60 * 1000) // 10 minutes
+            WatchStatus(
+                watch = connection.watch,
+                state = connection.state,
+                lastSyncTimeMs = connection.lastSyncTimeMs,
+                lastConnectionAttemptTimeMs = connection.lastConnectionAttemptTimeMs,
+                lastSentValue = connection.lastSentValue,
+                isOfflineByTimeout = isOfflineByTimeout
+            )
+        })
     }
 
     // ========================
@@ -248,6 +270,14 @@ class BleService : Service() {
             connections.values.forEach { it.submitReading(lastSent) }
             publishStatuses()
         }
+    }
+
+    private fun manualSyncWatch(watchAddress: String) {
+        val connection = connections[watchAddress] ?: return
+        val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() } ?: return
+        connection.connect()
+        connection.submitReading(lastSent)
+        publishStatuses()
     }
 
     // ========================

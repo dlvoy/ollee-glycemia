@@ -54,6 +54,14 @@ object WatchStore {
         writeAll(context, readAll(context).filterNot { it.address == address })
     }
 
+    @Synchronized
+    fun updateLastSyncTime(context: Context, address: String, timeMs: Long) {
+        val updated = readAll(context).map {
+            if (it.address == address) it.copy(lastSuccessfulSyncTimeMs = timeMs) else it
+        }
+        writeAll(context, updated)
+    }
+
     private fun migrateLegacyIfNeeded(context: Context) {
         val prefs = prefs(context)
         if (prefs.getBoolean(KEY_MIGRATION_DONE, false)) return
@@ -80,7 +88,8 @@ object WatchStore {
                         PairedWatch(
                             address = address,
                             name = item.optString("name", address),
-                            isCustomName = item.optBoolean("isCustomName", false)
+                            isCustomName = item.optBoolean("isCustomName", false),
+                            lastSuccessfulSyncTimeMs = item.optLong("lastSuccessfulSyncTimeMs", 0L)
                         )
                     )
                 }
@@ -98,6 +107,7 @@ object WatchStore {
                     .put("address", watch.address)
                     .put("name", watch.name)
                     .put("isCustomName", watch.isCustomName)
+                    .put("lastSuccessfulSyncTimeMs", watch.lastSuccessfulSyncTimeMs)
             )
         }
         prefs(context).edit().putString(KEY_WATCHES, array.toString()).apply()

@@ -15,6 +15,7 @@ import java.util.Date
 import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -407,19 +408,23 @@ fun MainScreen(nav: AppNavController) {
 
                 watchStatuses.forEach { status ->
                     val isStaleData = status.state == WatchConnState.SYNCED && (status.lastSentValue == "--- --" || status.lastSentValue == "Err   ")
+                    val effectiveState = if (status.isOfflineByTimeout) WatchConnState.OFFLINE else status.state
                     val stateColor = when {
+                        status.state == WatchConnState.ERROR -> Color(0xFFCC0000)
                         isStaleData -> Color(0xFF999999)
+                        status.isOfflineByTimeout -> Color(0xFF999999)
                         status.state == WatchConnState.SYNCED -> Color(0xFF00AA00)
                         status.state == WatchConnState.CONNECTING -> Color(0xFF0099CC)
                         status.state == WatchConnState.OFFLINE -> Color(0xFF999999)
-                        status.state == WatchConnState.ERROR -> Color(0xFFCC0000)
                         else -> Color(0xFF999999)
                     }
-                    val stateLabel = when (status.state) {
-                        WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
-                        WatchConnState.CONNECTING -> stringResource(R.string.watch_state_connecting)
-                        WatchConnState.OFFLINE -> stringResource(R.string.watch_state_offline)
-                        WatchConnState.ERROR -> stringResource(R.string.watch_state_error)
+                    val stateLabel = when {
+                        status.state == WatchConnState.CONNECTING -> stringResource(R.string.watch_state_connecting)
+                        status.state == WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
+                        status.state == WatchConnState.ERROR -> stringResource(R.string.watch_state_error)
+                        status.isOfflineByTimeout -> stringResource(R.string.watch_state_offline)
+                        status.state == WatchConnState.OFFLINE -> stringResource(R.string.watch_state_offline)
+                        else -> stringResource(R.string.watch_state_offline)
                     }
 
                     if (editingWatchId == status.watch.address) {
@@ -470,7 +475,23 @@ fun MainScreen(nav: AppNavController) {
                                 .fillMaxWidth()
                                 .background(OlleeColors.SurfaceCard, OlleeShapes.Pill)
                                 .border(1.5.dp, stateColor, OlleeShapes.Pill)
-                                .padding(horizontal = OlleeSpacing.xl, vertical = OlleeSpacing.md),
+                                .padding(horizontal = OlleeSpacing.xl, vertical = OlleeSpacing.md)
+                                .clickable(enabled = status.isOfflineByTimeout) {
+                                    val intent = Intent(context, pl.cukrzycowy.ollee.glycemia.BleService::class.java).apply {
+                                        action = pl.cukrzycowy.ollee.glycemia.BleService.ACTION_MANUAL_SYNC_WATCH
+                                        putExtra(pl.cukrzycowy.ollee.glycemia.BleService.EXTRA_WATCH_ADDRESS, status.watch.address)
+                                    }
+                                    try {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(intent)
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            context.startService(intent)
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("MainScreen", "Failed to trigger manual sync: ${e.message}")
+                                    }
+                                },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.md)
                         ) {
@@ -494,10 +515,13 @@ fun MainScreen(nav: AppNavController) {
                                         fontSize = 13.sp
                                     )
                                     val detailText = when {
+                                        status.isOfflineByTimeout && status.watch.lastSuccessfulSyncTimeMs > 0 ->
+                                            "@ " + formatExactTime(status.watch.lastSuccessfulSyncTimeMs)
                                         status.state == WatchConnState.SYNCED && status.lastSyncTimeMs > 0 ->
                                             "@ " + formatExactTime(status.lastSyncTimeMs)
-                                        status.state == WatchConnState.CONNECTING && status.lastConnectionAttemptTimeMs > 0 ->
-                                            "@ " + formatExactTime(status.lastConnectionAttemptTimeMs)
+                                        status.state == WatchConnState.CONNECTING && status.lastSyncTimeMs > 0 ->
+                                            "since @ " + formatExactTime(status.lastSyncTimeMs)
+                                        status.state == WatchConnState.ERROR -> ""
                                         else -> status.watch.address
                                     }
                                     Text(
@@ -505,7 +529,7 @@ fun MainScreen(nav: AppNavController) {
                                         color = OlleeColors.TextSecondary,
                                         fontSize = 12.sp
                                     )
-                                    if (status.lastSentValue.isNotEmpty()) {
+                                    if (status.lastSentValue.isNotEmpty() && status.state != WatchConnState.CONNECTING && status.state != WatchConnState.ERROR) {
                                         Text(
                                             text = "\"${status.lastSentValue}\"",
                                             color = OlleeColors.TextSecondary,

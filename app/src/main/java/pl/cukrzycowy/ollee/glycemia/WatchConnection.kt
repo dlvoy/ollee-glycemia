@@ -52,6 +52,16 @@ class WatchConnection(
         private set(value) {
             if (field == value) return
             field = value
+
+            if (value == WatchConnState.ERROR) {
+                errorTimeMs = System.currentTimeMillis()
+                if (isOfflineByTimeout()) {
+                    handler.postDelayed({ clearErrorIfStale() }, 5000)
+                }
+            } else if (value != WatchConnState.ERROR) {
+                errorTimeMs = 0L
+            }
+
             onStateChanged(this, value)
         }
 
@@ -63,6 +73,8 @@ class WatchConnection(
 
     var lastSentValue: String = ""
         private set
+
+    private var errorTimeMs: Long = 0L
 
     private val handler = Handler(Looper.getMainLooper())
     private var gatt: BluetoothGatt? = null
@@ -77,6 +89,24 @@ class WatchConnection(
 
     fun updateWatch(updated: PairedWatch) {
         watch = updated
+    }
+
+    private fun isOfflineByTimeout(): Boolean {
+        val now = System.currentTimeMillis()
+        return watch.lastSuccessfulSyncTimeMs == 0L ||
+            (now - watch.lastSuccessfulSyncTimeMs) > (10 * 60 * 1000)
+    }
+
+    private fun clearErrorIfStale() {
+        if (state != WatchConnState.ERROR) return
+        if (!isOfflineByTimeout()) return
+        if (isConnecting) return
+
+        val now = System.currentTimeMillis()
+        if ((now - errorTimeMs) >= 5000) {
+            state = WatchConnState.OFFLINE
+            errorTimeMs = 0L
+        }
     }
 
     /** Attempts a connection after [staggerIndex] * [CONNECT_STAGGER_MS] delay,
@@ -169,7 +199,9 @@ class WatchConnection(
                     WatchConnState.ERROR
                 }
 
-                handler.postDelayed({ connectNow() }, RECONNECT_DELAY_MS)
+                if (!isOfflineByTimeout()) {
+                    handler.postDelayed({ connectNow() }, RECONNECT_DELAY_MS)
+                }
             }
         }
 
@@ -224,6 +256,7 @@ class WatchConnection(
             }
             lastSyncTimeMs = System.currentTimeMillis()
             lastSentValue = bg
+            WatchStore.updateLastSyncTime(context, watch.address, lastSyncTimeMs)
             log("Sent to ${watch.address} -> '$bg'")
             true
         } catch (e: SecurityException) {

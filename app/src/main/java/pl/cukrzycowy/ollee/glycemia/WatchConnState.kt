@@ -12,5 +12,6 @@ data class WatchStatus(
     val state: WatchConnState,
     val lastSyncTimeMs: Long = 0L,
     val lastConnectionAttemptTimeMs: Long = 0L,
-    val lastSentValue: String = ""
+    val lastSentValue: String = "",
+    val isOfflineByTimeout: Boolean = false
 )
