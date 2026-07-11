@@ -68,6 +68,10 @@ class BleService : Service() {
 
         syncConnectionsWithStore()
         startTimeoutWatcher()
+
+        if (NightAutoPauseStore.isEnabled(this)) {
+            NightAutoPauseScheduler.scheduleNextCheck(this)
+        }
     }
 
     override fun onDestroy() {

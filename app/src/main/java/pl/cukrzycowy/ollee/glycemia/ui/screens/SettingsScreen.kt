@@ -8,7 +8,9 @@ import android.os.Build
 import android.os.PowerManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -21,18 +23,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import pl.cukrzycowy.ollee.glycemia.WatchActivityLabelStore
+import pl.cukrzycowy.ollee.glycemia.NightAutoPauseStore
+import pl.cukrzycowy.ollee.glycemia.WatchStore
+import pl.cukrzycowy.ollee.glycemia.WatchActivityState
+import pl.cukrzycowy.ollee.glycemia.BleService
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import pl.cukrzycowy.ollee.glycemia.BuildConfig
+import pl.cukrzycowy.ollee.glycemia.NightAutoPauseScheduler
 import pl.cukrzycowy.ollee.glycemia.R
 import pl.cukrzycowy.ollee.glycemia.ui.components.FoldableSection
 import pl.cukrzycowy.ollee.glycemia.ui.components.FullScreenScaffold
 import pl.cukrzycowy.ollee.glycemia.ui.components.SectionLabel
+import pl.cukrzycowy.ollee.glycemia.ui.components.TimeRangeSelector
 import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeColors
 import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeSpacing
 
@@ -40,6 +50,15 @@ import pl.cukrzycowy.ollee.glycemia.ui.theme.OlleeSpacing
 fun SettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var refreshTrigger by remember { mutableStateOf(0) }
+    var wasAutoPauseEnabled by remember { mutableStateOf(NightAutoPauseStore.isEnabled(context)) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (NightAutoPauseStore.isEnabled(context)) {
+                NightAutoPauseScheduler.checkAndApply(context)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -64,7 +83,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     var permissionsExpanded by remember { mutableStateOf(!allPermissionsGranted) }
     var batteryExpanded by remember { mutableStateOf(!isIgnoringBatteryOptimization) }
     var watchLabelsExpanded by remember { mutableStateOf(true) }
-    var aboutExpanded by remember { mutableStateOf(false) }
+    var nightAutoPauseExpanded by remember { mutableStateOf(true) }
+    var aboutExpanded by remember { mutableStateOf(true) }
 
     LaunchedEffect(allPermissionsGranted) {
         if (allPermissionsGranted) {
@@ -186,6 +206,66 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
 
         FoldableSection(
+            title = stringResource(R.string.settings_night_auto_pause),
+            expanded = nightAutoPauseExpanded,
+            onToggle = { nightAutoPauseExpanded = it }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.md)) {
+                var isAutoPauseEnabled by remember { mutableStateOf(NightAutoPauseStore.isEnabled(context)) }
+                var startTime by remember { mutableStateOf(NightAutoPauseStore.getStartTime(context)) }
+                var endTime by remember { mutableStateOf(NightAutoPauseStore.getEndTime(context)) }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = OlleeSpacing.sm),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(stringResource(R.string.settings_night_auto_pause_enable))
+                    Switch(
+                        checked = isAutoPauseEnabled,
+                        onCheckedChange = { newValue ->
+                            val wasEnabled = isAutoPauseEnabled
+                            isAutoPauseEnabled = newValue
+                            NightAutoPauseStore.setEnabled(context, newValue)
+                            if (newValue) {
+                                NightAutoPauseScheduler.scheduleNextCheck(context)
+                                NightAutoPauseScheduler.checkAndApply(context)
+                            } else {
+                                NightAutoPauseScheduler.cancel(context)
+                                if (wasEnabled) {
+                                    resumeAllPausedWatches(context)
+                                }
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            uncheckedThumbColor = Color.White
+                        )
+                    )
+                }
+
+                if (isAutoPauseEnabled) {
+                    TimeRangeSelector(
+                        startTime = startTime,
+                        endTime = endTime,
+                        onStartTimeChange = { newTime ->
+                            startTime = newTime
+                            NightAutoPauseStore.setStartTime(context, newTime)
+                            NightAutoPauseScheduler.checkAndApply(context)
+                        },
+                        onEndTimeChange = { newTime ->
+                            endTime = newTime
+                            NightAutoPauseStore.setEndTime(context, newTime)
+                            NightAutoPauseScheduler.checkAndApply(context)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        FoldableSection(
             title = stringResource(R.string.settings_about),
             expanded = aboutExpanded,
             onToggle = { aboutExpanded = it }
@@ -234,5 +314,19 @@ private fun openAppSettings(context: Context) {
         context.startActivity(intent)
     } catch (e: Exception) {
         android.util.Log.e("SettingsScreen", "Failed to open app settings: ${e.message}")
+    }
+}
+
+private fun resumeAllPausedWatches(context: Context) {
+    val watches = WatchStore.getAll(context)
+    val pausedWatches = watches.filter { it.activityState == WatchActivityState.PAUSED }
+
+    pausedWatches.forEach { watch ->
+        val intent = Intent(context, BleService::class.java).apply {
+            action = BleService.ACTION_SET_WATCH_ACTIVITY
+            putExtra(BleService.EXTRA_WATCH_ADDRESS, watch.address)
+            putExtra(BleService.EXTRA_ACTIVITY_STATE, WatchActivityState.ACTIVE.name)
+        }
+        context.startService(intent)
     }
 }

@@ -144,4 +144,10 @@
     <string name="settings_watch_labels">Etykiety zegarka</string>
     <string name="settings_pause_label">Etykieta pauzy (max. 6 znaków)</string>
     <string name="settings_stop_label">Etykieta zatrzymania (max. 6 znaków)</string>
+
+    <string name="settings_night_auto_pause">Automatyczna pauza nocna</string>
+    <string name="settings_night_auto_pause_enable">Włącz pauzę nocną</string>
+    <string name="time_range_paused_from">Pauza od %1$s do %2$s</string>
+    <string name="time_range_from">Od</string>
+    <string name="time_range_to">Do</string>
 </resources>

@@ -144,4 +144,10 @@
     <string name="settings_watch_labels">Watch Labels</string>
     <string name="settings_pause_label">Pause label (max 6 chars)</string>
     <string name="settings_stop_label">Stop label (max 6 chars)</string>
+
+    <string name="settings_night_auto_pause">Night Auto Pause</string>
+    <string name="settings_night_auto_pause_enable">Enable night auto-pause</string>
+    <string name="time_range_paused_from">Paused from %1$s to %2$s</string>
+    <string name="time_range_from">From</string>
+    <string name="time_range_to">To</string>
 </resources>

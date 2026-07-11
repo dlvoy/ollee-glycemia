@@ -49,6 +49,10 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name="pl.cukrzycowy.ollee.glycemia.NightAutoPauseReceiver"
+            android:exported="false"/>
+
         <service
             android:name="pl.cukrzycowy.ollee.glycemia.BleService"
             android:exported="false"

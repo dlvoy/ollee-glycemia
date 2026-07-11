@@ -144,4 +144,10 @@
     <string name="settings_watch_labels">Étiquettes de la montre</string>
     <string name="settings_pause_label">Étiquette de pause (max. 6 caractères)</string>
     <string name="settings_stop_label">Étiquette d\'arrêt (max. 6 caractères)</string>
+
+    <string name="settings_night_auto_pause">Pause auto nocturne</string>
+    <string name="settings_night_auto_pause_enable">Activer la pause auto nocturne</string>
+    <string name="time_range_paused_from">Pause de %1$s à %2$s</string>
+    <string name="time_range_from">De</string>
+    <string name="time_range_to">À</string>
 </resources>
