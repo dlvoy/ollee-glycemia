@@ -6,6 +6,8 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 
 - **Multiple data sources**: Receive glucose data from xDrip+ or GlucoDataHandler
 - **Multiple watch support**: Pair and manage multiple Ollee watches
+- **Watch activity states**: Pause or stop individual watches without deleting them
+- **Night auto-pause**: Automatically pause watches during configured night time hours
 - **Real-time synchronization**: Automatically sends glucose readings to your watch via Bluetooth
 - **Persistent service**: Continues monitoring glucose data even when the app is closed
 - **Smart watch reconnection**: Automatically detects and reconnects to paired watches
@@ -58,16 +60,33 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 2. Choose your Ollee Watch from the list
 3. The app will now start syncing glucose data to this watch
 
-#### Step 4: Configure Your Glucose Data Source
+#### Step 4: Managing Your Watches
 
-**For xDrip+:**
+**Pause or Stop a Watch**
+- Tap on the watch pill to open the actions menu, or long-press for options
+- **Pause**: Watch stops receiving glucose updates but can be resumed anytime
+- **Stop**: Similar to pause; useful to temporarily disable a watch without deleting it
+
+**Resume a Paused/Stopped Watch**
+- Tap the Play icon on a paused/stopped watch to resume it
+- The watch will immediately start receiving glucose updates again
+
+**Night Auto-Pause**
+- Go to **Settings → Night Auto Pause** to enable automatic pausing during night hours
+- Configure the pause time range (default: 23:00 - 6:00)
+- Active watches will automatically pause at the start time and resume at the end time
+- Useful for extending battery life or preventing overnight notifications
+
+#### Step 5: Configure Your Glucose Data Source
+
+**Configure xDrip+:**
 - Open xDrip+ app
 - Go to **Settings → Inter-app settings**
 - Enable "Broadcast data locally" and "Send BG data to other apps"
 - Tap **"Identify Receiver"** and enter: `pl.cukrzycowy.ollee.glycemia`
   - If other apps are already listed, add it with a space separator
 
-**For GlucoDataHandler:**
+**Configure GlucoDataHandler:**
 - Open GlucoDataHandler
 - Go to **Settings → Transfer Values**
 - Enable "Local Applications" and click on it
