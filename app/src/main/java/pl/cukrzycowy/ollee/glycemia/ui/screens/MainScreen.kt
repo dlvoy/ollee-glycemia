@@ -495,7 +495,7 @@ fun MainScreen(nav: AppNavController) {
                             }
                         }
                     } else {
-                        val clickEnabled = activityState != WatchActivityState.ACTIVE || status.isOfflineByTimeout
+                        val clickEnabled = activityState != WatchActivityState.ACTIVE || status.isOfflineByTimeout || (status.state == WatchConnState.SYNCED && !isStaleData)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -522,6 +522,8 @@ fun MainScreen(nav: AppNavController) {
                                             } catch (e: Exception) {
                                                 Log.e("MainScreen", "Failed to resume watch: ${e.message}")
                                             }
+                                        } else if (status.state == WatchConnState.SYNCED && !isStaleData) {
+                                            showActionsMenuFor = status.watch.address
                                         } else {
                                             val intent = Intent(context, BleService::class.java).apply {
                                                 action = BleService.ACTION_MANUAL_SYNC_WATCH
