@@ -1032,6 +1032,8 @@ private fun getBannerState(
     watchStatuses: List<WatchStatus>,
     nav: AppNavController
 ): Triple<String, StatusBannerTone, (() -> Unit)?> {
+    val activeWatches = watchStatuses.filter { it.watch.activityState == WatchActivityState.ACTIVE }
+
     return when {
         !permsOk -> Triple(
             stringResource(R.string.banner_permissions_required),
@@ -1053,17 +1055,17 @@ private fun getBannerState(
             StatusBannerTone.NEGATIVE,
             null
         )
-        watchStatuses.all { it.state == WatchConnState.SYNCED } -> {
-            val count = watchStatuses.size
+        activeWatches.all { it.state == WatchConnState.SYNCED } -> {
+            val count = activeWatches.size
             Triple(
                 stringResource(R.string.banner_watches_synced, count, count),
                 StatusBannerTone.POSITIVE,
                 null
             )
         }
-        watchStatuses.any { it.state == WatchConnState.SYNCED } -> {
-            val synced = watchStatuses.count { it.state == WatchConnState.SYNCED }
-            val total = watchStatuses.size
+        activeWatches.any { it.state == WatchConnState.SYNCED } -> {
+            val synced = activeWatches.count { it.state == WatchConnState.SYNCED }
+            val total = activeWatches.size
             Triple(
                 stringResource(R.string.banner_watches_synced, synced, total),
                 StatusBannerTone.POSITIVE,

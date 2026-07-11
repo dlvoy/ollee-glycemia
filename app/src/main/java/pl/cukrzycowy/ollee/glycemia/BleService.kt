@@ -405,11 +405,12 @@ class BleService : Service() {
     }
 
     private fun updateNotification() {
-        val text = if (connections.isEmpty()) {
+        val activeConnections = connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }
+        val text = if (activeConnections.isEmpty()) {
             getString(R.string.notification_no_watches)
         } else {
-            val synced = connections.values.count { it.state == WatchConnState.SYNCED }
-            getString(R.string.notification_watch_status_format, synced, connections.size)
+            val synced = activeConnections.count { it.state == WatchConnState.SYNCED }
+            getString(R.string.notification_watch_status_format, synced, activeConnections.size)
         }
         notificationManager.notify(1, createNotification(text))
     }
