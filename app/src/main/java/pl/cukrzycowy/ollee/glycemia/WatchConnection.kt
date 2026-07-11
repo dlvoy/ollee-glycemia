@@ -97,6 +97,10 @@ class WatchConnection(
             (now - watch.lastSuccessfulSyncTimeMs) > (30 * 60 * 1000) // 30 minutes
     }
 
+    private fun shouldMaintainConnection(): Boolean {
+        return watch.activityState == WatchActivityState.ACTIVE || !watch.activityLabelSent
+    }
+
     private fun clearErrorIfStale() {
         if (state != WatchConnState.ERROR) return
         if (!isOfflineByTimeout()) return
@@ -114,6 +118,11 @@ class WatchConnection(
      *  (re)connect at once (e.g. right after boot). */
     fun connect(staggerIndex: Int = 0) {
         if (torndown || isConnecting || isConnected) return
+
+        if (!shouldMaintainConnection()) {
+            disconnectSoft()
+            return
+        }
 
         handler.postDelayed({
             if (!torndown) connectNow()
@@ -199,7 +208,7 @@ class WatchConnection(
                     WatchConnState.ERROR
                 }
 
-                if (!isOfflineByTimeout()) {
+                if (shouldMaintainConnection() && !isOfflineByTimeout()) {
                     handler.postDelayed({ connectNow() }, RECONNECT_DELAY_MS)
                 }
             }
@@ -216,6 +225,11 @@ class WatchConnection(
         if (!isConnected || !servicesReady) return
         if (bg == lastSent) {
             state = WatchConnState.SYNCED
+            if (watch.activityState != WatchActivityState.ACTIVE) {
+                WatchStore.markActivityLabelSent(context, watch.address)
+                watch = watch.copy(activityLabelSent = true)
+                disconnectSoft()
+            }
             return
         }
 
@@ -224,6 +238,11 @@ class WatchConnection(
             lastSent = bg
             pendingBg = null
             state = WatchConnState.SYNCED
+            if (watch.activityState != WatchActivityState.ACTIVE) {
+                WatchStore.markActivityLabelSent(context, watch.address)
+                watch = watch.copy(activityLabelSent = true)
+                disconnectSoft()
+            }
         }
     }
 

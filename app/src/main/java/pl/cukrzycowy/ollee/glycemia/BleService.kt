@@ -31,7 +31,9 @@ class BleService : Service() {
         const val ACTION_SEND_CLEAR_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.SEND_CLEAR_GLYCEMIA"
         const val ACTION_RESEND_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.RESEND_GLYCEMIA"
         const val ACTION_MANUAL_SYNC_WATCH = "pl.cukrzycowy.ollee.glycemia.MANUAL_SYNC_WATCH"
+        const val ACTION_SET_WATCH_ACTIVITY = "pl.cukrzycowy.ollee.glycemia.SET_WATCH_ACTIVITY"
         const val EXTRA_WATCH_ADDRESS = "watch_address"
+        const val EXTRA_ACTIVITY_STATE = "activity_state"
     }
 
     // ========================
@@ -108,6 +110,20 @@ class BleService : Service() {
                 }
                 return START_STICKY
             }
+
+            ACTION_SET_WATCH_ACTIVITY -> {
+                val watchAddress = intent?.getStringExtra(EXTRA_WATCH_ADDRESS)
+                val stateName = intent?.getStringExtra(EXTRA_ACTIVITY_STATE)
+                if (watchAddress != null && stateName != null) {
+                    try {
+                        val newState = WatchActivityState.valueOf(stateName)
+                        setWatchActivity(watchAddress, newState)
+                    } catch (e: Exception) {
+                        log("Invalid activity state: $stateName")
+                    }
+                }
+                return START_STICKY
+            }
         }
 
         // Back-compat: a caller may still pass a bare device address (legacy
@@ -142,7 +158,12 @@ class BleService : Service() {
                 val connection = WatchConnection(this, watch, ::onConnectionStateChanged)
                 connections[watch.address] = connection
                 connection.connect(staggerIndex = index)
-                lastSent?.let { connection.submitReading(it) }
+                val toSubmit = when {
+                    watch.activityState == WatchActivityState.ACTIVE -> lastSent
+                    !watch.activityLabelSent -> labelFor(watch.activityState)
+                    else -> null
+                }
+                toSubmit?.let { connection.submitReading(it) }
             }
         }
 
@@ -160,7 +181,7 @@ class BleService : Service() {
         AppState.publishWatchStatuses(connections.values.map { connection ->
             val isValidDataFromProvider = connection.lastSentValue.isNotEmpty() &&
                 connection.lastSentValue != "--- --" && connection.lastSentValue != "Err   "
-            val isOfflineByTimeout = isValidDataFromProvider && (
+            val isOfflineByTimeout = connection.watch.activityState == WatchActivityState.ACTIVE && isValidDataFromProvider && (
                 connection.watch.lastSuccessfulSyncTimeMs == 0L ||
                 (now - connection.watch.lastSuccessfulSyncTimeMs) > (30 * 60 * 1000) // 30 minutes
             )
@@ -212,7 +233,7 @@ class BleService : Service() {
             .putString("last_sent", formatted)
             .apply()
 
-        connections.values.forEach { it.submitReading(formatted) }
+        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading(formatted) }
         publishStatuses()
         sendBroadcast(Intent("GLYCEMIA_UPDATED"))
     }
@@ -264,14 +285,14 @@ class BleService : Service() {
 
     private fun sendClearGlycemiaToAllWatches() {
         val clearValue = "--- --"
-        connections.values.forEach { it.submitReading(clearValue) }
+        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading(clearValue) }
         publishStatuses()
     }
 
     private fun resendGlycemiaToAllWatches() {
         val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
         if (lastSent != null) {
-            connections.values.forEach { it.submitReading(lastSent) }
+            connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading(lastSent) }
             publishStatuses()
         }
     }
@@ -306,7 +327,7 @@ class BleService : Service() {
                         isInErrorState = true
 
                         prefs.edit().putString("last_sent", "Err   ").apply()
-                        connections.values.forEach { it.submitReading("Err   ") }
+                        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading("Err   ") }
                         publishStatuses()
                     }
                 }
@@ -387,6 +408,30 @@ class BleService : Service() {
             getString(R.string.notification_watch_status_format, synced, connections.size)
         }
         notificationManager.notify(1, createNotification(text))
+    }
+
+    private fun labelFor(state: WatchActivityState): String {
+        val label = when (state) {
+            WatchActivityState.PAUSED -> WatchActivityLabelStore.getPauseLabel(this)
+            WatchActivityState.STOPPED -> WatchActivityLabelStore.getStopLabel(this)
+            WatchActivityState.ACTIVE -> ""
+        }
+        return label.take(5).padEnd(6, ' ')
+    }
+
+    private fun setWatchActivity(watchAddress: String, newState: WatchActivityState) {
+        WatchStore.setActivityState(this, watchAddress, newState)
+        syncConnectionsWithStore()
+        connections[watchAddress]?.let { conn ->
+            conn.connect()
+            val toSubmit = if (newState == WatchActivityState.ACTIVE) {
+                prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
+            } else {
+                labelFor(newState)
+            }
+            toSubmit?.let { conn.submitReading(it) }
+        }
+        publishStatuses()
     }
 
     private fun log(msg: String) {

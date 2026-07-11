@@ -62,6 +62,24 @@ object WatchStore {
         writeAll(context, updated)
     }
 
+    @Synchronized
+    fun setActivityState(context: Context, address: String, newState: WatchActivityState) {
+        val updated = readAll(context).map {
+            if (it.address == address && it.activityState != newState)
+                it.copy(activityState = newState, activityLabelSent = newState == WatchActivityState.ACTIVE)
+            else it
+        }
+        writeAll(context, updated)
+    }
+
+    @Synchronized
+    fun markActivityLabelSent(context: Context, address: String) {
+        val updated = readAll(context).map {
+            if (it.address == address) it.copy(activityLabelSent = true) else it
+        }
+        writeAll(context, updated)
+    }
+
     private fun migrateLegacyIfNeeded(context: Context) {
         val prefs = prefs(context)
         if (prefs.getBoolean(KEY_MIGRATION_DONE, false)) return
@@ -84,12 +102,15 @@ object WatchStore {
                 for (index in 0 until array.length()) {
                     val item = array.optJSONObject(index) ?: continue
                     val address = item.optString("address").takeIf { it.isNotBlank() } ?: continue
+                    val activityStateName = item.optString("activityState", "ACTIVE")
                     add(
                         PairedWatch(
                             address = address,
                             name = item.optString("name", address),
                             isCustomName = item.optBoolean("isCustomName", false),
-                            lastSuccessfulSyncTimeMs = item.optLong("lastSuccessfulSyncTimeMs", 0L)
+                            lastSuccessfulSyncTimeMs = item.optLong("lastSuccessfulSyncTimeMs", 0L),
+                            activityState = try { WatchActivityState.valueOf(activityStateName) } catch (e: Exception) { WatchActivityState.ACTIVE },
+                            activityLabelSent = item.optBoolean("activityLabelSent", false)
                         )
                     )
                 }
@@ -108,6 +129,8 @@ object WatchStore {
                     .put("name", watch.name)
                     .put("isCustomName", watch.isCustomName)
                     .put("lastSuccessfulSyncTimeMs", watch.lastSuccessfulSyncTimeMs)
+                    .put("activityState", watch.activityState.name)
+                    .put("activityLabelSent", watch.activityLabelSent)
             )
         }
         prefs(context).edit().putString(KEY_WATCHES, array.toString()).apply()

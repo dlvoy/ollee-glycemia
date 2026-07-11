@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -19,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import pl.cukrzycowy.ollee.glycemia.WatchActivityLabelStore
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
@@ -111,6 +113,37 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Text(stringResource(R.string.battery_optimization_disable))
             }
         }
+
+        SectionLabel(text = stringResource(R.string.settings_watch_labels), modifier = Modifier.fillMaxWidth())
+
+        var pauseLabel by remember { mutableStateOf(WatchActivityLabelStore.getPauseLabel(context)) }
+        var stopLabel by remember { mutableStateOf(WatchActivityLabelStore.getStopLabel(context)) }
+
+        OutlinedTextField(
+            value = pauseLabel,
+            onValueChange = {
+                if (it.length <= 5) {
+                    pauseLabel = it
+                    WatchActivityLabelStore.setPauseLabel(context, it)
+                }
+            },
+            label = { Text(stringResource(R.string.settings_pause_label)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        OutlinedTextField(
+            value = stopLabel,
+            onValueChange = {
+                if (it.length <= 5) {
+                    stopLabel = it
+                    WatchActivityLabelStore.setStopLabel(context, it)
+                }
+            },
+            label = { Text(stringResource(R.string.settings_stop_label)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
 
         SectionLabel(text = stringResource(R.string.settings_about), modifier = Modifier.fillMaxWidth())
         Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))

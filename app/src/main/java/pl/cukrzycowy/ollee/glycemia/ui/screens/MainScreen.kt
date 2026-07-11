@@ -16,6 +16,7 @@ import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -60,10 +66,14 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import pl.cukrzycowy.ollee.glycemia.AppState
+import pl.cukrzycowy.ollee.glycemia.BleService
 import pl.cukrzycowy.ollee.glycemia.GlycemiaGraphView
 import pl.cukrzycowy.ollee.glycemia.GlycemiaProviderManager
+import pl.cukrzycowy.ollee.glycemia.PairedWatch
+import pl.cukrzycowy.ollee.glycemia.WatchActivityState
 import pl.cukrzycowy.ollee.glycemia.WatchConnState
 import pl.cukrzycowy.ollee.glycemia.WatchStatus
+import pl.cukrzycowy.ollee.glycemia.WatchStore
 import pl.cukrzycowy.ollee.glycemia.ui.components.FoldableSection
 import pl.cukrzycowy.ollee.glycemia.ui.components.OlleeHeader
 import pl.cukrzycowy.ollee.glycemia.ui.components.PillButton
@@ -405,26 +415,41 @@ fun MainScreen(nav: AppNavController) {
                 var editingWatchId by remember { mutableStateOf<String?>(null) }
                 var editingWatchName by remember { mutableStateOf("") }
                 var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
+                var showActionsMenuFor by remember { mutableStateOf<String?>(null) }
+                var showPauseConfirm by remember { mutableStateOf<String?>(null) }
+                var showStopConfirm by remember { mutableStateOf<String?>(null) }
 
                 watchStatuses.forEach { status ->
+                    val activityState = status.watch.activityState
                     val isStaleData = status.state == WatchConnState.SYNCED && (status.lastSentValue == "--- --" || status.lastSentValue == "Err   ")
                     val effectiveState = if (status.isOfflineByTimeout) WatchConnState.OFFLINE else status.state
-                    val stateColor = when {
-                        status.state == WatchConnState.ERROR -> Color(0xFFCC0000)
-                        isStaleData -> Color(0xFF999999)
-                        status.isOfflineByTimeout -> Color(0xFF999999)
-                        status.state == WatchConnState.SYNCED -> Color(0xFF00AA00)
-                        status.state == WatchConnState.CONNECTING -> Color(0xFF0099CC)
-                        status.state == WatchConnState.OFFLINE -> Color(0xFF999999)
-                        else -> Color(0xFF999999)
-                    }
-                    val stateLabel = when {
-                        status.state == WatchConnState.CONNECTING -> stringResource(R.string.watch_state_connecting)
-                        status.state == WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
-                        status.state == WatchConnState.ERROR -> stringResource(R.string.watch_state_error)
-                        status.isOfflineByTimeout -> stringResource(R.string.watch_state_offline)
-                        status.state == WatchConnState.OFFLINE -> stringResource(R.string.watch_state_offline)
-                        else -> stringResource(R.string.watch_state_offline)
+
+                    val (stateColor, stateLabel, pillBg) = if (activityState != WatchActivityState.ACTIVE) {
+                        val label = when (activityState) {
+                            WatchActivityState.PAUSED -> stringResource(R.string.watch_state_paused)
+                            WatchActivityState.STOPPED -> stringResource(R.string.watch_state_stopped)
+                            else -> ""
+                        }
+                        Triple(Color(0xFF999999), label, OlleeColors.SurfaceDisabled)
+                    } else {
+                        val color = when {
+                            status.state == WatchConnState.ERROR -> Color(0xFFCC0000)
+                            isStaleData -> Color(0xFF999999)
+                            status.isOfflineByTimeout -> Color(0xFF999999)
+                            status.state == WatchConnState.SYNCED -> Color(0xFF00AA00)
+                            status.state == WatchConnState.CONNECTING -> Color(0xFF0099CC)
+                            status.state == WatchConnState.OFFLINE -> Color(0xFF999999)
+                            else -> Color(0xFF999999)
+                        }
+                        val label = when {
+                            status.state == WatchConnState.CONNECTING -> stringResource(R.string.watch_state_connecting)
+                            status.state == WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
+                            status.state == WatchConnState.ERROR -> stringResource(R.string.watch_state_error)
+                            status.isOfflineByTimeout -> stringResource(R.string.watch_state_offline)
+                            status.state == WatchConnState.OFFLINE -> stringResource(R.string.watch_state_offline)
+                            else -> stringResource(R.string.watch_state_offline)
+                        }
+                        Triple(color, label, OlleeColors.SurfaceCard)
                     }
 
                     if (editingWatchId == status.watch.address) {
@@ -470,28 +495,53 @@ fun MainScreen(nav: AppNavController) {
                             }
                         }
                     } else {
+                        val clickEnabled = activityState != WatchActivityState.ACTIVE || status.isOfflineByTimeout
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(OlleeColors.SurfaceCard, OlleeShapes.Pill)
+                                .background(pillBg, OlleeShapes.Pill)
                                 .border(1.5.dp, stateColor, OlleeShapes.Pill)
                                 .padding(horizontal = OlleeSpacing.xl, vertical = OlleeSpacing.md)
-                                .clickable(enabled = status.isOfflineByTimeout) {
-                                    val intent = Intent(context, pl.cukrzycowy.ollee.glycemia.BleService::class.java).apply {
-                                        action = pl.cukrzycowy.ollee.glycemia.BleService.ACTION_MANUAL_SYNC_WATCH
-                                        putExtra(pl.cukrzycowy.ollee.glycemia.BleService.EXTRA_WATCH_ADDRESS, status.watch.address)
-                                    }
-                                    try {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                            context.startForegroundService(intent)
+                                .combinedClickable(
+                                    enabled = clickEnabled,
+                                    onClick = {
+                                        if (activityState != WatchActivityState.ACTIVE) {
+                                            val intent = Intent(context, BleService::class.java).apply {
+                                                action = BleService.ACTION_SET_WATCH_ACTIVITY
+                                                putExtra(BleService.EXTRA_WATCH_ADDRESS, status.watch.address)
+                                                putExtra(BleService.EXTRA_ACTIVITY_STATE, WatchActivityState.ACTIVE.name)
+                                            }
+                                            try {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    context.startForegroundService(intent)
+                                                } else {
+                                                    @Suppress("DEPRECATION")
+                                                    context.startService(intent)
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("MainScreen", "Failed to resume watch: ${e.message}")
+                                            }
                                         } else {
-                                            @Suppress("DEPRECATION")
-                                            context.startService(intent)
+                                            val intent = Intent(context, BleService::class.java).apply {
+                                                action = BleService.ACTION_MANUAL_SYNC_WATCH
+                                                putExtra(BleService.EXTRA_WATCH_ADDRESS, status.watch.address)
+                                            }
+                                            try {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    context.startForegroundService(intent)
+                                                } else {
+                                                    @Suppress("DEPRECATION")
+                                                    context.startService(intent)
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("MainScreen", "Failed to trigger manual sync: ${e.message}")
+                                            }
                                         }
-                                    } catch (e: Exception) {
-                                        Log.e("MainScreen", "Failed to trigger manual sync: ${e.message}")
+                                    },
+                                    onLongClick = {
+                                        showActionsMenuFor = status.watch.address
                                     }
-                                },
+                                ),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.md)
                         ) {
@@ -545,13 +595,62 @@ fun MainScreen(nav: AppNavController) {
                                 horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.xs),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val (actionIcon, actionDesc) = when {
+                                    activityState != WatchActivityState.ACTIVE -> Pair(Icons.Filled.PlayArrow, stringResource(R.string.watch_action_resume))
+                                    activityState == WatchActivityState.ACTIVE && (status.state == WatchConnState.OFFLINE || status.isOfflineByTimeout || status.state == WatchConnState.ERROR) -> Pair(Icons.Filled.Refresh, stringResource(R.string.sync))
+                                    activityState == WatchActivityState.ACTIVE && status.state == WatchConnState.SYNCED && !isStaleData -> Pair(Icons.Filled.Pause, stringResource(R.string.watch_action_pause))
+                                    else -> Pair(Icons.Filled.Settings, stringResource(R.string.configure))
+                                }
+
                                 IconButton(
-                                    onClick = { showDeleteConfirm = status.watch.address },
+                                    onClick = {
+                                        when {
+                                            activityState != WatchActivityState.ACTIVE -> {
+                                                val intent = Intent(context, BleService::class.java).apply {
+                                                    action = BleService.ACTION_SET_WATCH_ACTIVITY
+                                                    putExtra(BleService.EXTRA_WATCH_ADDRESS, status.watch.address)
+                                                    putExtra(BleService.EXTRA_ACTIVITY_STATE, WatchActivityState.ACTIVE.name)
+                                                }
+                                                try {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                        context.startForegroundService(intent)
+                                                    } else {
+                                                        @Suppress("DEPRECATION")
+                                                        context.startService(intent)
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("MainScreen", "Failed to resume watch: ${e.message}")
+                                                }
+                                            }
+                                            status.state == WatchConnState.OFFLINE || status.isOfflineByTimeout || status.state == WatchConnState.ERROR -> {
+                                                val intent = Intent(context, BleService::class.java).apply {
+                                                    action = BleService.ACTION_MANUAL_SYNC_WATCH
+                                                    putExtra(BleService.EXTRA_WATCH_ADDRESS, status.watch.address)
+                                                }
+                                                try {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                        context.startForegroundService(intent)
+                                                    } else {
+                                                        @Suppress("DEPRECATION")
+                                                        context.startService(intent)
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.e("MainScreen", "Failed to sync: ${e.message}")
+                                                }
+                                            }
+                                            status.state == WatchConnState.SYNCED && !isStaleData -> {
+                                                showPauseConfirm = status.watch.address
+                                            }
+                                            else -> {
+                                                showActionsMenuFor = status.watch.address
+                                            }
+                                        }
+                                    },
                                     modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.Delete,
-                                        contentDescription = stringResource(R.string.remove),
+                                        imageVector = actionIcon,
+                                        contentDescription = actionDesc,
                                         tint = OlleeColors.TextPrimary
                                     )
                                 }
@@ -588,7 +687,7 @@ fun MainScreen(nav: AppNavController) {
                         confirmButton = {
                             TextButton(
                                 onClick = {
-                                    pl.cukrzycowy.ollee.glycemia.WatchStore.remove(context, showDeleteConfirm!!)
+                                    WatchStore.remove(context, showDeleteConfirm!!)
                                     showDeleteConfirm = null
                                     refreshWatchList(context)
                                 }
@@ -602,6 +701,139 @@ fun MainScreen(nav: AppNavController) {
                             }
                         }
                     )
+                }
+
+                if (showPauseConfirm != null) {
+                    val watchToPause = watchStatuses.find { it.watch.address == showPauseConfirm }?.watch
+                    val pauseMessage = if (watchToPause != null) {
+                        "${watchToPause.name}\n${watchToPause.address}"
+                    } else {
+                        showPauseConfirm ?: ""
+                    }
+
+                    AlertDialog(
+                        onDismissRequest = { showPauseConfirm = null },
+                        title = { Text(stringResource(R.string.watch_pause_confirm_title)) },
+                        text = { Text(pauseMessage) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val intent = Intent(context, BleService::class.java).apply {
+                                        action = BleService.ACTION_SET_WATCH_ACTIVITY
+                                        putExtra(BleService.EXTRA_WATCH_ADDRESS, showPauseConfirm!!)
+                                        putExtra(BleService.EXTRA_ACTIVITY_STATE, WatchActivityState.PAUSED.name)
+                                    }
+                                    try {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(intent)
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            context.startService(intent)
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("MainScreen", "Failed to pause watch: ${e.message}")
+                                    }
+                                    showPauseConfirm = null
+                                    refreshWatchList(context)
+                                }
+                            ) {
+                                Text(stringResource(R.string.confirm))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showPauseConfirm = null }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        }
+                    )
+                }
+
+                if (showStopConfirm != null) {
+                    val watchToStop = watchStatuses.find { it.watch.address == showStopConfirm }?.watch
+                    val stopMessage = if (watchToStop != null) {
+                        "${watchToStop.name}\n${watchToStop.address}"
+                    } else {
+                        showStopConfirm ?: ""
+                    }
+
+                    AlertDialog(
+                        onDismissRequest = { showStopConfirm = null },
+                        title = { Text(stringResource(R.string.watch_stop_confirm_title)) },
+                        text = { Text(stopMessage) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val intent = Intent(context, BleService::class.java).apply {
+                                        action = BleService.ACTION_SET_WATCH_ACTIVITY
+                                        putExtra(BleService.EXTRA_WATCH_ADDRESS, showStopConfirm!!)
+                                        putExtra(BleService.EXTRA_ACTIVITY_STATE, WatchActivityState.STOPPED.name)
+                                    }
+                                    try {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(intent)
+                                        } else {
+                                            @Suppress("DEPRECATION")
+                                            context.startService(intent)
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("MainScreen", "Failed to stop watch: ${e.message}")
+                                    }
+                                    showStopConfirm = null
+                                    refreshWatchList(context)
+                                }
+                            ) {
+                                Text(stringResource(R.string.confirm))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showStopConfirm = null }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        }
+                    )
+                }
+
+                if (showActionsMenuFor != null) {
+                    val actionWatch = watchStatuses.find { it.watch.address == showActionsMenuFor }
+                    if (actionWatch != null) {
+                        WatchActionsDialog(
+                            watch = actionWatch.watch,
+                            onResume = {
+                                showActionsMenuFor = null
+                                val intent = Intent(context, BleService::class.java).apply {
+                                    action = BleService.ACTION_SET_WATCH_ACTIVITY
+                                    putExtra(BleService.EXTRA_WATCH_ADDRESS, actionWatch.watch.address)
+                                    putExtra(BleService.EXTRA_ACTIVITY_STATE, WatchActivityState.ACTIVE.name)
+                                }
+                                try {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        context.startForegroundService(intent)
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        context.startService(intent)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MainScreen", "Failed to resume watch: ${e.message}")
+                                }
+                                refreshWatchList(context)
+                            },
+                            onPause = {
+                                showActionsMenuFor = null
+                                showPauseConfirm = actionWatch.watch.address
+                            },
+                            onStop = {
+                                showActionsMenuFor = null
+                                showStopConfirm = actionWatch.watch.address
+                            },
+                            onDelete = {
+                                showActionsMenuFor = null
+                                showDeleteConfirm = actionWatch.watch.address
+                            },
+                            onDismiss = { showActionsMenuFor = null }
+                        )
+                    } else {
+                        showActionsMenuFor = null
+                    }
                 }
             }
 
@@ -683,6 +915,91 @@ private fun GraphRangeDialog(
             }
         }
     )
+}
+
+@Composable
+private fun WatchActionsDialog(
+    watch: PairedWatch,
+    onResume: () -> Unit,
+    onPause: () -> Unit,
+    onStop: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(watch.name) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                if (watch.activityState != WatchActivityState.ACTIVE) {
+                    IconActionRow(
+                        icon = Icons.Filled.PlayArrow,
+                        label = stringResource(R.string.watch_action_resume),
+                        onClick = onResume
+                    )
+                }
+                if (watch.activityState != WatchActivityState.PAUSED) {
+                    IconActionRow(
+                        icon = Icons.Filled.Pause,
+                        label = stringResource(R.string.watch_action_pause),
+                        onClick = onPause
+                    )
+                }
+                if (watch.activityState != WatchActivityState.STOPPED) {
+                    IconActionRow(
+                        icon = Icons.Filled.Stop,
+                        label = stringResource(R.string.watch_action_stop),
+                        onClick = onStop
+                    )
+                }
+                IconActionRow(
+                    icon = Icons.Filled.Delete,
+                    label = stringResource(R.string.delete),
+                    onClick = onDelete
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.close))
+            }
+        }
+    )
+}
+
+@Composable
+private fun IconActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 2.dp,
+                color = OlleeColors.SurfaceCardBorder,
+                shape = OlleeShapes.Pill
+            )
+            .background(OlleeColors.Background, OlleeShapes.Pill)
+            .clickable(onClick = onClick)
+            .padding(horizontal = OlleeSpacing.lg, vertical = OlleeSpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.md)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = OlleeColors.TextPrimary,
+            modifier = Modifier.size(24.dp)
+        )
+        Text(
+            text = label,
+            color = OlleeColors.TextPrimary
+        )
+    }
 }
 
 private fun sendClearGlycemiaToWatches(context: Context) {
