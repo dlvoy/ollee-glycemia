@@ -158,8 +158,12 @@ class BleService : Service() {
     private fun publishStatuses() {
         val now = System.currentTimeMillis()
         AppState.publishWatchStatuses(connections.values.map { connection ->
-            val isOfflineByTimeout = connection.watch.lastSuccessfulSyncTimeMs == 0L ||
-                (now - connection.watch.lastSuccessfulSyncTimeMs) > (10 * 60 * 1000) // 10 minutes
+            val isValidDataFromProvider = connection.lastSentValue.isNotEmpty() &&
+                connection.lastSentValue != "--- --" && connection.lastSentValue != "Err   "
+            val isOfflineByTimeout = isValidDataFromProvider && (
+                connection.watch.lastSuccessfulSyncTimeMs == 0L ||
+                (now - connection.watch.lastSuccessfulSyncTimeMs) > (30 * 60 * 1000) // 30 minutes
+            )
             WatchStatus(
                 watch = connection.watch,
                 state = connection.state,

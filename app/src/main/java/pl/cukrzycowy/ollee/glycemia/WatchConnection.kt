@@ -94,7 +94,7 @@ class WatchConnection(
     private fun isOfflineByTimeout(): Boolean {
         val now = System.currentTimeMillis()
         return watch.lastSuccessfulSyncTimeMs == 0L ||
-            (now - watch.lastSuccessfulSyncTimeMs) > (10 * 60 * 1000)
+            (now - watch.lastSuccessfulSyncTimeMs) > (30 * 60 * 1000) // 30 minutes
     }
 
     private fun clearErrorIfStale() {
@@ -257,6 +257,7 @@ class WatchConnection(
             lastSyncTimeMs = System.currentTimeMillis()
             lastSentValue = bg
             WatchStore.updateLastSyncTime(context, watch.address, lastSyncTimeMs)
+            watch = watch.copy(lastSuccessfulSyncTimeMs = lastSyncTimeMs)
             log("Sent to ${watch.address} -> '$bg'")
             true
         } catch (e: SecurityException) {
