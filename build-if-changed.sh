@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+export GRADLE_OPTS="-Dorg.gradle.java.home=$JAVA_HOME"
+
 GRADLE_CACHE=".gradle_build_cache"
 
 # Get the most recent modification time of source files
