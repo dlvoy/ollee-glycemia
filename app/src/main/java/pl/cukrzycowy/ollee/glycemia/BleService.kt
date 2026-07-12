@@ -304,6 +304,12 @@ class BleService : Service() {
     private fun manualSyncWatch(watchAddress: String) {
         val connection = connections[watchAddress] ?: return
         val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() } ?: return
+
+        // Update last successful sync time to now to prevent immediate offline timeout
+        val now = System.currentTimeMillis()
+        WatchStore.updateLastSyncTime(this, watchAddress, now)
+        connection.updateWatch(connection.watch.copy(lastSuccessfulSyncTimeMs = now))
+
         connection.connect()
         connection.submitReading(lastSent)
         publishStatuses()
@@ -406,11 +412,13 @@ class BleService : Service() {
 
     private fun updateNotification() {
         val activeConnections = connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }
-        val text = if (activeConnections.isEmpty()) {
-            getString(R.string.notification_no_watches)
-        } else {
-            val synced = activeConnections.count { it.state == WatchConnState.SYNCED }
-            getString(R.string.notification_watch_status_format, synced, activeConnections.size)
+        val text = when {
+            connections.isEmpty() -> getString(R.string.notification_no_watches)
+            activeConnections.isEmpty() -> getString(R.string.notification_all_watches_inactive)
+            else -> {
+                val synced = activeConnections.count { it.state == WatchConnState.SYNCED }
+                getString(R.string.notification_watch_status_format, synced, activeConnections.size)
+            }
         }
         notificationManager.notify(1, createNotification(text))
     }

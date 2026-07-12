@@ -9,7 +9,7 @@ plugins {
 
 // Semantic version (MAJOR.MINOR.PATCH). Override per-build with -PappVersionName=X.Y.Z,
 // which is how the release GitHub Action derives it from the pushed `vX.Y.Z` tag.
-val appVersionName: String = (project.findProperty("appVersionName") as String?) ?: "1.0.0"
+val appVersionName: String = (project.findProperty("appVersionName") as String?) ?: "1.1.1"
 
 fun versionCodeFromSemver(version: String): Int {
     val (major, minor, patch) = version.split(".")

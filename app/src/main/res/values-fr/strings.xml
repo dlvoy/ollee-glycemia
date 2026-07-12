@@ -20,6 +20,7 @@
     <string name="notification_connected">🟢 Connecté</string>
     <string name="notification_reconnecting">🔴 Reconnexion...</string>
     <string name="notification_no_watches">Aucune montre jumelée</string>
+    <string name="notification_all_watches_inactive">Toutes les montres sont en pause ou arrêtées</string>
     <string name="notification_watch_status_format">%1$d/%2$d montres synchronisées</string>
     <string name="notification_title">xDrip → Montre</string>
     <string name="ble_service_name">Service BLE</string>
@@ -111,6 +112,7 @@
     <string name="banner_initializing">Initialisation...</string>
     <string name="banner_permissions_required">Permissions requises</string>
     <string name="banner_no_watch_paired">Aucune montre jumelée</string>
+    <string name="banner_all_watches_inactive">Toutes les montres sont en pause ou arrêtées</string>
     <string name="banner_no_glycemia">Pas de glycémie</string>
     <string name="banner_connected">Connecté</string>
     <string name="banner_watches_synced">%1$d/%2$d montres synchronisées</string>
@@ -150,4 +152,5 @@
     <string name="time_range_paused_from">Pause de %1$s à %2$s</string>
     <string name="time_range_from">De</string>
     <string name="time_range_to">À</string>
+    <string name="time_since_format">depuis @ %s</string>
 </resources>

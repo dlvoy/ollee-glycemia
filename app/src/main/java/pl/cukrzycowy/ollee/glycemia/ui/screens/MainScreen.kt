@@ -574,7 +574,7 @@ fun MainScreen(nav: AppNavController) {
                                         status.state == WatchConnState.SYNCED && status.lastSyncTimeMs > 0 ->
                                             "@ " + formatExactTime(status.lastSyncTimeMs)
                                         status.state == WatchConnState.CONNECTING && status.lastSyncTimeMs > 0 ->
-                                            "since @ " + formatExactTime(status.lastSyncTimeMs)
+                                            stringResource(R.string.time_since_format, formatExactTime(status.lastSyncTimeMs))
                                         status.lastSentValue.isNotEmpty() -> ""
                                         status.state == WatchConnState.OFFLINE -> status.watch.address
                                         status.state == WatchConnState.ERROR -> status.watch.address
@@ -1044,6 +1044,11 @@ private fun getBannerState(
             stringResource(R.string.banner_no_watch_paired),
             StatusBannerTone.NEGATIVE,
             { nav.navigate(Route.WatchPairing) }
+        )
+        activeWatches.isEmpty() -> Triple(
+            stringResource(R.string.banner_all_watches_inactive),
+            StatusBannerTone.NEUTRAL,
+            null
         )
         providerStatus.status == ProviderDataStatus.NO_DATA -> Triple(
             stringResource(R.string.banner_no_glycemia),

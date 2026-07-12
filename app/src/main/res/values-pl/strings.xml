@@ -23,6 +23,7 @@
     <string name="ble_service_name">Usługa BLE</string>
     <string name="showing_on_watch">Wyświetlane</string>
     <string name="notification_no_watches">Brak sparowanych zegarków</string>
+    <string name="notification_all_watches_inactive">Wszystkie zegarki zapauzowane lub zatrzymane</string>
     <string name="notification_watch_status_format">%1$d/%2$d zegarków zsynchronizowanych</string>
 
     <string name="provider_label">Źródło glikemii</string>
@@ -111,6 +112,7 @@
     <string name="banner_initializing">Inicjalizacja...</string>
     <string name="banner_permissions_required">Wymagane uprawnienia</string>
     <string name="banner_no_watch_paired">Brak sparowanego zegarka</string>
+    <string name="banner_all_watches_inactive">Wszystkie zegarki zapauzowane lub zatrzymane</string>
     <string name="banner_no_glycemia">Brak glikemii</string>
     <string name="banner_connected">Połączono</string>
     <string name="banner_watches_synced">%1$d/%2$d zegarków zsynchronizowanych</string>
@@ -150,4 +152,5 @@
     <string name="time_range_paused_from">Pauza od %1$s do %2$s</string>
     <string name="time_range_from">Od</string>
     <string name="time_range_to">Do</string>
+    <string name="time_since_format">od @ %s</string>
 </resources>

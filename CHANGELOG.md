@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-07-12
+
+### Fixed
+
+- **Translated "since" label**: Time display for CONNECTING state now uses proper translations instead of hardcoded English
+- **Notification message for inactive watches**: Shows "All watches paused or stopped" instead of "No paired watches" when all paired watches are inactive
+- **Manual sync offline state**: Updating lastSuccessfulSyncTime when manual sync is triggered to prevent immediate offline timeout and restore active refresh schedule
+
 ## [1.1.0] - 2026-07-11
 
 ### Added
@@ -51,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sync count no longer includes paused or stopped watches in status reporting
 
+[1.1.1]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.1.1
 [1.1.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.1.0
 [1.0.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.0.0
 
