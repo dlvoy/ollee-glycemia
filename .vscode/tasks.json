@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "JAVA_HOME=\"${JAVA_HOME:=$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21)}\" ./gradlew assembleDebug"
+                "if [ -z \"$JAVA_HOME\" ]; then export JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null || { [ -d /usr/lib/jvm/java-21-openjdk-amd64 ] && echo /usr/lib/jvm/java-21-openjdk-amd64 || echo /opt/homebrew/opt/openjdk@21; }); fi && ./gradlew assembleDebug"
             ],
             "isBackground": false,
             "presentation": {
@@ -24,7 +24,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "JAVA_HOME=\"${JAVA_HOME:=$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21)}\" bash build-and-select.sh"
+                "if [ -z \"$JAVA_HOME\" ]; then export JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null || { [ -d /usr/lib/jvm/java-21-openjdk-amd64 ] && echo /usr/lib/jvm/java-21-openjdk-amd64 || echo /opt/homebrew/opt/openjdk@21; }); fi && bash build-and-select.sh"
             ],
             "isBackground": false,
             "presentation": {
@@ -41,7 +41,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "JAVA_HOME=\"${JAVA_HOME:=$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21)}\" bash build-and-launch.sh"
+                "if [ -z \"$JAVA_HOME\" ]; then export JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null || { [ -d /usr/lib/jvm/java-21-openjdk-amd64 ] && echo /usr/lib/jvm/java-21-openjdk-amd64 || echo /opt/homebrew/opt/openjdk@21; }); fi && bash build-and-launch.sh"
             ],
             "isBackground": false,
             "presentation": {

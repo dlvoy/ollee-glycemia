@@ -6,11 +6,11 @@
             "matchCommandLine": true
         }
     },
-    "java.jdt.ls.java.home": "/opt/homebrew/opt/openjdk@21",
+    "java.jdt.ls.java.home": "${env:JAVA_HOME:/opt/homebrew/opt/openjdk@21}",
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-21",
-            "path": "/opt/homebrew/opt/openjdk@21",
+            "path": "${env:JAVA_HOME:/opt/homebrew/opt/openjdk@21}",
             "default": true
         }
     ],
