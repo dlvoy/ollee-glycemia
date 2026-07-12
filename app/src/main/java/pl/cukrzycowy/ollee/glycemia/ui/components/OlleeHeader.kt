@@ -47,7 +47,7 @@ fun OlleeHeader(
         horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.md)
     ) {
         Image(
-            painter = painterResource(R.drawable.olleexdrip),
+            painter = painterResource(R.drawable.olleeglycemia),
             contentDescription = "Ollee",
             modifier = Modifier
                 .height(36.dp)
