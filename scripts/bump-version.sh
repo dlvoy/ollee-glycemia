@@ -56,8 +56,12 @@ TODAY=$(date +%Y-%m-%d)
 
 echo "New version: $NEW_VERSION"
 
-# Update gradle file
-sed -i '' "s/val appVersionName.*= .*/val appVersionName: String = (project.findProperty(\"appVersionName\") as String?) ?: \"$NEW_VERSION\"/" "$GRADLE_FILE"
+# Update gradle file (cross-platform sed)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s/val appVersionName.*= .*/val appVersionName: String = (project.findProperty(\"appVersionName\") as String?) ?: \"$NEW_VERSION\"/" "$GRADLE_FILE"
+else
+    sed -i "s/val appVersionName.*= .*/val appVersionName: String = (project.findProperty(\"appVersionName\") as String?) ?: \"$NEW_VERSION\"/" "$GRADLE_FILE"
+fi
 
 echo "✓ Updated $GRADLE_FILE"
 

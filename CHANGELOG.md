@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-12
+
+### Added
+
+- **Splash screen assets**: New glycemia vector drawable and updated splash screen background image
+  - Replaces unused launcher images with improved visual assets
+
+### Fixed
+
+- **Settings screen scrollability**: Settings page now scrollable when multiple sections are expanded on smaller screens
+  - All UI elements remain reachable regardless of screen height and open sections
+- **VSCode Java configuration**: JAVA_HOME environment variable now properly respected on Linux/WSL
+  - Cross-platform compatibility: uses `$JAVA_HOME` if set, falls back to platform-specific detection (macOS `/usr/libexec/java_home` or Linux standard paths)
+
+
 ## [1.2.2] - 2026-07-12
 
 ### Changed
@@ -111,6 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Bluetooth permission management**: Comprehensive Bluetooth Connect and Scan permission handling
 - **Smooth data interpolation**: Synthetic glucose value generation using Hermite interpolation
 
+[1.3.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.3.0
 [1.2.2]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.2
 [1.2.1]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.1
 [1.2.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.0
