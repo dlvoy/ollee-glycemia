@@ -24,6 +24,7 @@ class XdripProvider : GlycemiaProvider {
             "com.eveningoutpost.dexdrip.ExternalStatusChange" -> handleCompatibleBroadcast(intent)
             "com.eveningoutpost.dexdrip.BgEstimate",
             "com.eveningoutpost.dexdrip.BROADCAST" -> handleXdripBroadcast(intent)
+            "com.eveningoutpost.dexdrip.BgEstimateNoData" -> handleBgEstimateNoData(intent)
             else -> null
         }
     }
@@ -84,8 +85,12 @@ class XdripProvider : GlycemiaProvider {
 
         val delta = readNumericExtra(intent, "delta") ?: slope?.let { it * 300000.0 }
 
-        val timestamp = readTimestamp(intent, "com.eveningoutpost.dexdrip.Extras.SgvTimestampMs")
-            ?: System.currentTimeMillis()
+        val timestamp = if (intent.hasExtra("bg.timeStamp")) {
+            intent.getLongExtra("bg.timeStamp", 0L).takeIf { it > 0 } ?: System.currentTimeMillis()
+        } else {
+            readTimestamp(intent, "com.eveningoutpost.dexdrip.Extras.Time")
+                ?: System.currentTimeMillis()
+        }
 
         return GlycemiaReading(
             bg = bg,
@@ -192,5 +197,15 @@ class XdripProvider : GlycemiaProvider {
             }
             else -> null
         }
+    }
+
+    private fun handleBgEstimateNoData(intent: Intent): GlycemiaReading? {
+        Log.d("XDRIP", "Received BgEstimateNoData: connected to sensor but no current reading")
+        return GlycemiaReading(
+            bg = "---",
+            trend = null,
+            delta = null,
+            timestamp = System.currentTimeMillis()
+        )
     }
 }

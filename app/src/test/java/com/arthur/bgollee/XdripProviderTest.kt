@@ -73,12 +73,12 @@ class XdripProviderTest {
     }
 
     @Test
-    fun parseIntent_mapsXdripBroadcastAndCalculatesDeltaFromSlope() {
+    fun parseIntent_mapsXdripBroadcastWithExtrasTime() {
         val testTimestamp = 5000000L
         val intent = Intent("com.eveningoutpost.dexdrip.BROADCAST")
             .putExtra("com.eveningoutpost.dexdrip.Extras.BgEstimate", 111.0)
             .putExtra("com.eveningoutpost.dexdrip.Extras.BgSlope", -2.0)
-            .putExtra("com.eveningoutpost.dexdrip.Extras.SgvTimestampMs", testTimestamp)
+            .putExtra("com.eveningoutpost.dexdrip.Extras.Time", testTimestamp)
 
         val reading = provider.parseIntent(intent)
 
@@ -87,6 +87,35 @@ class XdripProviderTest {
         assertEquals("DOWN", reading.trend)
         assertEquals(-600000.0, reading.delta ?: Double.NaN, 0.0)
         assertEquals(testTimestamp, reading.timestamp)
+    }
+
+    @Test
+    fun parseIntent_mapsXdripBroadcastWithBgTimestamp() {
+        val testTimestamp = 6000000L
+        val intent = Intent("com.eveningoutpost.dexdrip.BROADCAST")
+            .putExtra("com.eveningoutpost.dexdrip.Extras.BgEstimate", 120.0)
+            .putExtra("com.eveningoutpost.dexdrip.Extras.BgSlope", 1.5)
+            .putExtra("bg.timeStamp", testTimestamp)
+
+        val reading = provider.parseIntent(intent)
+
+        requireNotNull(reading)
+        assertEquals("120", reading.bg)
+        assertEquals("UP", reading.trend)
+        assertEquals(testTimestamp, reading.timestamp)
+    }
+
+    @Test
+    fun parseIntent_handlesBgEstimateNoData() {
+        val intent = Intent("com.eveningoutpost.dexdrip.BgEstimateNoData")
+
+        val reading = provider.parseIntent(intent)
+
+        requireNotNull(reading)
+        assertEquals("---", reading.bg)
+        assertNull(reading.trend)
+        assertNull(reading.delta)
+        assert(reading.timestamp >= System.currentTimeMillis() - 1000)
     }
 
     @Test

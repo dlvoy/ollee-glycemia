@@ -14,27 +14,9 @@
 - **Type**: Android app (Kotlin)
 - **Target**: Glucose monitoring for smartwatches
 - **Data Source**: xDrip (real CGM data)
-- **Key Providers**: xDrip, Nightscout, Synthetic data
+- **Key Providers**: xDrip, Nightscout - TODO in future, Synthetic data
 
 ## Important Notes
-
-### Timestamps & History
-- All readings use millisecond timestamps
-- `GlycemiaReading` has a `timestamp` field (defaults to current time if not set)
-- `GlycemiaHistoryStore` maintains 24-hour rolling history
-- Back-filled readings should be placed at their measurement time, not arrival time
-
-### Broadcast Handlers
-Three xDrip broadcast types are supported:
-1. `"com.eveningoutpost.dexdrip.BROADCAST"` - xDrip native format
-2. `"org.nightscout.android.broadcast"` - Nightscout format
-3. `"com.eveningoutpost.dexdrip.ExternalStatusChange"` - Compatible JSON format
-
-### Common Pitfalls to Avoid
-- ❌ Don't use `System.currentTimeMillis()` for broadcast timestamps - extract from broadcast
-- ❌ Don't treat all received readings as "current" - filter by timestamp
-- ❌ Don't add comments that reference issues/PRs - those belong in commit messages
-- ❌ Don't over-engineer solutions - keep it simple and focused
 
 ### File Organization
 ```
@@ -55,10 +37,6 @@ app/src/main/java/pl/cukrzycowy/ollee/glycemia/
 ## Before Making Changes
 
 1. **Read existing code** to understand current implementation
-2. **Check timestamps** - they should be milliseconds (Long)
-3. **Verify broadcasts** - use the logging in XdripReceiver to see actual fields
-4. **Test filtering logic** - old readings shouldn't override current ones
-5. **Update tests** - any new behavior needs test coverage
 
 ## VSCode & Gradle Configuration
 
@@ -67,13 +45,10 @@ app/src/main/java/pl/cukrzycowy/ollee/glycemia/
 - **VSCode Java Extension**: Configured to use Homebrew Java (see `.vscode/settings.json`)
 - **Gradle Tasks**: Auto-set JAVA_HOME before execution (see `.vscode/tasks.json`)
 
-### Why This Matters
-After VSCode restart, the Java extension may try to use its bundled JRE which lacks `jlink`. The configuration prevents this automatically — **no manual `./gradlew --stop` needed**.
-
-See `docs/GRADLE_JAVA_FIX.md` for detailed explanation.
-
 ## Communication Style
 - Be concise and direct
-- Show what changed and why
+- Show what changed and why - very shortly
 - Use file_path:line_number format for code references
 - Don't narrate internal deliberation
+
+DO NOT AUTO-EXTEND THIS FILE UNLESS ASKED - if you feel the need - suggest with SHORT summary what you want to put it at end
