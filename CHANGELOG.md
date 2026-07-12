@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-12
+
+### Added
+
+- **xDrip SGV timestamp handling**: Back-filled readings now correctly placed in history at measurement time, not arrival time
+  - Extracts actual timestamp from xDrip broadcasts (supports both legacy and newer broadcast formats)
+  - Only newest reading displayed as current in UI and sent to watches
+  - Historical readings added to graph regardless of arrival order
+- **No-data state handling**: New BgEstimateNoData broadcast indicates sensor connection with no current reading
+  - Shows "---" on watch when xDrip has no data but is still connected
+  - Helps distinguish between "no connection" vs "waiting for data"
+
+### Fixed
+
+- **xDrip broadcast receiving**: Fixed timestamp field detection to use correct field names
+  - Tries `bg.timeStamp` (newer API) or `Extras.Time` (older API)
+  - Fallback to current time if timestamp not available (maintains backward compatibility)
+- **Gradle Java configuration**: Automatic detection of Java 21 from multiple sources prevents VSCode restart issues
+
 ## [1.1.1] - 2026-07-12
 
 ### Fixed
