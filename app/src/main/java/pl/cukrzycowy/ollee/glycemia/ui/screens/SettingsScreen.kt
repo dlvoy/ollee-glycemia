@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -99,181 +101,188 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
 
     FullScreenScaffold(title = stringResource(R.string.settings_title), onBack = onBack) {
-        FoldableSection(
-            title = stringResource(R.string.settings_permissions),
-            expanded = permissionsExpanded,
-            onToggle = { permissionsExpanded = it }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
-                perms.forEach { perm ->
-                    val label = getPermissionLabel(perm)
-                    refreshTrigger
-                    val hasPermission = ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
-                    val buttonColor = if (hasPermission) Color(0xFF00AA00) else Color(0xFFCC0000)
-                    Button(
-                        onClick = {
-                            if (hasPermission) {
-                                openAppSettings(context)
-                            } else {
-                                requestPermission(context, perm)
-                            }
-                            refreshTrigger++
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = buttonColor,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(text = (if (hasPermission) "✓ " else "✗ ") + label)
-                    }
-                }
-            }
-        }
-
-        FoldableSection(
-            title = stringResource(R.string.battery_optimization_title),
-            expanded = batteryExpanded,
-            onToggle = { batteryExpanded = it }
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
-                if (isIgnoringBatteryOptimization) {
-                    Button(
-                        onClick = {
-                            openAppSettings(context)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00AA00),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(stringResource(R.string.battery_optimization_disabled))
-                    }
-                } else {
-                    Text(stringResource(R.string.battery_optimization_description))
-                    Button(
-                        onClick = {
-                            requestIgnoreBatteryOptimization(context)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFCC8800),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(stringResource(R.string.battery_optimization_disable))
-                    }
-                }
-            }
-        }
-
-        FoldableSection(
-            title = stringResource(R.string.settings_watch_labels),
-            expanded = watchLabelsExpanded,
-            onToggle = { watchLabelsExpanded = it }
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
-                var pauseLabel by remember { mutableStateOf(WatchActivityLabelStore.getPauseLabel(context)) }
-                var stopLabel by remember { mutableStateOf(WatchActivityLabelStore.getStopLabel(context)) }
-
-                OutlinedTextField(
-                    value = pauseLabel,
-                    onValueChange = {
-                        if (it.length <= 6) {
-                            pauseLabel = it
-                            WatchActivityLabelStore.setPauseLabel(context, it)
-                        }
-                    },
-                    label = { Text(stringResource(R.string.settings_pause_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = stopLabel,
-                    onValueChange = {
-                        if (it.length <= 6) {
-                            stopLabel = it
-                            WatchActivityLabelStore.setStopLabel(context, it)
-                        }
-                    },
-                    label = { Text(stringResource(R.string.settings_stop_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-        }
-
-        FoldableSection(
-            title = stringResource(R.string.settings_night_auto_pause),
-            expanded = nightAutoPauseExpanded,
-            onToggle = { nightAutoPauseExpanded = it }
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.md)) {
-                var isAutoPauseEnabled by remember { mutableStateOf(NightAutoPauseStore.isEnabled(context)) }
-                var startTime by remember { mutableStateOf(NightAutoPauseStore.getStartTime(context)) }
-                var endTime by remember { mutableStateOf(NightAutoPauseStore.getEndTime(context)) }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = OlleeSpacing.sm),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Text(stringResource(R.string.settings_night_auto_pause_enable))
-                    Switch(
-                        checked = isAutoPauseEnabled,
-                        onCheckedChange = { newValue ->
-                            val wasEnabled = isAutoPauseEnabled
-                            isAutoPauseEnabled = newValue
-                            NightAutoPauseStore.setEnabled(context, newValue)
-                            if (newValue) {
-                                NightAutoPauseScheduler.scheduleNextCheck(context)
-                                NightAutoPauseScheduler.checkAndApply(context)
-                            } else {
-                                NightAutoPauseScheduler.cancel(context)
-                                if (wasEnabled) {
-                                    resumeAllPausedWatches(context)
+            FoldableSection(
+                title = stringResource(R.string.settings_permissions),
+                expanded = permissionsExpanded,
+                onToggle = { permissionsExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                    perms.forEach { perm ->
+                        val label = getPermissionLabel(perm)
+                        refreshTrigger
+                        val hasPermission = ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+                        val buttonColor = if (hasPermission) Color(0xFF00AA00) else Color(0xFFCC0000)
+                        Button(
+                            onClick = {
+                                if (hasPermission) {
+                                    openAppSettings(context)
+                                } else {
+                                    requestPermission(context, perm)
                                 }
+                                refreshTrigger++
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = buttonColor,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(text = (if (hasPermission) "✓ " else "✗ ") + label)
+                        }
+                    }
+                }
+            }
+
+            FoldableSection(
+                title = stringResource(R.string.battery_optimization_title),
+                expanded = batteryExpanded,
+                onToggle = { batteryExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                    if (isIgnoringBatteryOptimization) {
+                        Button(
+                            onClick = {
+                                openAppSettings(context)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF00AA00),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(stringResource(R.string.battery_optimization_disabled))
+                        }
+                    } else {
+                        Text(stringResource(R.string.battery_optimization_description))
+                        Button(
+                            onClick = {
+                                requestIgnoreBatteryOptimization(context)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFCC8800),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(stringResource(R.string.battery_optimization_disable))
+                        }
+                    }
+                }
+            }
+
+            FoldableSection(
+                title = stringResource(R.string.settings_watch_labels),
+                expanded = watchLabelsExpanded,
+                onToggle = { watchLabelsExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                    var pauseLabel by remember { mutableStateOf(WatchActivityLabelStore.getPauseLabel(context)) }
+                    var stopLabel by remember { mutableStateOf(WatchActivityLabelStore.getStopLabel(context)) }
+
+                    OutlinedTextField(
+                        value = pauseLabel,
+                        onValueChange = {
+                            if (it.length <= 6) {
+                                pauseLabel = it
+                                WatchActivityLabelStore.setPauseLabel(context, it)
                             }
                         },
-                        colors = SwitchDefaults.colors(
-                            uncheckedThumbColor = Color.White
-                        )
+                        label = { Text(stringResource(R.string.settings_pause_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
-                }
 
-                if (isAutoPauseEnabled) {
-                    TimeRangeSelector(
-                        startTime = startTime,
-                        endTime = endTime,
-                        onStartTimeChange = { newTime ->
-                            startTime = newTime
-                            NightAutoPauseStore.setStartTime(context, newTime)
-                            NightAutoPauseScheduler.checkAndApply(context)
+                    OutlinedTextField(
+                        value = stopLabel,
+                        onValueChange = {
+                            if (it.length <= 6) {
+                                stopLabel = it
+                                WatchActivityLabelStore.setStopLabel(context, it)
+                            }
                         },
-                        onEndTimeChange = { newTime ->
-                            endTime = newTime
-                            NightAutoPauseStore.setEndTime(context, newTime)
-                            NightAutoPauseScheduler.checkAndApply(context)
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text(stringResource(R.string.settings_stop_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                 }
             }
-        }
 
-        FoldableSection(
-            title = stringResource(R.string.settings_about),
-            expanded = aboutExpanded,
-            onToggle = { aboutExpanded = it }
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
-                Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))
-                Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
-                Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+            FoldableSection(
+                title = stringResource(R.string.settings_night_auto_pause),
+                expanded = nightAutoPauseExpanded,
+                onToggle = { nightAutoPauseExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.md)) {
+                    var isAutoPauseEnabled by remember { mutableStateOf(NightAutoPauseStore.isEnabled(context)) }
+                    var startTime by remember { mutableStateOf(NightAutoPauseStore.getStartTime(context)) }
+                    var endTime by remember { mutableStateOf(NightAutoPauseStore.getEndTime(context)) }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = OlleeSpacing.sm),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Text(stringResource(R.string.settings_night_auto_pause_enable))
+                        Switch(
+                            checked = isAutoPauseEnabled,
+                            onCheckedChange = { newValue ->
+                                val wasEnabled = isAutoPauseEnabled
+                                isAutoPauseEnabled = newValue
+                                NightAutoPauseStore.setEnabled(context, newValue)
+                                if (newValue) {
+                                    NightAutoPauseScheduler.scheduleNextCheck(context)
+                                    NightAutoPauseScheduler.checkAndApply(context)
+                                } else {
+                                    NightAutoPauseScheduler.cancel(context)
+                                    if (wasEnabled) {
+                                        resumeAllPausedWatches(context)
+                                    }
+                                }
+                            },
+                            colors = SwitchDefaults.colors(
+                                uncheckedThumbColor = Color.White
+                            )
+                        )
+                    }
+
+                    if (isAutoPauseEnabled) {
+                        TimeRangeSelector(
+                            startTime = startTime,
+                            endTime = endTime,
+                            onStartTimeChange = { newTime ->
+                                startTime = newTime
+                                NightAutoPauseStore.setStartTime(context, newTime)
+                                NightAutoPauseScheduler.checkAndApply(context)
+                            },
+                            onEndTimeChange = { newTime ->
+                                endTime = newTime
+                                NightAutoPauseStore.setEndTime(context, newTime)
+                                NightAutoPauseScheduler.checkAndApply(context)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            FoldableSection(
+                title = stringResource(R.string.settings_about),
+                expanded = aboutExpanded,
+                onToggle = { aboutExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                    Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))
+                    Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
+                    Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+                }
             }
         }
     }
