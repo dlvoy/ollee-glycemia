@@ -6,8 +6,8 @@
             "type": "shell",
             "command": "bash",
             "args": [
-                "./gradlew",
-                "assembleDebug"
+                "-c",
+                "JAVA_HOME=\"${JAVA_HOME:=$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21)}\" ./gradlew assembleDebug"
             ],
             "isBackground": false,
             "presentation": {
@@ -23,7 +23,8 @@
             "type": "shell",
             "command": "bash",
             "args": [
-                "build-and-select.sh"
+                "-c",
+                "JAVA_HOME=\"${JAVA_HOME:=$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21)}\" bash build-and-select.sh"
             ],
             "isBackground": false,
             "presentation": {
@@ -39,7 +40,8 @@
             "type": "shell",
             "command": "bash",
             "args": [
-                "build-and-launch.sh"
+                "-c",
+                "JAVA_HOME=\"${JAVA_HOME:=$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21)}\" bash build-and-launch.sh"
             ],
             "isBackground": false,
             "presentation": {

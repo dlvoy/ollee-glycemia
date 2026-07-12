@@ -2,8 +2,29 @@
 
 ## Prerequisites
 
-- JDK 17
+- **Java 21** (required by Android Gradle plugin; Homebrew, SDKMAN, or system installation)
 - Android SDK (compileSdk 36, minSdk 24)
+
+### Java Setup
+
+The build requires Java 21. Install via:
+
+**macOS (Homebrew):**
+```bash
+brew install openjdk@21
+```
+
+**Linux (SDKMAN):**
+```bash
+sdk install java 21.current
+```
+
+**Or use an existing Java 21 installation:**
+```bash
+export JAVA_HOME=/path/to/java21
+```
+
+The build system auto-detects Java from common installation paths. If your setup isn't detected, set `JAVA_HOME` before building.
 
 ## Build locally
 

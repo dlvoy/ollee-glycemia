@@ -6,5 +6,15 @@
             "matchCommandLine": true
         }
     },
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.jdt.ls.java.home": "/opt/homebrew/opt/openjdk@21",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/opt/homebrew/opt/openjdk@21",
+            "default": true
+        }
+    ],
+    "_comment": "java.jdt.ls.java.home: Set to your Java 21 installation. Common paths: /opt/homebrew/opt/openjdk@21 (macOS ARM), /usr/local/opt/openjdk@21 (macOS Intel), /usr/lib/jvm/java-21 (Linux), $HOME/.sdkman/candidates/java/21.current (SDKMAN)",
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "redhat.telemetry.enabled": false
 }

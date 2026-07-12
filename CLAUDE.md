@@ -60,6 +60,18 @@ app/src/main/java/pl/cukrzycowy/ollee/glycemia/
 4. **Test filtering logic** - old readings shouldn't override current ones
 5. **Update tests** - any new behavior needs test coverage
 
+## VSCode & Gradle Configuration
+
+### Java Version
+- **System**: Homebrew OpenJDK 21 at `/opt/homebrew/opt/openjdk@21`
+- **VSCode Java Extension**: Configured to use Homebrew Java (see `.vscode/settings.json`)
+- **Gradle Tasks**: Auto-set JAVA_HOME before execution (see `.vscode/tasks.json`)
+
+### Why This Matters
+After VSCode restart, the Java extension may try to use its bundled JRE which lacks `jlink`. The configuration prevents this automatically — **no manual `./gradlew --stop` needed**.
+
+See `docs/GRADLE_JAVA_FIX.md` for detailed explanation.
+
 ## Communication Style
 - Be concise and direct
 - Show what changed and why
