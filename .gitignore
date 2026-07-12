@@ -19,3 +19,4 @@ local.properties
 .idea/codeStyles/*
 project/screens/*
 project/prompts/*
+project/release.keystore

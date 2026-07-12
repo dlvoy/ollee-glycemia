@@ -13,7 +13,8 @@ Each command:
 2. Increments the appropriate semver field
 3. Updates version in gradle file
 4. Prepares CHANGELOG.md with new version section (dated today)
-5. Does NOT create a commit (you review first)
+5. Adds tag link to CHANGELOG.md (for manual tagging with `git tag`)
+6. Does NOT create a commit or tag (you handle git manually)
 
 Usage:
 ```

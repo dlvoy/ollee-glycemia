@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-07-12
+
+### Changed
+
+- **Changelog versioning workflow**: Changelog bump scripts now automatically add release tag links to CHANGELOG.md, eliminating manual link entry
+  - Tag links are inserted in markdown format at the end of the file following Keep a Changelog conventions
+  - Git tagging remains manual (user controls `git tag` after commit)
+
+
 ## [1.2.1] - 2026-07-12
 
 ### Added
@@ -87,10 +96,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sync count no longer includes paused or stopped watches in status reporting
 
-[1.1.1]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.1.1
-[1.1.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.1.0
-[1.0.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.0.0
-
 ## [1.0.0] - 2026-07-10
 
 ### Added
@@ -105,3 +110,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pluggable provider architecture**: Extensible design for adding new glucose data sources
 - **Bluetooth permission management**: Comprehensive Bluetooth Connect and Scan permission handling
 - **Smooth data interpolation**: Synthetic glucose value generation using Hermite interpolation
+
+[1.2.2]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.2
+[1.2.1]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.1
+[1.2.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.0
+[1.1.1]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.1.1
+[1.1.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.1.0
+[1.0.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.0.0

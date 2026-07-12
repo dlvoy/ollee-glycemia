@@ -84,9 +84,25 @@ EOF
 # Add rest of original changelog (skip first 6 lines which are headers)
 tail -n +7 "$CHANGELOG_FILE" >> "$TEMP_CHANGELOG"
 
+# Check if link definitions section exists (lines starting with [version]:)
+if grep -q "^\[.*\]: https://" "$TEMP_CHANGELOG"; then
+    # Insert the new link definition before the first existing link (only once)
+    # Use a marker to find the first occurrence and insert before it
+    LINE_NUM=$(grep -n "^\[.*\]: https://" "$TEMP_CHANGELOG" | head -1 | cut -d: -f1)
+    if [ -n "$LINE_NUM" ]; then
+        # Use awk to insert at the specific line
+        awk -v line="$LINE_NUM" -v newline="[$NEW_VERSION]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v$NEW_VERSION" \
+            'NR == line {print newline} {print}' "$TEMP_CHANGELOG" > "$TEMP_CHANGELOG.tmp" && mv "$TEMP_CHANGELOG.tmp" "$TEMP_CHANGELOG"
+    fi
+else
+    # Add link definition at the end if none exist
+    echo "" >> "$TEMP_CHANGELOG"
+    echo "[$NEW_VERSION]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v$NEW_VERSION" >> "$TEMP_CHANGELOG"
+fi
+
 mv "$TEMP_CHANGELOG" "$CHANGELOG_FILE"
 
-echo "✓ Updated $CHANGELOG_FILE"
+echo "✓ Updated $CHANGELOG_FILE with tag link"
 echo ""
 echo "✅ Version bumped: $CURRENT_VERSION → $NEW_VERSION"
 echo ""
