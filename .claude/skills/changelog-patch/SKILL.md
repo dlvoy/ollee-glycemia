@@ -5,7 +5,8 @@ description: Bump patch version (1.2.0 → 1.2.1) and write real CHANGELOG entri
 
 1. Run from the project root:
    ```bash
-   cd "$(git rev-parse --show-toplevel)" && bash scripts/bump-version.sh patch
+   cd "$(git rev-parse --show-toplevel)"
+   bash scripts/bump-version.sh patch
    ```
 2. Find the commits included in this release — everything since the last commit that touched CHANGELOG.md:
    ```bash

@@ -5,7 +5,8 @@ description: Bump minor version (1.2.0 → 1.3.0) and write real CHANGELOG entri
 
 1. Run from the project root:
    ```bash
-   cd "$(git rev-parse --show-toplevel)" && bash scripts/bump-version.sh minor
+   cd "$(git rev-parse --show-toplevel)"
+   bash scripts/bump-version.sh minor
    ```
 2. Find the commits included in this release — everything since the last commit that touched CHANGELOG.md:
    ```bash
