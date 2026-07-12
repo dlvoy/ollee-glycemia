@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{ read -r line; input=$(echo \"$line\" | jq -r '.user_input // empty'); if echo \"$input\" | grep -q '^/changelog-'; then cmd=$(echo \"$input\" | sed 's|/changelog-||' | sed 's/ .*//'); bash scripts/bump-version.sh \"$cmd\"; fi; } < /dev/stdin",
+            "statusMessage": "Running version bump..."
+          }
+        ]
+      }
+    ]
+  }
+}
