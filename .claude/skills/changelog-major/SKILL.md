@@ -3,7 +3,7 @@ name: changelog-major
 description: Bump major version (1.2.0 → 2.0.0) and write real CHANGELOG entries for it
 ---
 
-1. Run from the project root:
+1. Run from the project root (one by one! do not run with &&!):
    ```bash
    cd "$(git rev-parse --show-toplevel)"
    bash scripts/bump-version.sh major
