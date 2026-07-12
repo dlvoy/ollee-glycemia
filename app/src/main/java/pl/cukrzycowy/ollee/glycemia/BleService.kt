@@ -22,6 +22,7 @@ class BleService : Service() {
     private val connections = mutableMapOf<String, WatchConnection>()
     private var currentProvider: GlycemiaProvider? = null
     private var isInErrorState = false
+    private var lastKnownReadingTimestamp: Long = 0L
 
     companion object {
         const val CHANNEL_ID = "ble_service_channel"
@@ -45,6 +46,7 @@ class BleService : Service() {
 
         prefs = getSharedPreferences("data", MODE_PRIVATE)
         notificationManager = getSystemService(NotificationManager::class.java)
+        lastKnownReadingTimestamp = prefs.getLong("last_time", 0L)
 
         createNotificationChannel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -86,6 +88,7 @@ class BleService : Service() {
         when (intent?.action) {
             ACTION_SWITCH_PROVIDER -> {
                 currentProvider?.stop(this)
+                lastKnownReadingTimestamp = 0L
                 currentProvider = GlycemiaProviderManager.getSelected(this).also {
                     it.start(this, ::onGlycemiaReading)
                 }
@@ -205,11 +208,7 @@ class BleService : Service() {
     // ========================
 
     private fun onGlycemiaReading(reading: GlycemiaReading) {
-        prefs.edit()
-            .putString("last_bg", reading.bg)
-            .putFloat("last_delta", reading.delta?.toFloat() ?: Float.NaN)
-            .putLong("last_time", reading.timestamp)
-            .apply()
+        val isNewerReading = reading.timestamp > lastKnownReadingTimestamp
 
         reading.bg.toIntOrNull()?.let { valueMgDl ->
             GlycemiaHistoryStore.append(
@@ -223,9 +222,21 @@ class BleService : Service() {
             sendBroadcast(Intent("GLYCEMIA_HISTORY_UPDATED"))
         }
 
-        handleBg(reading.bg, reading.trend, reading.delta)
+        if (isNewerReading) {
+            lastKnownReadingTimestamp = reading.timestamp
+            prefs.edit()
+                .putString("last_bg", reading.bg)
+                .putFloat("last_delta", reading.delta?.toFloat() ?: Float.NaN)
+                .putLong("last_time", reading.timestamp)
+                .apply()
 
-        sendBroadcast(Intent("BG_UPDATED"))
+            handleBg(reading.bg, reading.trend, reading.delta)
+            sendBroadcast(Intent("BG_UPDATED"))
+        } else {
+            log("Ignoring archival SGV reading (timestamp: ${reading.timestamp}, current: $lastKnownReadingTimestamp)")
+        }
+
+        sendBroadcast(Intent("GLYCEMIA_UPDATED"))
     }
 
     private fun handleBg(bg: String, trend: String?, delta: Double? = null) {

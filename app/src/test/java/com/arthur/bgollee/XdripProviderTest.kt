@@ -16,10 +16,12 @@ class XdripProviderTest {
 
     @Test
     fun parseIntent_mapsNightscoutBroadcast() {
+        val testTimestamp = 1000000L
         val intent = Intent("org.nightscout.android.broadcast")
             .putExtra("glucose_value", 145.0)
             .putExtra("delta", 4.5)
             .putExtra("trend_arrow", 5)
+            .putExtra("timestamp", testTimestamp)
 
         val reading = provider.parseIntent(intent)
 
@@ -27,12 +29,26 @@ class XdripProviderTest {
         assertEquals("145", reading.bg)
         assertEquals("UP", reading.trend)
         assertEquals(4.5, reading.delta ?: Double.NaN, 0.0)
+        assertEquals(testTimestamp, reading.timestamp)
+    }
+
+    @Test
+    fun parseIntent_nightscoutBroadcast_fallsBackToCurrentTimeWhenNoTimestamp() {
+        val intent = Intent("org.nightscout.android.broadcast")
+            .putExtra("glucose_value", 145.0)
+
+        val reading = provider.parseIntent(intent)
+
+        requireNotNull(reading)
+        assertEquals("145", reading.bg)
+        assert(reading.timestamp >= System.currentTimeMillis() - 1000) // Allow 1s margin
     }
 
     @Test
     fun parseIntent_mapsCompatibleJsonBroadcast() {
+        val testTimestamp = 2000000L
         val intent = Intent("com.eveningoutpost.dexdrip.ExternalStatusChange")
-            .putExtra("status", "{\"sgv\":123,\"delta\":-2.0,\"direction\":\"Flat\"}")
+            .putExtra("status", "{\"sgv\":123,\"delta\":-2.0,\"direction\":\"Flat\",\"timestamp\":$testTimestamp}")
 
         val reading = provider.parseIntent(intent)
 
@@ -40,13 +56,29 @@ class XdripProviderTest {
         assertEquals("123", reading.bg)
         assertEquals("FLAT", reading.trend)
         assertEquals(-2.0, reading.delta ?: Double.NaN, 0.0)
+        assertEquals(testTimestamp, reading.timestamp)
+    }
+
+    @Test
+    fun parseIntent_compatibleJsonBroadcast_extractsTimeFromJsonAlternateFields() {
+        val intent1 = Intent("com.eveningoutpost.dexdrip.ExternalStatusChange")
+            .putExtra("status", "{\"sgv\":123,\"time\":3000000}")
+        val reading1 = provider.parseIntent(intent1)
+        assertEquals(3000000L, reading1?.timestamp)
+
+        val intent2 = Intent("com.eveningoutpost.dexdrip.ExternalStatusChange")
+            .putExtra("status", "{\"sgv\":123,\"date\":4000000}")
+        val reading2 = provider.parseIntent(intent2)
+        assertEquals(4000000L, reading2?.timestamp)
     }
 
     @Test
     fun parseIntent_mapsXdripBroadcastAndCalculatesDeltaFromSlope() {
+        val testTimestamp = 5000000L
         val intent = Intent("com.eveningoutpost.dexdrip.BROADCAST")
             .putExtra("com.eveningoutpost.dexdrip.Extras.BgEstimate", 111.0)
             .putExtra("com.eveningoutpost.dexdrip.Extras.BgSlope", -2.0)
+            .putExtra("com.eveningoutpost.dexdrip.Extras.SgvTimestampMs", testTimestamp)
 
         val reading = provider.parseIntent(intent)
 
@@ -54,6 +86,7 @@ class XdripProviderTest {
         assertEquals("111", reading.bg)
         assertEquals("DOWN", reading.trend)
         assertEquals(-600000.0, reading.delta ?: Double.NaN, 0.0)
+        assertEquals(testTimestamp, reading.timestamp)
     }
 
     @Test

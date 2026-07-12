@@ -46,11 +46,13 @@ class XdripProvider : GlycemiaProvider {
             else -> null
         }
 
+        val timestamp = readTimestamp(intent, "timestamp") ?: System.currentTimeMillis()
+
         return GlycemiaReading(
             bg = glucoseValue.toInt().toString(),
             trend = trend,
             delta = delta,
-            timestamp = System.currentTimeMillis()
+            timestamp = timestamp
         )
     }
 
@@ -82,11 +84,14 @@ class XdripProvider : GlycemiaProvider {
 
         val delta = readNumericExtra(intent, "delta") ?: slope?.let { it * 300000.0 }
 
+        val timestamp = readTimestamp(intent, "com.eveningoutpost.dexdrip.Extras.SgvTimestampMs")
+            ?: System.currentTimeMillis()
+
         return GlycemiaReading(
             bg = bg,
             trend = trend,
             delta = delta,
-            timestamp = System.currentTimeMillis()
+            timestamp = timestamp
         )
     }
 
@@ -113,11 +118,13 @@ class XdripProvider : GlycemiaProvider {
                 else -> null
             }
 
+            val timestamp = readJsonTimestamp(json) ?: System.currentTimeMillis()
+
             GlycemiaReading(
                 bg = sgv.toInt().toString(),
                 trend = trend,
                 delta = if (json.has("delta")) json.getDouble("delta") else null,
-                timestamp = System.currentTimeMillis()
+                timestamp = timestamp
             )
         } catch (error: Exception) {
             Log.e("XDRIP", "[Compatible] Error parsing JSON status", error)
@@ -155,5 +162,35 @@ class XdripProvider : GlycemiaProvider {
         if (longValue != longSentinel) return longValue.toDouble()
 
         return intent.getStringExtra(key)?.toDoubleOrNull()
+    }
+
+    private fun readTimestamp(intent: Intent, key: String): Long? {
+        if (!intent.hasExtra(key)) return null
+
+        val longSentinel = Long.MIN_VALUE
+        val longValue = intent.getLongExtra(key, longSentinel)
+        if (longValue != longSentinel) return longValue
+
+        val intSentinel = Int.MIN_VALUE
+        val intValue = intent.getIntExtra(key, intSentinel)
+        if (intValue != intSentinel) return intValue.toLong()
+
+        return intent.getStringExtra(key)?.toLongOrNull()
+    }
+
+    private fun readJsonTimestamp(json: JSONObject): Long? {
+        return when {
+            json.has("timestamp") -> json.optLong("timestamp", 0).takeIf { it > 0 }
+            json.has("time") -> json.optLong("time", 0).takeIf { it > 0 }
+            json.has("date") -> json.optLong("date", 0).takeIf { it > 0 }
+            json.has("dateString") -> {
+                try {
+                    json.optString("dateString").toLong()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            else -> null
+        }
     }
 }
