@@ -1,1 +1,12 @@
-{}
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(bash scripts/bump-version.sh:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git rev-parse:*)"
+    ]
+  }
+}
+
