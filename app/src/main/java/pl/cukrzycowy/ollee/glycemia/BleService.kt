@@ -33,6 +33,7 @@ class BleService : Service() {
         const val ACTION_RESEND_GLYCEMIA = "pl.cukrzycowy.ollee.glycemia.RESEND_GLYCEMIA"
         const val ACTION_MANUAL_SYNC_WATCH = "pl.cukrzycowy.ollee.glycemia.MANUAL_SYNC_WATCH"
         const val ACTION_SET_WATCH_ACTIVITY = "pl.cukrzycowy.ollee.glycemia.SET_WATCH_ACTIVITY"
+        const val ACTION_DEBUG_TOGGLE_OFFLINE = "pl.cukrzycowy.ollee.glycemia.DEBUG_TOGGLE_OFFLINE"
         const val EXTRA_WATCH_ADDRESS = "watch_address"
         const val EXTRA_ACTIVITY_STATE = "activity_state"
     }
@@ -128,6 +129,14 @@ class BleService : Service() {
                     } catch (e: Exception) {
                         log("Invalid activity state: $stateName")
                     }
+                }
+                return START_STICKY
+            }
+
+            ACTION_DEBUG_TOGGLE_OFFLINE -> {
+                val watchAddress = intent?.getStringExtra(EXTRA_WATCH_ADDRESS)
+                if (watchAddress != null) {
+                    debugToggleWatchOffline(watchAddress)
                 }
                 return START_STICKY
             }
@@ -464,6 +473,32 @@ class BleService : Service() {
             toSubmit?.let { conn.submitReading(it) }
         }
         publishStatuses()
+    }
+
+    private fun debugToggleWatchOffline(watchAddress: String) {
+        val connection = connections[watchAddress] ?: return
+        val now = System.currentTimeMillis()
+
+        if (connection.state == WatchConnState.OFFLINE) {
+            // Turn online - set last sync to now
+            WatchStore.updateLastSyncTime(this, watchAddress, now)
+            connection.updateWatch(connection.watch.copy(lastSuccessfulSyncTimeMs = now))
+            connection.connect()
+            val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
+            if (lastSent != null) {
+                connection.submitReading(lastSent)
+            }
+            publishStatuses()
+            log("Debug: Watch $watchAddress turned ONLINE")
+        } else {
+            // Turn offline - set last sync to 1 day ago
+            val oneDayAgoMs = now - (24 * 60 * 60 * 1000L)
+            WatchStore.updateLastSyncTime(this, watchAddress, oneDayAgoMs)
+            connection.updateWatch(connection.watch.copy(lastSuccessfulSyncTimeMs = oneDayAgoMs))
+            connection.disconnectSoft()
+            publishStatuses()
+            log("Debug: Watch $watchAddress turned OFFLINE")
+        }
     }
 
     private fun log(msg: String) {

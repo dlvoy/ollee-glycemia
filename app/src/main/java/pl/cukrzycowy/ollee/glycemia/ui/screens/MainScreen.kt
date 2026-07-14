@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
@@ -67,6 +68,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import pl.cukrzycowy.ollee.glycemia.AppState
 import pl.cukrzycowy.ollee.glycemia.BleService
+import pl.cukrzycowy.ollee.glycemia.DebugStore
 import pl.cukrzycowy.ollee.glycemia.GlycemiaGraphView
 import pl.cukrzycowy.ollee.glycemia.GlycemiaProviderManager
 import pl.cukrzycowy.ollee.glycemia.PairedWatch
@@ -804,6 +806,8 @@ fun MainScreen(nav: AppNavController) {
                     if (actionWatch != null) {
                         WatchActionsDialog(
                             watch = actionWatch.watch,
+                            isOffline = actionWatch.isOfflineByTimeout || actionWatch.state == WatchConnState.OFFLINE,
+                            showDebugOption = DebugStore.isDebugModeEnabled(context),
                             onResume = {
                                 showActionsMenuFor = null
                                 val intent = Intent(context, BleService::class.java).apply {
@@ -834,6 +838,24 @@ fun MainScreen(nav: AppNavController) {
                             onDelete = {
                                 showActionsMenuFor = null
                                 showDeleteConfirm = actionWatch.watch.address
+                            },
+                            onDebugToggle = {
+                                showActionsMenuFor = null
+                                val intent = Intent(context, BleService::class.java).apply {
+                                    action = BleService.ACTION_DEBUG_TOGGLE_OFFLINE
+                                    putExtra(BleService.EXTRA_WATCH_ADDRESS, actionWatch.watch.address)
+                                }
+                                try {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        context.startForegroundService(intent)
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        context.startService(intent)
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MainScreen", "Failed to toggle watch debug state: ${e.message}")
+                                }
+                                refreshWatchList(context)
                             },
                             onDismiss = { showActionsMenuFor = null }
                         )
@@ -926,10 +948,13 @@ private fun GraphRangeDialog(
 @Composable
 private fun WatchActionsDialog(
     watch: PairedWatch,
+    isOffline: Boolean,
+    showDebugOption: Boolean,
     onResume: () -> Unit,
     onPause: () -> Unit,
     onStop: () -> Unit,
     onDelete: () -> Unit,
+    onDebugToggle: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -958,6 +983,13 @@ private fun WatchActionsDialog(
                         icon = Icons.Filled.Stop,
                         label = stringResource(R.string.watch_action_stop),
                         onClick = onStop
+                    )
+                }
+                if (showDebugOption) {
+                    IconActionRow(
+                        icon = Icons.Filled.BugReport,
+                        label = if (isOffline) "Turn online" else "Turn offline",
+                        onClick = onDebugToggle
                     )
                 }
                 IconActionRow(

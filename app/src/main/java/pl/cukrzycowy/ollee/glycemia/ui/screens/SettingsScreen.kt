@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,6 +32,7 @@ import pl.cukrzycowy.ollee.glycemia.NightAutoPauseStore
 import pl.cukrzycowy.ollee.glycemia.WatchStore
 import pl.cukrzycowy.ollee.glycemia.WatchActivityState
 import pl.cukrzycowy.ollee.glycemia.BleService
+import pl.cukrzycowy.ollee.glycemia.DebugStore
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
@@ -53,6 +57,11 @@ fun SettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var refreshTrigger by remember { mutableStateOf(0) }
     var wasAutoPauseEnabled by remember { mutableStateOf(NightAutoPauseStore.isEnabled(context)) }
+
+    var versionClickCount by remember { mutableIntStateOf(0) }
+    var devOptionsUnlocked by remember { mutableStateOf(DebugStore.isDeveloperOptionsUnlocked(context)) }
+    var debugModeEnabled by remember { mutableStateOf(DebugStore.isDebugModeEnabled(context)) }
+    var lastToast by remember { mutableStateOf<Toast?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -88,6 +97,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     var watchLabelsExpanded by remember { mutableStateOf(true) }
     var nightAutoPauseExpanded by remember { mutableStateOf(true) }
     var aboutExpanded by remember { mutableStateOf(true) }
+    var devOptionsExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(allPermissionsGranted) {
         if (allPermissionsGranted) {
@@ -280,9 +290,58 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onToggle = { aboutExpanded = it }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
-                    Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME))
+                    Text(
+                        text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+                        modifier = Modifier.clickable {
+                            if (devOptionsUnlocked) {
+                                Toast.makeText(context, "Already developer", Toast.LENGTH_SHORT).show()
+                            } else {
+                                versionClickCount++
+                                val remaining = 7 - versionClickCount
+                                when {
+                                    remaining == 3 || (remaining in 0..2 && versionClickCount < 7) -> {
+                                        lastToast?.cancel()
+                                        lastToast = Toast.makeText(context, "Only $remaining clicks left...", Toast.LENGTH_SHORT).apply { show() }
+                                    }
+                                    versionClickCount == 7 -> {
+                                        lastToast?.cancel()
+                                        DebugStore.setDeveloperOptionsUnlocked(context, true)
+                                        devOptionsUnlocked = true
+                                        Toast.makeText(context, "Developer options shown", Toast.LENGTH_SHORT).show()
+                                    }
+                                    versionClickCount > 7 -> {
+                                        versionClickCount = 0
+                                    }
+                                }
+                            }
+                        }
+                    )
                     Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
                     Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+                }
+            }
+
+            if (devOptionsUnlocked && BuildConfig.DEBUG) {
+                FoldableSection(
+                    title = "Development options",
+                    expanded = devOptionsExpanded,
+                    onToggle = { devOptionsExpanded = it }
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                        Button(
+                            onClick = {
+                                debugModeEnabled = !debugModeEnabled
+                                DebugStore.setDebugModeEnabled(context, debugModeEnabled)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (debugModeEnabled) Color(0xFF00AA00) else Color(0xFFCC0000),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(if (debugModeEnabled) "✓ Debug mode enabled" else "✗ Enable debug mode")
+                        }
+                    }
                 }
             }
         }
