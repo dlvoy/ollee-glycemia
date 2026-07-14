@@ -34,6 +34,15 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "version=${TAG#v}" >> $GITHUB_OUTPUT
 
+      - name: Extract changelog section
+        id: changelog
+        run: |
+          chmod +x scripts/extract-changelog.sh
+          CHANGELOG_BODY=$(scripts/extract-changelog.sh "${{ steps.version.outputs.version }}")
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       # ── Signing (optional) ──────────────────────────────────────────────────
       - name: Decode keystore (if secrets are set)
         if: >
@@ -77,6 +86,9 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
+          body: |
+            ${{ steps.changelog.outputs.body }}
+
           generate_release_notes: true
           files: output/ollee-glycemia-${{ steps.version.outputs.version }}-release.apk
 
