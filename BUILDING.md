@@ -90,6 +90,35 @@ Developer options are hidden by default. To unlock them:
 
 This workflow does not build release APKs — release builds are only produced by tagging a commit, see [RELEASING.md](RELEASING.md).
 
+## Git Hooks Configuration
+
+This repository enforces GitHub noreply email usage for all commits. After cloning, run the setup script:
+
+```bash
+./scripts/setup-git-hooks.sh
+```
+
+This configures Git to use the hooks in `.githooks/`. The `commit-msg` hook validates that all commits use a GitHub noreply email address in the format:
+
+```
+<number>+<username>@users.noreply.github.com
+```
+
+Example: `5094588+dlvoy@users.noreply.github.com`
+
+**What happens if you try to commit with a different email:**
+- Your commit will be **rejected locally** with an error message
+- The CI/CD pipeline will also reject commits with invalid emails (see `.github/workflows/verify-authors.yml`)
+
+**To check or update your email configuration:**
+```bash
+# View your current author email
+git config user.email
+
+# Set your GitHub noreply email (replace 12345 and username with your values)
+git config user.email "12345+username@users.noreply.github.com"
+```
+
 ## Signing release builds locally
 
 Release builds are signed automatically if the following environment variables are set when running `assembleRelease`; otherwise an unsigned APK is produced.

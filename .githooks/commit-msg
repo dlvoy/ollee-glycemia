@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+EMAIL=$(git var GIT_AUTHOR_IDENT | sed -E 's/.*<(.*)>.*/\1/')
+
+if [[ ! "$EMAIL" =~ ^[0-9]+\+.*@users\.noreply\.github\.com$ ]]; then
+    echo
+    echo "ERROR: Commits must use a GitHub noreply email."
+    echo "Current author email: $EMAIL"
+    echo
+    echo "Expected format: <number>+<username>@users.noreply.github.com"
+    echo "Example: 5094588+dlvoy@users.noreply.github.com"
+    echo
+    exit 1
+fi

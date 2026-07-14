@@ -1,0 +1,28 @@
+name: Verify Commit Authors
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify-authors:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Commit Emails
+        run: |
+          INVALID=$(git log --format='%ae' \
+            | sort -u \
+            | grep -vE '^[0-9]+\+.*@users\.noreply\.github\.com$' || true)
+
+          if [ -n "$INVALID" ]; then
+            echo "ERROR: Found commits with invalid email addresses:"
+            echo "$INVALID"
+            echo ""
+            echo "Expected format: <number>+<username>@users.noreply.github.com"
+            exit 1
+          fi
