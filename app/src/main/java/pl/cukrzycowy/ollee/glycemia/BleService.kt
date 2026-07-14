@@ -355,10 +355,18 @@ class BleService : Service() {
             override fun run() {
 
                 val lastTime = prefs.getLong("last_time", 0L)
+                val providerSwitchTime = prefs.getLong("provider_switch_time", 0L)
                 val now = System.currentTimeMillis()
 
-                if (now - lastTime > TIMEOUT_MS) {
+                val isAwaitingWindow = (now - providerSwitchTime) < (5.5 * 60 * 1000)
+                val shouldError = when {
+                    isAwaitingWindow && lastTime == 0L -> false
+                    lastTime == 0L && (now - providerSwitchTime) > (5.5 * 60 * 1000) -> true
+                    lastTime > 0L && (now - lastTime) > TIMEOUT_MS -> true
+                    else -> false
+                }
 
+                if (shouldError) {
                     if (!isInErrorState) {
                         log("Timeout -> ERROR")
 
@@ -367,6 +375,11 @@ class BleService : Service() {
                         prefs.edit().putString("last_sent", "Err   ").apply()
                         connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading("Err   ") }
                         publishStatuses()
+                    }
+                } else {
+                    if (isInErrorState && !shouldError) {
+                        isInErrorState = false
+                        log("Error cleared - back to normal")
                     }
                 }
 
