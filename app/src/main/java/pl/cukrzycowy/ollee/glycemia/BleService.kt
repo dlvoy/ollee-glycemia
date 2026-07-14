@@ -248,7 +248,15 @@ class BleService : Service() {
             .putString("last_sent", formatted)
             .apply()
 
-        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading(formatted) }
+        val activeWatches = connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }
+
+        activeWatches.forEach {
+            if (it.state == WatchConnState.OFFLINE) {
+                it.connect()
+            }
+        }
+
+        activeWatches.forEach { it.submitReading(formatted) }
         publishStatuses()
         sendBroadcast(Intent("GLYCEMIA_UPDATED"))
     }

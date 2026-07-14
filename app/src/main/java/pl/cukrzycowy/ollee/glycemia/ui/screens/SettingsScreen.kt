@@ -80,6 +80,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
 
     val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    refreshTrigger
     val isIgnoringBatteryOptimization = powerManager.isIgnoringBatteryOptimizations(context.packageName)
 
     var permissionsExpanded by remember { mutableStateOf(!allPermissionsGranted) }
