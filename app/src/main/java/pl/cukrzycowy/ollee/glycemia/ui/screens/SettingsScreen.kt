@@ -422,6 +422,13 @@ fun SettingsScreen(onBack: () -> Unit) {
                     )
                     Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
                     Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+
+                    if (debugModeEnabled) {
+                        Text("Debug Mode: ON 🐛", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                    }
+                    if (devOptionsUnlocked) {
+                        Text("Developer Options: Unlocked 🔓", style = androidx.compose.material3.MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
 

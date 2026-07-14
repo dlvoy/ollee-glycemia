@@ -39,12 +39,13 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 
 #### Step 1: Grant Permissions
 
-1. Tap **"Request Permissions"** in the app
+1. Tap **"Request Permissions"** in the app (or go to **Settings → Permissions**)
 2. Grant the following permissions when prompted:
-   - Bluetooth Connect
-   - Bluetooth Scan
-   - Notifications
-   - (Optional) Battery optimization exemption
+   - **Bluetooth Connect** - Required to communicate with your watch
+   - **Bluetooth Scan** - Required to find and detect your watch
+   - **Notifications** - Required for app status notifications
+   - **Storage Access** - Required for backup/restore functionality (see [Backup & Restore](#backup--restore) below)
+   - (Optional) **Battery optimization exemption** - Recommended for reliable background operation
 
 #### Step 2: Pair Your Watch with OS Bluetooth
 
@@ -76,6 +77,43 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 - Configure the pause time range (default: 23:00 - 6:00)
 - Active watches will automatically pause at the start time and resume at the end time
 - Useful for extending battery life or preventing overnight notifications
+
+### Backup & Restore
+
+Ollee Glycemia supports backing up and restoring your configuration, allowing you to easily transfer your settings between devices or recover them after reinstalling the app.
+
+#### Storage Permission Requirement
+
+Backup/restore functionality requires **Storage Access** permission to save and read backup files from your phone's Downloads folder. This permission is required because:
+- Backup files are stored in `Downloads/OlleeGlycemia/` to remain accessible across app reinstalls
+- Your backup files survive app uninstall/reinstall, allowing you to restore your exact setup
+
+**First Run:** On first app launch, if no watches are paired and a backup exists, you'll be prompted to restore your previous settings. You can either restore or start fresh.
+
+#### Manual Backup & Restore
+
+To manually back up or restore your configuration:
+
+1. Go to **Settings → Backup preferences**
+2. **Export preferences** - Creates a backup file in your Downloads folder (named `preferences-backup-YYYYMMDDHHMM.json`)
+3. **Import preferences** - Loads the latest backup file and restores all your settings, watches, and labels
+
+**What gets backed up:**
+- Watch list and names
+- Watch activity states (paused, stopped, active)
+- Activity labels (custom pause/stop button labels)
+- Night auto-pause schedule
+- Graph display range
+- Glucose history (24 hours)
+- Selected data source
+
+#### Storage Access Permission
+
+If you haven't granted storage access:
+- Go to **Settings → Permissions → Storage Access (for backups)**
+- Tap **Grant Access** to enable backup/restore functionality
+- You'll be directed to your phone's system settings
+- Once enabled, backup files will be accessible to the app
 
 #### Step 5: Configure Your Glucose Data Source
 

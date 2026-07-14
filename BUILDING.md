@@ -55,6 +55,35 @@ The version code is derived automatically from the version name (`major * 10000 
 
 Every build — debug and release alike — embeds the git commit hash and the build timestamp into `BuildConfig`. These are shown in the app under **Settings → About**, alongside the version number.
 
+## Developer & Debug Mode
+
+### Unlocking Developer Options
+
+Developer options are hidden by default. To unlock them:
+
+1. Go to **Settings → About**
+2. Tap the **Version** line 7 times
+3. You'll see a countdown toast ("X taps remaining")
+4. Once unlocked, a **Developer Options** section appears in Settings
+
+### What's Available in Developer Options
+
+**Debug Mode Toggle**
+- In debug mode, context menu on watch pill allow overriding/setting watch offline mode.
+
+### Build-Time Debug Features
+
+**Debug APK Build**
+- Built with `./gradlew assembleDebug`
+- Includes full symbol information and debugging support
+- Can be installed alongside release builds (different package name variant)
+- Allows debugging via Android Studio's debugger
+
+**BuildConfig Embedded Data**
+- Git commit hash (shown in **Settings → About** as "Commit")
+- Build timestamp (shown in **Settings → About** as "Built")
+- Useful for tracking which exact code version is running
+
 ## Continuous Integration
 
 `.github/workflows/build.yml` builds a debug APK on every push and pull request to `main`/`master`, and uploads it as a workflow artifact named `ollee-glycemia-<short-sha>-debug.apk`.
