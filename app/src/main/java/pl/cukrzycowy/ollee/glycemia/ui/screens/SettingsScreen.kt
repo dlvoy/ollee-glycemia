@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +34,11 @@ import pl.cukrzycowy.ollee.glycemia.WatchStore
 import pl.cukrzycowy.ollee.glycemia.WatchActivityState
 import pl.cukrzycowy.ollee.glycemia.BleService
 import pl.cukrzycowy.ollee.glycemia.DebugStore
+import pl.cukrzycowy.ollee.glycemia.PreferencesBackupManager
+import pl.cukrzycowy.ollee.glycemia.StoragePermissionHelper
+import pl.cukrzycowy.ollee.glycemia.StoragePermissionStore
+import androidx.compose.material3.AlertDialog
+import java.io.File
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
@@ -63,6 +69,10 @@ fun SettingsScreen(onBack: () -> Unit) {
     var debugModeEnabled by remember { mutableStateOf(DebugStore.isDebugModeEnabled(context)) }
     var lastToast by remember { mutableStateOf<Toast?>(null) }
 
+    var showImportConfirmDialog by remember { mutableStateOf(false) }
+    var latestBackupFile by remember { mutableStateOf<File?>(null) }
+    var backupExpanded by remember { mutableStateOf(false) }
+
     DisposableEffect(Unit) {
         onDispose {
             if (NightAutoPauseStore.isEnabled(context)) {
@@ -81,7 +91,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     val perms = listOf(
         Manifest.permission.BLUETOOTH_CONNECT,
         Manifest.permission.BLUETOOTH_SCAN,
-        Manifest.permission.POST_NOTIFICATIONS
+        Manifest.permission.POST_NOTIFICATIONS,
+        Manifest.permission.MANAGE_EXTERNAL_STORAGE
     )
 
     val allPermissionsGranted = perms.all { perm ->
@@ -127,7 +138,11 @@ fun SettingsScreen(onBack: () -> Unit) {
                     perms.forEach { perm ->
                         val label = getPermissionLabel(perm)
                         refreshTrigger
-                        val hasPermission = ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+                        val hasPermission = if (perm == Manifest.permission.MANAGE_EXTERNAL_STORAGE) {
+                            StoragePermissionHelper.hasAllFilesAccess()
+                        } else {
+                            ContextCompat.checkSelfPermission(context, perm) == PackageManager.PERMISSION_GRANTED
+                        }
                         val buttonColor = if (hasPermission) Color(0xFF00AA00) else Color(0xFFCC0000)
                         Button(
                             onClick = {
@@ -284,46 +299,9 @@ fun SettingsScreen(onBack: () -> Unit) {
                 }
             }
 
-            FoldableSection(
-                title = stringResource(R.string.settings_about),
-                expanded = aboutExpanded,
-                onToggle = { aboutExpanded = it }
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
-                    Text(
-                        text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
-                        modifier = Modifier.clickable {
-                            if (devOptionsUnlocked) {
-                                Toast.makeText(context, "Already developer", Toast.LENGTH_SHORT).show()
-                            } else {
-                                versionClickCount++
-                                val remaining = 7 - versionClickCount
-                                when {
-                                    remaining == 3 || (remaining in 0..2 && versionClickCount < 7) -> {
-                                        lastToast?.cancel()
-                                        lastToast = Toast.makeText(context, "Only $remaining clicks left...", Toast.LENGTH_SHORT).apply { show() }
-                                    }
-                                    versionClickCount == 7 -> {
-                                        lastToast?.cancel()
-                                        DebugStore.setDeveloperOptionsUnlocked(context, true)
-                                        devOptionsUnlocked = true
-                                        Toast.makeText(context, "Developer options shown", Toast.LENGTH_SHORT).show()
-                                    }
-                                    versionClickCount > 7 -> {
-                                        versionClickCount = 0
-                                    }
-                                }
-                            }
-                        }
-                    )
-                    Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
-                    Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
-                }
-            }
-
             if (devOptionsUnlocked && BuildConfig.DEBUG) {
                 FoldableSection(
-                    title = "Development options",
+                    title = stringResource(R.string.dev_options_title),
                     expanded = devOptionsExpanded,
                     onToggle = { devOptionsExpanded = it }
                 ) {
@@ -339,10 +317,142 @@ fun SettingsScreen(onBack: () -> Unit) {
                                 contentColor = Color.White
                             )
                         ) {
-                            Text(if (debugModeEnabled) "✓ Debug mode enabled" else "✗ Enable debug mode")
+                            Text(if (debugModeEnabled) stringResource(R.string.dev_mode_enable) else stringResource(R.string.dev_mode_disable))
                         }
                     }
                 }
+            }
+
+            FoldableSection(
+                title = stringResource(R.string.backup_title),
+                expanded = backupExpanded,
+                onToggle = { backupExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                    refreshTrigger
+                    val hasAllFilesAccess = StoragePermissionHelper.hasAllFilesAccess()
+
+                    Button(
+                        enabled = hasAllFilesAccess,
+                        onClick = {
+                            try {
+                                val file = PreferencesBackupManager.exportPreferences(context)
+                                val msg = context.getString(R.string.backup_export_success, file.name)
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                Log.d("BackupExport", "Success: ${file.absolutePath}")
+                            } catch (e: SecurityException) {
+                                Log.e("BackupExport", "Permission denied: ${e.message}", e)
+                                if (context is android.app.Activity) {
+                                    ActivityCompat.requestPermissions(context, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 200)
+                                }
+                                Toast.makeText(context, "Storage permission required - please retry after granting", Toast.LENGTH_LONG).show()
+                            } catch (e: Exception) {
+                                Log.e("BackupExport", "Export failed: ${e.message}", e)
+                                val msg = context.getString(R.string.backup_export_failed, e.message ?: "Unknown error")
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0099CC),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(stringResource(R.string.backup_export))
+                    }
+
+                    Button(
+                        enabled = hasAllFilesAccess,
+                        onClick = {
+                            val latestBackup = PreferencesBackupManager.findLatestBackup(context)
+                            if (latestBackup != null) {
+                                latestBackupFile = latestBackup
+                                showImportConfirmDialog = true
+                            } else {
+                                val msg = context.getString(R.string.backup_not_found)
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0099CC),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(stringResource(R.string.backup_import))
+                    }
+                }
+            }
+
+            FoldableSection(
+                title = stringResource(R.string.settings_about),
+                expanded = aboutExpanded,
+                onToggle = { aboutExpanded = it }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
+                    Text(
+                        text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+                        modifier = Modifier.clickable {
+                            val alreadyDevStr = context.getString(R.string.dev_already_unlocked)
+                            val unlockedStr = context.getString(R.string.dev_unlocked)
+                            val unlockToastStr = context.getString(R.string.dev_unlock_toast)
+
+                            if (devOptionsUnlocked) {
+                                Toast.makeText(context, alreadyDevStr, Toast.LENGTH_SHORT).show()
+                            } else {
+                                versionClickCount++
+                                val remaining = 7 - versionClickCount
+                                when {
+                                    remaining == 3 || (remaining in 0..2 && versionClickCount < 7) -> {
+                                        lastToast?.cancel()
+                                        lastToast = Toast.makeText(context, unlockToastStr.replace("%d", remaining.toString()), Toast.LENGTH_SHORT).apply { show() }
+                                    }
+                                    versionClickCount == 7 -> {
+                                        lastToast?.cancel()
+                                        DebugStore.setDeveloperOptionsUnlocked(context, true)
+                                        devOptionsUnlocked = true
+                                        Toast.makeText(context, unlockedStr, Toast.LENGTH_SHORT).show()
+                                    }
+                                    versionClickCount > 7 -> {
+                                        versionClickCount = 0
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
+                    Text(stringResource(R.string.settings_build_date, BuildConfig.BUILD_TIME))
+                }
+            }
+
+            if (showImportConfirmDialog && latestBackupFile != null) {
+                AlertDialog(
+                    onDismissRequest = { showImportConfirmDialog = false },
+                    title = { Text(stringResource(R.string.backup_import_title)) },
+                    text = { Text(stringResource(R.string.backup_import_message, latestBackupFile!!.name)) },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(
+                            onClick = {
+                                showImportConfirmDialog = false
+                                val successMsg = context.getString(R.string.backup_import_success)
+                                try {
+                                    PreferencesBackupManager.importPreferences(context, latestBackupFile!!)
+                                    Toast.makeText(context, successMsg, Toast.LENGTH_LONG).show()
+                                } catch (e: Exception) {
+                                    val failMsg = context.getString(R.string.backup_import_failed, e.message ?: "Unknown error")
+                                    Toast.makeText(context, failMsg, Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        ) {
+                            Text(stringResource(R.string.backup_import_button))
+                        }
+                    },
+                    dismissButton = {
+                        androidx.compose.material3.TextButton(onClick = { showImportConfirmDialog = false }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                    }
+                )
             }
         }
     }
@@ -354,12 +464,21 @@ private fun getPermissionLabel(permission: String): String {
         Manifest.permission.BLUETOOTH_CONNECT -> stringResource(R.string.perm_bluetooth_connect)
         Manifest.permission.BLUETOOTH_SCAN -> stringResource(R.string.perm_bluetooth_scan)
         Manifest.permission.POST_NOTIFICATIONS -> stringResource(R.string.perm_post_notifications)
+        Manifest.permission.MANAGE_EXTERNAL_STORAGE -> stringResource(R.string.perm_manage_external_storage)
         else -> permission.split(".").last()
     }
 }
 
 private fun requestPermission(context: Context, permission: String) {
-    if (context is android.app.Activity) {
+    if (permission == Manifest.permission.MANAGE_EXTERNAL_STORAGE) {
+        // Clear the declined flag when user manually clicks to grant
+        StoragePermissionStore.setUserDeclinedPrompt(context, false)
+        try {
+            context.startActivity(StoragePermissionHelper.createAllFilesAccessSettingsIntent(context))
+        } catch (e: Exception) {
+            Log.e("SettingsScreen", "Failed to open storage settings: ${e.message}", e)
+        }
+    } else if (context is android.app.Activity) {
         ActivityCompat.requestPermissions(context, arrayOf(permission), 100)
     }
 }

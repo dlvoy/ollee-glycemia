@@ -80,6 +80,7 @@
     <string name="perm_bluetooth_connect">Bluetooth Connection</string>
     <string name="perm_bluetooth_scan">Bluetooth Scanning</string>
     <string name="perm_post_notifications">Notifications</string>
+    <string name="perm_manage_external_storage">Storage (for backups)</string>
     <string name="perm_access_fine_location">Precise Location</string>
     <string name="perm_access_coarse_location">Approximate Location</string>
     <string name="perm_foreground_service_connected_device">Foreground Service</string>
@@ -153,4 +154,34 @@
     <string name="time_range_from">From</string>
     <string name="time_range_to">To</string>
     <string name="time_since_format">since @ %s</string>
+
+    <string name="dev_options_title">Development options</string>
+    <string name="dev_mode_disable">✗ Enable debug mode</string>
+    <string name="dev_mode_enable">✓ Debug mode enabled</string>
+    <string name="dev_already_unlocked">Already developer</string>
+    <string name="dev_unlocked">Developer options shown</string>
+    <string name="dev_unlock_toast">Only %d clicks left...</string>
+    <string name="dev_watch_turn_offline">Turn offline</string>
+    <string name="dev_watch_turn_online">Turn online</string>
+
+    <string name="backup_title">Backup preferences</string>
+    <string name="backup_export">Export preferences</string>
+    <string name="backup_import">Import preferences</string>
+    <string name="backup_export_success">Exported to Downloads/OlleeGlycemia/%s</string>
+    <string name="backup_export_failed">Export failed: %s</string>
+    <string name="backup_import_title">Import preferences?</string>
+    <string name="backup_import_message">Load preferences from %s?\n\nThis will override your current configuration.</string>
+    <string name="backup_import_button">Import</string>
+    <string name="backup_import_success">Preferences imported. Please restart the app.</string>
+    <string name="backup_import_failed">Import failed: %s</string>
+    <string name="backup_not_found">No backup file found</string>
+    <string name="backup_storage_access_title">Grant Storage Access?</string>
+    <string name="backup_storage_access_description">Storage access is required so backups stay visible even after reinstalling the app.</string>
+    <string name="backup_storage_access_grant">Grant Access</string>
+    <string name="first_run_restore_title">Restore Backup Settings?</string>
+    <string name="first_run_restore_message">Found backup from %s\n\nWould you like to restore your settings?</string>
+    <string name="first_run_restore_button">Restore</string>
+    <string name="first_run_skip_button">Start Fresh</string>
+    <string name="first_run_restore_success">Settings restored. Please restart the app.</string>
+    <string name="first_run_restore_failed">Restore failed: %s</string>
 </resources>

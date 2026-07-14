@@ -80,6 +80,7 @@
     <string name="perm_bluetooth_connect">Connexion Bluetooth</string>
     <string name="perm_bluetooth_scan">Analyse Bluetooth</string>
     <string name="perm_post_notifications">Notifications</string>
+    <string name="perm_manage_external_storage">Stockage (pour les sauvegardes)</string>
     <string name="perm_access_fine_location">Localisation précise</string>
     <string name="perm_access_coarse_location">Localisation approximative</string>
     <string name="perm_foreground_service_connected_device">Service au premier plan</string>
@@ -153,4 +154,34 @@
     <string name="time_range_from">De</string>
     <string name="time_range_to">À</string>
     <string name="time_since_format">depuis @ %s</string>
+
+    <string name="dev_options_title">Options de développement</string>
+    <string name="dev_mode_disable">✗ Activer le mode débogage</string>
+    <string name="dev_mode_enable">✓ Mode de débogage activé</string>
+    <string name="dev_already_unlocked">Déjà développeur</string>
+    <string name="dev_unlocked">Options de développement affichées</string>
+    <string name="dev_unlock_toast">Seulement %d clics restants...</string>
+    <string name="dev_watch_turn_offline">Passer hors ligne</string>
+    <string name="dev_watch_turn_online">Passer en ligne</string>
+
+    <string name="backup_title">Sauvegarde des paramètres</string>
+    <string name="backup_export">Exporter les paramètres</string>
+    <string name="backup_import">Importer les paramètres</string>
+    <string name="backup_export_success">Exporté vers Downloads/OlleeGlycemia/%s</string>
+    <string name="backup_export_failed">L\'export a échoué : %s</string>
+    <string name="backup_import_title">Importer les paramètres ?</string>
+    <string name="backup_import_message">Charger les paramètres depuis %s ?\n\nCela remplacera votre configuration actuelle.</string>
+    <string name="backup_import_button">Importer</string>
+    <string name="backup_import_success">Paramètres importés. Veuillez redémarrer l\'application.</string>
+    <string name="backup_import_failed">L\'importation a échoué : %s</string>
+    <string name="backup_not_found">Aucun fichier de sauvegarde trouvé</string>
+    <string name="backup_storage_access_title">Autoriser l\'accès au stockage ?</string>
+    <string name="backup_storage_access_description">L\'accès au stockage est requis pour que les sauvegardes restent visibles même après une réinstallation de l\'application.</string>
+    <string name="backup_storage_access_grant">Autoriser l\'accès</string>
+    <string name="first_run_restore_title">Restaurer les paramètres de sauvegarde ?</string>
+    <string name="first_run_restore_message">Sauvegarde trouvée du %s\n\nVoulez-vous restaurer vos paramètres ?</string>
+    <string name="first_run_restore_button">Restaurer</string>
+    <string name="first_run_skip_button">Nouvelle configuration</string>
+    <string name="first_run_restore_success">Paramètres restaurés. Veuillez redémarrer l\'application.</string>
+    <string name="first_run_restore_failed">La restauration a échoué : %s</string>
 </resources>

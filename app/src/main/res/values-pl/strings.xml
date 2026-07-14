@@ -80,6 +80,7 @@
     <string name="perm_bluetooth_connect">Połączenie Bluetooth</string>
     <string name="perm_bluetooth_scan">Skanowanie Bluetooth</string>
     <string name="perm_post_notifications">Powiadomienia</string>
+    <string name="perm_manage_external_storage">Dostęp do kopii zapasowych</string>
     <string name="perm_access_fine_location">Dokładna lokalizacja</string>
     <string name="perm_access_coarse_location">Przybliżona lokalizacja</string>
     <string name="perm_foreground_service_connected_device">Usługa pierwszoplanowa</string>
@@ -153,4 +154,34 @@
     <string name="time_range_from">Od</string>
     <string name="time_range_to">Do</string>
     <string name="time_since_format">od @ %s</string>
+
+    <string name="dev_options_title">Opcje deweloperskie</string>
+    <string name="dev_mode_disable">✗ Włącz tryb debugowania</string>
+    <string name="dev_mode_enable">✓ Tryb debugowania włączony</string>
+    <string name="dev_already_unlocked">Już deweloper</string>
+    <string name="dev_unlocked">Opcje deweloperskie pokazane</string>
+    <string name="dev_unlock_toast">Zostało tylko %d kliknięć...</string>
+    <string name="dev_watch_turn_offline">Włącz tryb offline</string>
+    <string name="dev_watch_turn_online">Wyłącz tryb offline</string>
+
+    <string name="backup_title">Kopia zapasowa ustawień</string>
+    <string name="backup_export">Eksportuj ustawienia</string>
+    <string name="backup_import">Importuj ustawienia</string>
+    <string name="backup_export_success">Eksportowano do Downloads/OlleeGlycemia/%s</string>
+    <string name="backup_export_failed">Eksport nie powiódł się: %s</string>
+    <string name="backup_import_title">Importować ustawienia?</string>
+    <string name="backup_import_message">Załadować ustawienia z %s?\n\nTo zastąpi Twoją bieżącą konfigurację.</string>
+    <string name="backup_import_button">Importuj</string>
+    <string name="backup_import_success">Ustawienia importowane. Proszę uruchomić ponownie aplikację.</string>
+    <string name="backup_import_failed">Import nie powiódł się: %s</string>
+    <string name="backup_not_found">Nie znaleziono pliku kopii zapasowej</string>
+    <string name="backup_storage_access_title">Przyznać dostęp do pamięci?</string>
+    <string name="backup_storage_access_description">Dostęp do pamięci jest wymagany, aby kopie zapasowe pozostały widoczne po ponownej instalacji aplikacji.</string>
+    <string name="backup_storage_access_grant">Przyznaj dostęp</string>
+    <string name="first_run_restore_title">Przywrócić ustawienia z kopii zapasowej?</string>
+    <string name="first_run_restore_message">Znaleziono kopię zapasową z %s\n\nChcesz przywrócić swoje ustawienia?</string>
+    <string name="first_run_restore_button">Przywróć</string>
+    <string name="first_run_skip_button">Nowa konfiguracja</string>
+    <string name="first_run_restore_success">Ustawienia przywrócone. Proszę uruchomić ponownie aplikację.</string>
+    <string name="first_run_restore_failed">Przywracanie nie powiodło się: %s</string>
 </resources>

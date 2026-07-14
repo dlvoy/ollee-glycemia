@@ -170,7 +170,7 @@ fun MainScreen(nav: AppNavController) {
     var graphExpanded by remember { mutableStateOf(true) }
     var showProviderPicker by remember { mutableStateOf(false) }
     var showGraphOptions by remember { mutableStateOf(false) }
-    var selectedGraphRange by remember { mutableStateOf(2) }
+    var selectedGraphRange by remember { mutableStateOf(prefs.getInt("graph_display_range", 2)) }
     var refreshGraphTrigger by remember { mutableStateOf(0) }
     var providerStatus by remember { mutableStateOf(calculateProviderStatus(context, lastTime)) }
     var previousStatus by remember { mutableStateOf(providerStatus.status) }
@@ -363,7 +363,11 @@ fun MainScreen(nav: AppNavController) {
             if (showGraphOptions) {
                 GraphRangeDialog(
                     currentRange = selectedGraphRange,
-                    onRangeSelected = { selectedGraphRange = it; showGraphOptions = false },
+                    onRangeSelected = {
+                        selectedGraphRange = it
+                        prefs.edit().putInt("graph_display_range", it).apply()
+                        showGraphOptions = false
+                    },
                     onClearHistory = {
                         pl.cukrzycowy.ollee.glycemia.GlycemiaHistoryStore.clear(context)
                         showGraphOptions = false
@@ -988,7 +992,7 @@ private fun WatchActionsDialog(
                 if (showDebugOption) {
                     IconActionRow(
                         icon = Icons.Filled.BugReport,
-                        label = if (isOffline) "Turn online" else "Turn offline",
+                        label = if (isOffline) stringResource(R.string.dev_watch_turn_online) else stringResource(R.string.dev_watch_turn_offline),
                         onClick = onDebugToggle
                     )
                 }
