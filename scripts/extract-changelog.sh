@@ -16,4 +16,4 @@ if [ ! -f "$CHANGELOG_FILE" ]; then
 fi
 
 # Extract section for the version (from version header to next version header)
-sed -n "/^## \[${VERSION}\]/,/^## \[/{/^## \[${VERSION}\]/!{/^## \[/!p}}" "$CHANGELOG_FILE" | sed '1s/^//' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'
+sed -n "/^## \[${VERSION}\]/,/^## \[/p" "$CHANGELOG_FILE" | sed '1d;$d' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'
