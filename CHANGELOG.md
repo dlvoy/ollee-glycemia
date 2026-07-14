@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-14
+
+### Added
+
+- **Backup and restore preferences**: Export and import your complete app configuration
+  - Backs up watch list, activity labels, night auto-pause schedule, graph settings, and 24-hour glucose history
+  - Backup files stored in `Downloads/OlleeGlycemia/` and survive app uninstall/reinstall
+  - Manually import via **Settings → Backup preferences → Import preferences**
+  - First-run restore prompt shown automatically if backup found and no watches paired
+- **Storage permission management**: Dedicated storage access permission in **Settings → Permissions**
+  - Required for backup/restore functionality to persist across reinstalls
+  - First-run prompt with option to grant access or skip
+  - "User declined prompt" flag prevents repeated prompts until manually enabled
+- **Developer options improvements**: Enhanced debug mode visibility and control
+  - Debug mode status indicator in **Settings → About** when enabled
+  - Developer options unlock status shown in About section
+  - Added debug functionality in BleService for connection troubleshooting
+
+### Fixed
+
+- **BleService timeout handling**: Improved error handling in connection timeout logic
+  - Better stability during watch reconnection scenarios
+
+
 ## [1.3.0] - 2026-07-12
 
 ### Added
@@ -126,6 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Bluetooth permission management**: Comprehensive Bluetooth Connect and Scan permission handling
 - **Smooth data interpolation**: Synthetic glucose value generation using Hermite interpolation
 
+[1.4.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.4.0
 [1.3.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.3.0
 [1.2.2]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.2
 [1.2.1]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.1
