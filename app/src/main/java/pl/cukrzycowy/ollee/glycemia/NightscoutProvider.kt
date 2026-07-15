@@ -158,7 +158,7 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
         )
 
         Log.d(TAG, "Scheduling next fetch in ${delayMs}ms")
-        handler.postDelayed({ fetchReadings() }, delayMs)
+        handler.postDelayed({ Thread { fetchReadings() }.start() }, delayMs)
     }
 
     /**
