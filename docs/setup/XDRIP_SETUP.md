@@ -13,24 +13,24 @@ This guide walks you through configuring xDrip+ to broadcast glucose data to Oll
 
 Open the xDrip+ app and tap the **hamburger menu** (three horizontal lines) in the top-left corner.
 
-![xDrip+ main screen with menu button](xdrip_setup_01.png)
+<img src="xdrip_setup_01.png" width="250" alt="xDrip+ main screen with menu button">
 
 ### Step 2: Go to Settings
 
 In the menu, scroll down and tap **Settings** at the bottom of the list.
 
-![Menu with Settings option highlighted](xdrip_setup_02.png)
+<img src="xdrip_setup_02.png" width="250" alt="Menu with Settings option highlighted">
 
 ### Step 3: Open Inter-app Settings
 
 In the Settings page, scroll down to the "OTHER SETTINGS" section and tap **Inter-app settings**.
 
-![Settings page with Inter-app settings highlighted](xdrip_setup_03.png)
+<img src="xdrip_setup_03.png" width="250" alt="Settings page with Inter-app settings highlighted">
 
 ### Step 4: Click "Identify Receiver"
 In the Inter-app settings page, ensure **"Broadcast locally"** is set to **ON**, then scroll down and tap **"Identify receiver"**.
 
-![Inter-app settings with Identify receiver highlighted](xdrip_setup_04.png)
+<img src="xdrip_setup_04.png" width="250" alt="Inter-app settings with Identify receiver highlighted">
 
 ### Step 5: Add Ollee Glycemia Package Name
 
@@ -50,7 +50,7 @@ Do not remove existing receivers—just append our package name at the end with 
 
 Tap **OK** to save.
 
-![Dialog with package names - Ollee Glycemia highlighted](xdrip_setup_05.png)
+<img src="xdrip_setup_05.png" width="300" alt="Dialog with package names - Ollee Glycemia highlighted">
 
 ## Testing the Connection
 
