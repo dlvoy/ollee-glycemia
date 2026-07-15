@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-07-16
+
+### Added
+
+- **Nightscout provider support**: Connect directly to your Nightscout instance for remote glucose data
+  - Full Nightscout HTTP API integration with authentication via API tokens
+  - Configurable Nightscout URL and API token in provider settings
+  - Test connection button to verify Nightscout access before saving
+  - Adaptive fetch scheduling with intelligent retry and delay calculation
+  - Comprehensive error handling and logging for debugging
+  - 19 integration tests verifying HTTP client, parsing, and scheduling logic
+  - Complete setup documentation with step-by-step screenshots and troubleshooting
+- **Provider configuration backup/restore**: Save and restore settings for all configured providers
+  - Backs up configurations for all providers (xDrip, GlucoDataHandler, Nightscout, VirtualHuman)
+  - Previously only backed up the active provider; now includes all provider configurations
+  - Restore automatically applies each provider's saved settings to the correct provider instance
+- **Documentation**: Added comprehensive Nightscout setup guide
+  - Step-by-step instructions with 5 screenshots showing Nightscout Admin Tools workflow
+  - Instructions for creating API tokens and configuring Ollee Glycemia
+  - Troubleshooting section for common connection and access issues
+  - Updated README to mention Nightscout as a supported data source alongside xDrip+ and GlucoDataHandler
+
+### Fixed
+
+- **Scheduled fetch threading**: Network requests on scheduled fetches now run on background thread
+  - Prevents `NetworkOnMainThreadException` when Nightscout fetches are triggered by handler callbacks
+  - Uses explicit thread wrapping in scheduler to ensure background execution
+
+
 ## [1.4.0] - 2026-07-14
 
 ### Added
@@ -150,6 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Bluetooth permission management**: Comprehensive Bluetooth Connect and Scan permission handling
 - **Smooth data interpolation**: Synthetic glucose value generation using Hermite interpolation
 
+[1.5.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.5.0
 [1.4.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.4.0
 [1.3.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.3.0
 [1.2.2]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.2.2
