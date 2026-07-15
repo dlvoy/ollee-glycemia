@@ -24,6 +24,8 @@ object OlleeColors {
     val StatusWarning = Color(0xFFFFC107)
     val OnStatusColor = Color(0xFFFFFFFF)
 
+    val HelpText = Color(0xFF1976D2)  // Material blue
+
     val Background = Color(0xFFFFFFFF)
     val SurfaceCard = Color(0xFFF1F1F3)
     val SurfaceCardBorder = Color(0xFFE0E0E0)

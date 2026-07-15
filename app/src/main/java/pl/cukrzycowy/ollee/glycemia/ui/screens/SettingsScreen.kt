@@ -12,12 +12,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +49,7 @@ import java.io.File
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Switch
@@ -358,7 +366,15 @@ fun SettingsScreen(onBack: () -> Unit) {
                             contentColor = Color.White
                         )
                     ) {
-                        Text(stringResource(R.string.backup_export))
+                        androidx.compose.foundation.layout.Row(
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.White)
+                            androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.backup_export))
+                        }
                     }
 
                     Button(
@@ -379,7 +395,15 @@ fun SettingsScreen(onBack: () -> Unit) {
                             contentColor = Color.White
                         )
                     ) {
-                        Text(stringResource(R.string.backup_import))
+                        androidx.compose.foundation.layout.Row(
+                            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.White)
+                            androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.backup_import))
+                        }
                     }
                 }
             }

@@ -71,54 +71,23 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
         // Create HTTP client
         httpClient = NightscoutHttpClient(normalizedUrl, effectiveToken)
 
-        // Test connection with status() call
-        val statusResult = httpClient!!.status()
-
-        when (statusResult) {
-            is NightscoutParseResult.Success -> {
-                val status = statusResult.value
-                Log.d(TAG, "Connected to Nightscout v${status.version}: ${status.title ?: "unnamed"}")
-                
-                val okState = NightscoutLastFetchState(
-                    status = NightscoutFetchStatus.OK,
-                    attemptedAtMillis = System.currentTimeMillis(),
-                    completedAtMillis = System.currentTimeMillis(),
-                    readingTimestampMillis = null,
-                    bg = null,
-                    detail = "Connected to ${status.version}"
-                )
-                NightscoutFetchStateStore.write(context, okState)
-
-                // Schedule first fetch immediately, then adaptive scheduling
-                lastReadingReceivedAt = System.currentTimeMillis()
-                lastReadingTimestamp = System.currentTimeMillis()
-                failureCount = 0
-                scheduleFetch()
-            }
-            is NightscoutParseResult.Failure -> {
-                Log.e(TAG, "Connection test failed: ${statusResult.reason}")
-                
-                val failureStatus = when {
-                    statusResult.reason.contains("401") || statusResult.reason.contains("Authentication") -> 
-                        NightscoutFetchStatus.AUTH_ERROR
-                    statusResult.reason.contains("timeout", ignoreCase = true) -> 
-                        NightscoutFetchStatus.CONNECTION_ERROR
-                    statusResult.reason.contains("unsupported", ignoreCase = true) -> 
-                        NightscoutFetchStatus.INVALID_RESPONSE
-                    else -> NightscoutFetchStatus.CONNECTION_ERROR
-                }
-
-                val failState = NightscoutLastFetchState(
-                    status = failureStatus,
-                    attemptedAtMillis = System.currentTimeMillis(),
-                    completedAtMillis = System.currentTimeMillis(),
-                    readingTimestampMillis = null,
-                    bg = null,
-                    detail = statusResult.reason
-                )
-                NightscoutFetchStateStore.write(context, failState)
-            }
-        }
+        // Initialize state and start fetching
+        lastReadingReceivedAt = 0L
+        lastReadingTimestamp = 0L
+        failureCount = 0
+        
+        val initialState = NightscoutLastFetchState(
+            status = NightscoutFetchStatus.NEVER_RUN,
+            attemptedAtMillis = System.currentTimeMillis(),
+            completedAtMillis = System.currentTimeMillis(),
+            readingTimestampMillis = null,
+            bg = null,
+            detail = "Provider started, waiting for first fetch"
+        )
+        NightscoutFetchStateStore.write(context, initialState)
+        
+        // Fetch immediately, then schedule adaptive fetches
+        fetchReadings()
     }
 
     override fun stop(context: Context) {

@@ -27,7 +27,7 @@ object NightscoutUrlNormalizer {
      * Input cases handled:
      * - user.ns.example.com -> https://user.ns.example.com
      * - https://user.ns.example.com -> https://user.ns.example.com
-     * - https://user.ns.example.com/?token=sync-xxxxxxxxxxxxxxxx -> baseUrl, extracted token
+     * - https://user.ns.example.com/?token=ollee-xxxxxxxxxxxxxxxx -> baseUrl, extracted token
      * - https://user.ns.example.com/api/v1/ -> https://user.ns.example.com
      * - https://user.ns.example.com:8443/api/v1/status.json -> https://user.ns.example.com:8443
      *
@@ -148,7 +148,7 @@ object NightscoutUrlNormalizer {
         }
 
         if (!TOKEN_PATTERN.matches(token)) {
-            return "Token format looks unusual. Expected format: sync-xxxxxxxxxxxxxxxx or similar"
+            return "Token format looks unusual. Expected format: ollee-xxxxxxxxxxxxxxxx or similar"
         }
 
         return null

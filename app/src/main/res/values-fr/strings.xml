@@ -55,6 +55,42 @@
     <string name="provider_virtual_human_seed_helper">Optionnel. Laissez vide = motif aléatoire à chaque démarrage.</string>
     <string name="provider_virtual_human_seed_random">aléatoire</string>
     <string name="provider_virtual_human_summary_format">%1$s, graine: %2$s</string>
+
+    <!-- Nightscout Provider -->
+    <string name="provider_nightscout">Nightscout</string>
+    <string name="provider_nightscout_config_title">Paramètres Nightscout</string>
+    <string name="provider_nightscout_url_label">URL Nightscout</string>
+    <string name="provider_nightscout_url_helper">Exemple : https://user.ns.example.com</string>
+    <string name="provider_nightscout_token_label">Jeton Nightscout</string>
+    <string name="provider_nightscout_token_helper">Utilisez un jeton au format ollee-xxxxxxxxxxxxxxxx. N\'utilisez pas l\'ancien format API_SECRET.</string>
+    <string name="provider_nightscout_summary_not_configured">Non configuré</string>
+    <string name="provider_nightscout_summary_configured">Configuré : %1$s</string>
+    <string name="provider_nightscout_test_connection">Tester la connexion</string>
+    <string name="provider_nightscout_testing">Test de connexion…</string>
+    <string name="provider_nightscout_status_ok">OK - Nightscout %1$s</string>
+    <string name="provider_nightscout_invalid_url">URL invalide</string>
+    <string name="provider_nightscout_invalid_auth">Jeton invalide ou non autorisé</string>
+    <string name="provider_nightscout_invalid_config">Configuration invalide</string>
+    <string name="provider_nightscout_invalid_response">Réponse Nightscout invalide</string>
+    <string name="provider_nightscout_unsupported_version">La version Nightscout doit être 15.x.x ou plus récente</string>
+    <string name="provider_nightscout_connection_error">Erreur de connexion : %1$s</string>
+    <string name="provider_nightscout_token_warning">Le format du jeton semble inhabituel. Format attendu : ollee-xxxxxxxxxxxxxxxx</string>
+    <string name="provider_nightscout_last_fetch_title">Dernier téléchargement</string>
+    <string name="provider_nightscout_last_fetch_never">Jamais</string>
+    <string name="provider_nightscout_fetch_status_never_run">Jamais exécuté</string>
+    <string name="provider_nightscout_fetch_status_ok">OK</string>
+    <string name="provider_nightscout_fetch_status_invalid_config">Configuration invalide</string>
+    <string name="provider_nightscout_fetch_status_auth_error">Erreur d\'authentification</string>
+    <string name="provider_nightscout_fetch_status_connection_error">Erreur de connexion</string>
+    <string name="provider_nightscout_fetch_status_no_data">Pas de données</string>
+    <string name="provider_nightscout_fetch_status_invalid_response">Réponse invalide</string>
+    <string name="provider_nightscout_fetch_status_delayed_data">Données retardées</string>
+    <string name="provider_nightscout_fetch_status_server_error">Erreur serveur</string>
+    <string name="provider_nightscout_error_url_empty">L\'URL ne peut pas être vide</string>
+    <string name="provider_nightscout_error_malformed_url">URL malformée</string>
+    <string name="provider_nightscout_error_invalid_scheme">Schéma invalide (doit être http ou https)</string>
+    <string name="provider_nightscout_error_no_host">L\'URL doit contenir un hôte</string>
+
     <string name="ble_permissions_required">Accorder les permissions Bluetooth pour exécuter le service.</string>
     <string name="graph_range_2h">2 heures</string>
     <string name="graph_range_3h">3 heures</string>

@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -871,6 +872,7 @@ fun MainScreen(nav: AppNavController) {
 
             PillButton(
                 text = stringResource(R.string.pair_watch),
+                icon = Icons.Default.Bluetooth,
                 style = PillButtonStyle.SUCCESS,
                 onClick = { nav.navigate(Route.WatchPairing) }
             )
@@ -1125,6 +1127,7 @@ private fun getBannerState(
 private fun getLocalizedProviderName(providerId: String): String {
     return when (providerId) {
         "xdrip" -> stringResource(R.string.provider_xdrip)
+        "nightscout" -> stringResource(R.string.provider_nightscout)
         "constant" -> stringResource(R.string.provider_constant)
         "virtual_human" -> stringResource(R.string.provider_virtual_human)
         else -> providerId

@@ -65,8 +65,11 @@ class BleService : Service() {
 
         log("Service created")
 
-        currentProvider = GlycemiaProviderManager.getSelected(this).also {
-            it.start(this, ::onGlycemiaReading)
+        // Start provider on background thread (some providers like Nightscout make HTTP calls)
+        currentProvider = GlycemiaProviderManager.getSelected(this).also { provider ->
+            Thread {
+                provider.start(this, ::onGlycemiaReading)
+            }.start()
         }
 
         syncConnectionsWithStore()
@@ -90,8 +93,10 @@ class BleService : Service() {
             ACTION_SWITCH_PROVIDER -> {
                 currentProvider?.stop(this)
                 lastKnownReadingTimestamp = 0L
-                currentProvider = GlycemiaProviderManager.getSelected(this).also {
-                    it.start(this, ::onGlycemiaReading)
+                currentProvider = GlycemiaProviderManager.getSelected(this).also { provider ->
+                    Thread {
+                        provider.start(this, ::onGlycemiaReading)
+                    }.start()
                 }
                 return START_STICKY
             }

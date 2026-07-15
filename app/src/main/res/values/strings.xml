@@ -60,9 +60,9 @@
     <string name="provider_nightscout">Nightscout</string>
     <string name="provider_nightscout_config_title">Nightscout settings</string>
     <string name="provider_nightscout_url_label">Nightscout URL</string>
-    <string name="provider_nightscout_url_helper">Example: https://example-nightscout.org</string>
+    <string name="provider_nightscout_url_helper">Example: https://user.ns.example.com</string>
     <string name="provider_nightscout_token_label">Nightscout token</string>
-    <string name="provider_nightscout_token_helper">Use a token such as sync-xxxxxxxxxxxxxxxx. Do not use the old API_SECRET format.</string>
+    <string name="provider_nightscout_token_helper">Use a token such as ollee-xxxxxxxxxxxxxxxx. Do not use the old API_SECRET format.</string>
     <string name="provider_nightscout_summary_not_configured">Not configured</string>
     <string name="provider_nightscout_summary_configured">Configured: %1$s</string>
     <string name="provider_nightscout_test_connection">Test connection</string>
@@ -74,9 +74,22 @@
     <string name="provider_nightscout_invalid_response">Invalid Nightscout response</string>
     <string name="provider_nightscout_unsupported_version">Nightscout version must be 15.x.x or newer</string>
     <string name="provider_nightscout_connection_error">Connection error: %1$s</string>
-    <string name="provider_nightscout_token_warning">Token format looks unusual. Expected format: sync-xxxxxxxxxxxxxxxx</string>
+    <string name="provider_nightscout_token_warning">Token format looks unusual. Expected format: ollee-xxxxxxxxxxxxxxxx</string>
     <string name="provider_nightscout_last_fetch_title">Last fetch</string>
     <string name="provider_nightscout_last_fetch_never">Never</string>
+    <string name="provider_nightscout_fetch_status_never_run">Never run</string>
+    <string name="provider_nightscout_fetch_status_ok">OK</string>
+    <string name="provider_nightscout_fetch_status_invalid_config">Invalid config</string>
+    <string name="provider_nightscout_fetch_status_auth_error">Auth error</string>
+    <string name="provider_nightscout_fetch_status_connection_error">Connection error</string>
+    <string name="provider_nightscout_fetch_status_no_data">No data</string>
+    <string name="provider_nightscout_fetch_status_invalid_response">Invalid response</string>
+    <string name="provider_nightscout_fetch_status_delayed_data">Delayed data</string>
+    <string name="provider_nightscout_fetch_status_server_error">Server error</string>
+    <string name="provider_nightscout_error_url_empty">URL cannot be empty</string>
+    <string name="provider_nightscout_error_malformed_url">Malformed URL</string>
+    <string name="provider_nightscout_error_invalid_scheme">Invalid scheme (must be http or https)</string>
+    <string name="provider_nightscout_error_no_host">URL must contain a host</string>
 
     <string name="ble_permissions_required">Grant Bluetooth permissions to run the service.</string>
     <string name="graph_range_2h">2 hours</string>
