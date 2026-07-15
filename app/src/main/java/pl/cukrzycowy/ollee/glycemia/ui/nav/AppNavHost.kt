@@ -13,6 +13,7 @@ import pl.cukrzycowy.ollee.glycemia.WatchStore
 import pl.cukrzycowy.ollee.glycemia.ui.components.FirstRunImportDialog
 import pl.cukrzycowy.ollee.glycemia.ui.components.StorageAccessDialog
 import pl.cukrzycowy.ollee.glycemia.ui.screens.MainScreen
+import pl.cukrzycowy.ollee.glycemia.ui.screens.NightscoutProviderConfigScreen
 import pl.cukrzycowy.ollee.glycemia.ui.screens.ProviderConfigScreen
 import pl.cukrzycowy.ollee.glycemia.ui.screens.SettingsScreen
 import pl.cukrzycowy.ollee.glycemia.ui.screens.WatchPairingScreen
@@ -67,7 +68,14 @@ fun AppNavHost(startDestination: Route = Route.Main) {
     when (val route = nav.current) {
         is Route.Main -> MainScreen(nav = nav)
         is Route.Settings -> SettingsScreen(onBack = { nav.back() })
-        is Route.ProviderConfig -> ProviderConfigScreen(providerId = route.providerId, onBack = { nav.back() })
+        is Route.ProviderConfig -> {
+            // Route to specialized Nightscout screen or generic provider config screen
+            if (route.providerId == "nightscout") {
+                NightscoutProviderConfigScreen(onBack = { nav.back() })
+            } else {
+                ProviderConfigScreen(providerId = route.providerId, onBack = { nav.back() })
+            }
+        }
         is Route.WatchPairing -> WatchPairingScreen(onBack = { nav.back() })
     }
 
