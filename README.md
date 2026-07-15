@@ -1,10 +1,10 @@
 # Ollee Glycemia
 
-Ollee Glycemia is an Android app that bridges your glucose monitoring system (xDrip or GlucoDataHandler) with your Ollee Watch, enabling real-time glucose data display on your wrist.
+Ollee Glycemia is an Android app that bridges your glucose monitoring system (xDrip, GlucoDataHandler, or Nightscout) with your Ollee Watch, enabling real-time glucose data display on your wrist.
 
 ## Features
 
-- **Multiple data sources**: Receive glucose data from xDrip+ or GlucoDataHandler
+- **Multiple data sources**: Receive glucose data from xDrip+, GlucoDataHandler, or Nightscout
 - **Multiple watch support**: Pair and manage multiple Ollee watches
 - **Watch activity states**: Pause or stop individual watches without deleting them
 - **Night auto-pause**: Automatically pause watches during configured night time hours
@@ -25,8 +25,10 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 
 - Android device with Bluetooth capability (API 24+)
 - Ollee Watch
-- **xDrip+ or GlucoDataHandler app installed and configured**
-  - ⚠️ **If using xDrip+**: Follow the [xDrip+ Setup Guide](docs/setup/XDRIP_SETUP.md) to correctly configure broadcast receivers (critical step)
+- **One of the following data sources configured:**
+  - **xDrip+ app** - Follow the [xDrip+ Setup Guide](docs/setup/XDRIP_SETUP.md) to configure broadcast receivers (critical step)
+  - **GlucoDataHandler app** - Configure to send xDrip+ broadcasts
+  - **Nightscout instance** - Follow the [Nightscout Setup Guide](docs/setup/NIGHTSCOUT_SETUP.md) to set up remote glucose access
 
 ### Installation
 
@@ -83,19 +85,27 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 
 #### Step 5: Configure Your Glucose Data Source
 
-**Configure xDrip+:**
+Choose one of the following data sources:
+
+**Option A: Configure xDrip+**
 - Open xDrip+ app
 - Go to **Settings → Inter-app settings**
 - Enable "Broadcast data locally" and "Send BG data to other apps"
 - Tap **"Identify Receiver"** and enter: `pl.cukrzycowy.ollee.glycemia`
-  - If other apps are already listed, add it with a space separator
+  - If other receiver apps are already listed, add it with a space separator
+- See the [xDrip+ Setup Guide](docs/setup/XDRIP_SETUP.md) for detailed step-by-step instructions
 
-**Configure GlucoDataHandler:**
+**Option B: Configure GlucoDataHandler**
 - Open GlucoDataHandler
 - Go to **Settings → Transfer Values**
 - Enable "Local Applications" and click on it
 - Enable "Send xDrip+ Broadcast"
 - Go to **Identify xDrip+ broadcast receivers** and select "Ollee Glycemia"
+
+**Option C: Configure Nightscout**
+- In Ollee Glycemia, select **Nightscout** from the available data sources
+- Enter your Nightscout URL and API token
+- See the [Nightscout Setup Guide](docs/setup/NIGHTSCOUT_SETUP.md) for detailed step-by-step instructions with screenshots
 
 ### Viewing Glucose Data on Your Watch
 
