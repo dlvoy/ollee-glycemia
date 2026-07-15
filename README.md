@@ -17,13 +17,16 @@ Ollee Glycemia is an Android app that bridges your glucose monitoring system (xD
 
 **Do not use any data displayed on the watch to make medical decisions.** The BG values shown on the watch may be inaccurate due to synchronization issues or data source delays. Always verify readings using your primary glucose monitoring device.
 
+**Important**: The watch firmware relies on the app to update displayed glucose data. If the connection is lost or synchronization fails, the watch will continue displaying the last received glucose value—**without any indication that it is outdated or stale**. The watch has no way to know how old the displayed data is. This means you could see incorrect glucose readings if the watch and phone are disconnected, and the watch will not update until the app successfully resynchronizes.
+
 ## Getting Started
 
 ### Prerequisites
 
 - Android device with Bluetooth capability (API 24+)
 - Ollee Watch
-- xDrip+ or GlucoDataHandler app installed and configured
+- **xDrip+ or GlucoDataHandler app installed and configured**
+  - ⚠️ **If using xDrip+**: Follow the [xDrip+ Setup Guide](docs/setup/XDRIP_SETUP.md) to correctly configure broadcast receivers (critical step)
 
 ### Installation
 
