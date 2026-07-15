@@ -23,17 +23,89 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
         callback = onReading
         isRunning = true
 
-        // Phase 2+: Read config, validate, schedule fetch
-        // For now: save INVALID_CONFIG state since provider is not fully initialized
-        val invalidState = NightscoutLastFetchState(
-            status = NightscoutFetchStatus.INVALID_CONFIG,
-            attemptedAtMillis = null,
-            completedAtMillis = null,
-            readingTimestampMillis = null,
-            bg = null,
-            detail = "Provider not fully initialized in Phase 1"
-        )
-        NightscoutFetchStateStore.write(context, invalidState)
+        // Read config and validate
+        val config = getSavedConfig(context)
+        val baseUrl = config[KEY_BASE_URL]
+        val token = config[KEY_TOKEN]
+
+        if (baseUrl.isNullOrEmpty()) {
+            val invalidState = NightscoutLastFetchState(
+                status = NightscoutFetchStatus.INVALID_CONFIG,
+                attemptedAtMillis = System.currentTimeMillis(),
+                completedAtMillis = System.currentTimeMillis(),
+                readingTimestampMillis = null,
+                bg = null,
+                detail = "Base URL not configured"
+            )
+            NightscoutFetchStateStore.write(context, invalidState)
+            return
+        }
+
+        // Validate and normalize URL
+        val normalizationResult = NightscoutUrlNormalizer.normalize(baseUrl)
+        if (normalizationResult is NightscoutConfigValidationResult.Invalid) {
+            val invalidState = NightscoutLastFetchState(
+                status = NightscoutFetchStatus.INVALID_CONFIG,
+                attemptedAtMillis = System.currentTimeMillis(),
+                completedAtMillis = System.currentTimeMillis(),
+                readingTimestampMillis = null,
+                bg = null,
+                detail = normalizationResult.reason
+            )
+            NightscoutFetchStateStore.write(context, invalidState)
+            return
+        }
+
+        val normalizedConfig = (normalizationResult as NightscoutConfigValidationResult.Valid).normalized
+        val normalizedUrl = normalizedConfig.baseUrl
+        val effectiveToken = (token ?: "").ifEmpty { normalizedConfig.extractedToken }
+
+        // Test connection with status() call
+        val httpClient = NightscoutHttpClient(normalizedUrl, effectiveToken)
+        val statusResult = httpClient.status()
+
+        when (statusResult) {
+            is NightscoutParseResult.Success -> {
+                val status = statusResult.value
+                Log.d(TAG, "Connected to Nightscout v${status.version}: ${status.title ?: "unnamed"}")
+                
+                val okState = NightscoutLastFetchState(
+                    status = NightscoutFetchStatus.OK,
+                    attemptedAtMillis = System.currentTimeMillis(),
+                    completedAtMillis = System.currentTimeMillis(),
+                    readingTimestampMillis = null,
+                    bg = null,
+                    detail = "Connected to ${status.version}"
+                )
+                NightscoutFetchStateStore.write(context, okState)
+
+                // Phase 3+: Schedule regular fetch here
+                // For now, just mark as ready
+            }
+            is NightscoutParseResult.Failure -> {
+                Log.e(TAG, "Connection test failed: ${statusResult.reason}")
+                
+                val failureStatus = when {
+                    statusResult.reason.contains("401") || statusResult.reason.contains("Authentication") -> 
+                        NightscoutFetchStatus.AUTH_ERROR
+                    statusResult.reason.contains("timeout", ignoreCase = true) -> 
+                        NightscoutFetchStatus.CONNECTION_ERROR
+                    statusResult.reason.contains("unsupported", ignoreCase = true) -> 
+                        NightscoutFetchStatus.INVALID_RESPONSE
+                    else -> NightscoutFetchStatus.CONNECTION_ERROR
+                }
+
+                val failState = NightscoutLastFetchState(
+                    status = failureStatus,
+                    attemptedAtMillis = System.currentTimeMillis(),
+                    completedAtMillis = System.currentTimeMillis(),
+                    readingTimestampMillis = null,
+                    bg = null,
+                    detail = statusResult.reason
+                )
+                NightscoutFetchStateStore.write(context, failState)
+            }
+        }
     }
 
     override fun stop(context: Context) {
