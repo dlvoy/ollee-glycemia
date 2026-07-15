@@ -416,32 +416,36 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Column(verticalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)) {
                     Text(
                         text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
-                        modifier = Modifier.clickable {
-                            val alreadyDevStr = context.getString(R.string.dev_already_unlocked)
-                            val unlockedStr = context.getString(R.string.dev_unlocked)
-                            val unlockToastStr = context.getString(R.string.dev_unlock_toast)
+                        modifier = if (BuildConfig.DEBUG) {
+                            Modifier.clickable {
+                                val alreadyDevStr = context.getString(R.string.dev_already_unlocked)
+                                val unlockedStr = context.getString(R.string.dev_unlocked)
+                                val unlockToastStr = context.getString(R.string.dev_unlock_toast)
 
-                            if (devOptionsUnlocked) {
-                                Toast.makeText(context, alreadyDevStr, Toast.LENGTH_SHORT).show()
-                            } else {
-                                versionClickCount++
-                                val remaining = 7 - versionClickCount
-                                when {
-                                    remaining == 3 || (remaining in 0..2 && versionClickCount < 7) -> {
-                                        lastToast?.cancel()
-                                        lastToast = Toast.makeText(context, unlockToastStr.replace("%d", remaining.toString()), Toast.LENGTH_SHORT).apply { show() }
-                                    }
-                                    versionClickCount == 7 -> {
-                                        lastToast?.cancel()
-                                        DebugStore.setDeveloperOptionsUnlocked(context, true)
-                                        devOptionsUnlocked = true
-                                        Toast.makeText(context, unlockedStr, Toast.LENGTH_SHORT).show()
-                                    }
-                                    versionClickCount > 7 -> {
-                                        versionClickCount = 0
+                                if (devOptionsUnlocked) {
+                                    Toast.makeText(context, alreadyDevStr, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    versionClickCount++
+                                    val remaining = 7 - versionClickCount
+                                    when {
+                                        remaining == 3 || (remaining in 0..2 && versionClickCount < 7) -> {
+                                            lastToast?.cancel()
+                                            lastToast = Toast.makeText(context, unlockToastStr.replace("%d", remaining.toString()), Toast.LENGTH_SHORT).apply { show() }
+                                        }
+                                        versionClickCount == 7 -> {
+                                            lastToast?.cancel()
+                                            DebugStore.setDeveloperOptionsUnlocked(context, true)
+                                            devOptionsUnlocked = true
+                                            Toast.makeText(context, unlockedStr, Toast.LENGTH_SHORT).show()
+                                        }
+                                        versionClickCount > 7 -> {
+                                            versionClickCount = 0
+                                        }
                                     }
                                 }
                             }
+                        } else {
+                            Modifier
                         }
                     )
                     Text(stringResource(R.string.settings_build_commit, BuildConfig.GIT_COMMIT_HASH))
