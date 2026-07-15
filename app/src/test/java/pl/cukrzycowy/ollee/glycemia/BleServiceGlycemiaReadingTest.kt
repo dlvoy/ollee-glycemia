@@ -1,8 +1,9 @@
-package com.arthur.bgollee
+package pl.cukrzycowy.ollee.glycemia
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Looper
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +17,7 @@ import pl.cukrzycowy.ollee.glycemia.BleService
 import pl.cukrzycowy.ollee.glycemia.GlycemiaHistoryEntry
 import pl.cukrzycowy.ollee.glycemia.GlycemiaHistoryStore
 import pl.cukrzycowy.ollee.glycemia.GlycemiaReading
+import pl.cukrzycowy.ollee.glycemia.XdripProvider
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -41,19 +43,11 @@ class BleServiceGlycemiaReadingTest {
             timestamp = testTimestamp
         )
 
-        // Create a service instance and call onGlycemiaReading via reflection
-        val service = spy(BleService())
-
-        // Since onGlycemiaReading is private, we access it via reflection
-        val method = BleService::class.java.getDeclaredMethod("onGlycemiaReading", GlycemiaReading::class.java)
-        method.isAccessible = true
-
-        // Mock the service's dependencies
-        `when`(service.getSystemService(android.app.NotificationManager::class.java)).thenReturn(mock(android.app.NotificationManager::class.java))
-        `when`(service.getSharedPreferences("data", Context.MODE_PRIVATE)).thenReturn(prefs)
-
-        // This test verifies that the timestamp is preserved in SharedPreferences
-        // The actual behavior will be tested via integration
+        // Verify that GlycemiaReading preserves the timestamp
+        assertEquals(testTimestamp, reading.timestamp)
+        assertEquals("150", reading.bg)
+        assertEquals("UP", reading.trend)
+        assertEquals(5.0, reading.delta ?: 0.0, 0.001)
     }
 
     @Test
@@ -102,7 +96,7 @@ class BleServiceGlycemiaReadingTest {
 
     @Test
     fun xDripProviderExtractsTimestamp() {
-        val provider = com.arthur.bgollee.XdripProviderTest()
+        val provider = XdripProvider()
 
         // Test that xDrip broadcast with timestamp is extracted
         val testTimestamp = 1672531200000L // Some timestamp

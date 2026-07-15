@@ -55,6 +55,29 @@
     <string name="provider_virtual_human_seed_helper">Optional. Leave empty = random pattern on each start.</string>
     <string name="provider_virtual_human_seed_random">random</string>
     <string name="provider_virtual_human_summary_format">%1$s, seed: %2$s</string>
+
+    <!-- Nightscout Provider -->
+    <string name="provider_nightscout">Nightscout</string>
+    <string name="provider_nightscout_config_title">Nightscout settings</string>
+    <string name="provider_nightscout_url_label">Nightscout URL</string>
+    <string name="provider_nightscout_url_helper">Example: https://example-nightscout.org</string>
+    <string name="provider_nightscout_token_label">Nightscout token</string>
+    <string name="provider_nightscout_token_helper">Use a token such as sync-xxxxxxxxxxxxxxxx. Do not use the old API_SECRET format.</string>
+    <string name="provider_nightscout_summary_not_configured">Not configured</string>
+    <string name="provider_nightscout_summary_configured">Configured: %1$s</string>
+    <string name="provider_nightscout_test_connection">Test connection</string>
+    <string name="provider_nightscout_testing">Testing connection…</string>
+    <string name="provider_nightscout_status_ok">OK - Nightscout %1$s</string>
+    <string name="provider_nightscout_invalid_url">Invalid URL</string>
+    <string name="provider_nightscout_invalid_auth">Invalid token or unauthorized</string>
+    <string name="provider_nightscout_invalid_config">Invalid configuration</string>
+    <string name="provider_nightscout_invalid_response">Invalid Nightscout response</string>
+    <string name="provider_nightscout_unsupported_version">Nightscout version must be 15.x.x or newer</string>
+    <string name="provider_nightscout_connection_error">Connection error: %1$s</string>
+    <string name="provider_nightscout_token_warning">Token format looks unusual. Expected format: sync-xxxxxxxxxxxxxxxx</string>
+    <string name="provider_nightscout_last_fetch_title">Last fetch</string>
+    <string name="provider_nightscout_last_fetch_never">Never</string>
+
     <string name="ble_permissions_required">Grant Bluetooth permissions to run the service.</string>
     <string name="graph_range_2h">2 hours</string>
     <string name="graph_range_3h">3 hours</string>

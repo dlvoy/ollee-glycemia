@@ -9,6 +9,7 @@ object GlycemiaProviderManager {
     val allProviders: List<GlycemiaProvider> = listOf(
         XdripProvider(),
         ConstantProvider(),
+        NightscoutProvider(),
         VirtualHumanProvider()
     )
 

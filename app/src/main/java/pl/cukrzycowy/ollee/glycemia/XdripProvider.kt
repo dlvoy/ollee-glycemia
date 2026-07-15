@@ -87,6 +87,8 @@ class XdripProvider : GlycemiaProvider {
 
         val timestamp = if (intent.hasExtra("bg.timeStamp")) {
             intent.getLongExtra("bg.timeStamp", 0L).takeIf { it > 0 } ?: System.currentTimeMillis()
+        } else if (intent.hasExtra("com.eveningoutpost.dexdrip.Extras.SgvTimestampMs")) {
+            intent.getLongExtra("com.eveningoutpost.dexdrip.Extras.SgvTimestampMs", 0L).takeIf { it > 0 } ?: System.currentTimeMillis()
         } else {
             readTimestamp(intent, "com.eveningoutpost.dexdrip.Extras.Time")
                 ?: System.currentTimeMillis()
