@@ -18,9 +18,17 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
     private val handler = Handler(Looper.getMainLooper())
     private var isRunning = false
 
+    // State for scheduler
+    private var httpClient: NightscoutHttpClient? = null
+    private var lastReadingTimestamp: Long = 0L
+    private var lastReadingReceivedAt: Long = 0L
+    private var failureCount: Int = 0
+    private var context: Context? = null
+
     override fun start(context: Context, onReading: (GlycemiaReading) -> Unit) {
         Log.d(TAG, "Starting Nightscout provider")
         callback = onReading
+        this.context = context
         isRunning = true
 
         // Read config and validate
@@ -60,9 +68,11 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
         val normalizedUrl = normalizedConfig.baseUrl
         val effectiveToken = (token ?: "").ifEmpty { normalizedConfig.extractedToken }
 
+        // Create HTTP client
+        httpClient = NightscoutHttpClient(normalizedUrl, effectiveToken)
+
         // Test connection with status() call
-        val httpClient = NightscoutHttpClient(normalizedUrl, effectiveToken)
-        val statusResult = httpClient.status()
+        val statusResult = httpClient!!.status()
 
         when (statusResult) {
             is NightscoutParseResult.Success -> {
@@ -79,8 +89,11 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
                 )
                 NightscoutFetchStateStore.write(context, okState)
 
-                // Phase 3+: Schedule regular fetch here
-                // For now, just mark as ready
+                // Schedule first fetch immediately, then adaptive scheduling
+                lastReadingReceivedAt = System.currentTimeMillis()
+                lastReadingTimestamp = System.currentTimeMillis()
+                failureCount = 0
+                scheduleFetch()
             }
             is NightscoutParseResult.Failure -> {
                 Log.e(TAG, "Connection test failed: ${statusResult.reason}")
@@ -113,6 +126,8 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
         isRunning = false
         handler.removeCallbacksAndMessages(null)
         callback = null
+        httpClient = null
+        this.context = null
     }
 
     override fun getConfigSpec(context: Context): ProviderConfigSpec {
@@ -155,6 +170,106 @@ class NightscoutProvider : ConfigurableGlycemiaProvider {
             context.getString(R.string.provider_nightscout_summary_not_configured)
         } else {
             context.getString(R.string.provider_nightscout_summary_configured, baseUrl)
+        }
+    }
+
+    /**
+     * Schedule the next fetch based on adaptive scheduling logic.
+     */
+    private fun scheduleFetch() {
+        if (!isRunning || httpClient == null || callback == null || context == null) {
+            return
+        }
+
+        val delayMs = NightscoutScheduler.calculateNextFetchDelay(
+            lastReadingTimestampMs = lastReadingTimestamp,
+            lastReadingReceivedAt = lastReadingReceivedAt,
+            timeNow = System.currentTimeMillis(),
+            failureCount = failureCount
+        )
+
+        Log.d(TAG, "Scheduling next fetch in ${delayMs}ms")
+        handler.postDelayed({ fetchReadings() }, delayMs)
+    }
+
+    /**
+     * Fetch latest reading from Nightscout and schedule next fetch.
+     */
+    private fun fetchReadings() {
+        if (!isRunning || httpClient == null || callback == null || context == null) {
+            return
+        }
+
+        val attemptTime = System.currentTimeMillis()
+        val entriesResult = httpClient!!.entries(count = 1)
+
+        when (entriesResult) {
+            is NightscoutParseResult.Success -> {
+                val entry = entriesResult.value
+                val reading = NightscoutScheduler.entryToReading(entry)
+
+                // Update state
+                lastReadingTimestamp = entry.timestampMillis
+                lastReadingReceivedAt = System.currentTimeMillis()
+                failureCount = 0
+
+                // Call provider callback
+                callback!!(reading)
+
+                // Store state
+                val successState = NightscoutLastFetchState(
+                    status = NightscoutFetchStatus.OK,
+                    attemptedAtMillis = attemptTime,
+                    completedAtMillis = System.currentTimeMillis(),
+                    readingTimestampMillis = entry.timestampMillis,
+                    bg = entry.sgv.toString(),
+                    detail = null,
+                    httpCode = 200
+                )
+                NightscoutFetchStateStore.write(context!!, successState)
+
+                Log.d(TAG, "Fetched reading: ${entry.sgv} (age=${System.currentTimeMillis() - entry.timestampMillis}ms)")
+
+                // Schedule next fetch
+                scheduleFetch()
+            }
+            is NightscoutParseResult.Failure -> {
+                failureCount++
+                Log.w(TAG, "Fetch failed (attempt $failureCount): ${entriesResult.reason}")
+
+                // Classify error and store state
+                val errorStatus = when {
+                    entriesResult.reason.contains("401") || entriesResult.reason.contains("Authentication") ->
+                        NightscoutFetchStatus.AUTH_ERROR
+                    entriesResult.reason.contains("timeout", ignoreCase = true) ->
+                        NightscoutFetchStatus.CONNECTION_ERROR
+                    entriesResult.reason.contains("Empty response") ->
+                        NightscoutFetchStatus.NO_DATA
+                    entriesResult.reason.contains("invalid", ignoreCase = true) ->
+                        NightscoutFetchStatus.INVALID_RESPONSE
+                    else -> NightscoutFetchStatus.CONNECTION_ERROR
+                }
+
+                val failState = NightscoutLastFetchState(
+                    status = errorStatus,
+                    attemptedAtMillis = attemptTime,
+                    completedAtMillis = System.currentTimeMillis(),
+                    readingTimestampMillis = lastReadingTimestamp.takeIf { it > 0 },
+                    bg = null,
+                    detail = entriesResult.reason,
+                    nextFetchAtMillis = System.currentTimeMillis() + 
+                        NightscoutScheduler.calculateNextFetchDelay(
+                            lastReadingTimestampMs = lastReadingTimestamp,
+                            lastReadingReceivedAt = lastReadingReceivedAt,
+                            timeNow = System.currentTimeMillis(),
+                            failureCount = failureCount
+                        )
+                )
+                NightscoutFetchStateStore.write(context!!, failState)
+
+                // Schedule retry with backoff
+                scheduleFetch()
+            }
         }
     }
 
