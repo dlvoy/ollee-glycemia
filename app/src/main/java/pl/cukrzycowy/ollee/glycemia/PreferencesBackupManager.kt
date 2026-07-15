@@ -61,6 +61,24 @@ object PreferencesBackupManager {
 
         val prefs = context.getSharedPreferences("data", Context.MODE_PRIVATE)
         backup.put("provider", GlycemiaProviderManager.getSelected(context).id)
+        
+        // Save configurations for all providers
+        val providerConfigs = JSONObject()
+        GlycemiaProviderManager.allProviders.forEach { provider ->
+            if (provider is ConfigurableGlycemiaProvider) {
+                val configurableProvider = provider as ConfigurableGlycemiaProvider
+                val config = configurableProvider.getSavedConfig(context)
+                if (config.isNotEmpty()) {
+                    val configObj = JSONObject()
+                    config.forEach { (key, value) ->
+                        configObj.put(key, value)
+                    }
+                    providerConfigs.put(provider.id, configObj)
+                }
+            }
+        }
+        backup.put("providerConfigs", providerConfigs)
+        
         backup.put("lastBg", prefs.getString("last_bg", ""))
 
         val lastDelta = prefs.getFloat("last_delta", Float.NaN)
@@ -165,6 +183,24 @@ object PreferencesBackupManager {
 
         if (backup.has("provider")) {
             GlycemiaProviderManager.setSelected(context, backup.getString("provider"))
+        }
+
+        // Restore configurations for all providers
+        if (backup.has("providerConfigs")) {
+            val providerConfigs = backup.getJSONObject("providerConfigs")
+            GlycemiaProviderManager.allProviders.forEach { provider ->
+                if (provider is ConfigurableGlycemiaProvider && providerConfigs.has(provider.id)) {
+                    val configurableProvider = provider as ConfigurableGlycemiaProvider
+                    val configObj = providerConfigs.getJSONObject(provider.id)
+                    val config = mutableMapOf<String, String>()
+                    val keys = configObj.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        config[key] = configObj.getString(key)
+                    }
+                    configurableProvider.saveConfig(context, config)
+                }
+            }
         }
 
         if (backup.has("lastDelta")) {
