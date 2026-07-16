@@ -113,7 +113,22 @@ Choose one of the following data sources:
 
 Once configured, when a new glucose reading is received:
 - **Long-press the bottom-right button** on your watch to display your current glucose level
-- The value will remain displayed until you press the button again or a new reading arrives
+
+<img src="docs/ollee_glycemia_preview.png" width="250" alt="Long press and hold bottom-right button of Casio watch to display glucose level">
+
+- When screensaver is enabled (in [Ollee Watch app](https://play.google.com/store/apps/details?id=app.ollee.ollee_watch.ollee_watch) device settings) - glucose level will be shown as a screen saver, after 30 seconds of inactivity. When movement is detected - watch wakes up to show main dial.
+
+<img src="docs/ollee_screensaver_setup.png" width="250" alt="Enabling screen saver in Ollee Watch app device settings">
+
+
+
+> **⚠️ Warning** Due to limitations of Ollee Watch `00.01.10` firmware - once screensaver is shown - it is not updated. 
+> 
+> When new glucose reading arrives, screensaver still displays old one! To get up-to-date value, long press method should be used, or the watch needs to be awakened and go again into screensaver mode.
+> 
+> That means **screensaver may show outdated value!**
+
+> **ℹ️ Strange digits** Because of limitations of Casio's `Module 593` compatible displays used by Ollee Watch mod - not all segments of the display can be independently turned on. Some digits in some positions look strange - like the `7` in the example above - it appears "shorter". 
 
 ### Reconnecting Your Watch
 
