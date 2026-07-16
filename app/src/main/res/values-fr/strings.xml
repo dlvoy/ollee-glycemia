@@ -220,4 +220,10 @@
     <string name="first_run_skip_button">Nouvelle configuration</string>
     <string name="first_run_restore_success">Paramètres restaurés. Veuillez redémarrer l\'application.</string>
     <string name="first_run_restore_failed">La restauration a échoué : %s</string>
+
+    <!-- Disclaimer -->
+    <string name="disclaimer_title">AVIS DE NON-RESPONSABILITÉ</string>
+    <string name="disclaimer_body">**N\'utilisez pas les données affichées sur la montre pour prendre des décisions médicales.** Les valeurs de glycémie affichées sur la montre peuvent être inexactes en raison de problèmes de synchronisation ou de retards de la source de données. Vérifiez toujours vos lectures à l\'aide de votre appareil de surveillance de la glycémie principal.\n\n**Important** : Le micrologiciel de la montre dépend de l\'application pour mettre à jour les données de glycémie affichées. Si la connexion est perdue ou si la synchronisation échoue, la montre continuera à afficher la dernière valeur de glycémie reçue—**sans aucune indication que les données sont obsolètes ou périmées**. La montre n\'a aucun moyen de connaître l\'âge des données affichées. Cela signifie que vous pourriez voir des lectures de glycémie incorrectes si la montre et le téléphone sont déconnectés, et la montre ne se mettra pas à jour jusqu\'à ce que l\'application se resynchronise avec succès.</string>
+    <string name="disclaimer_checkbox">J\'ai lu et compris l\'avis de non-responsabilité</string>
+    <string name="disclaimer_button">J\'ai compris</string>
 </resources>

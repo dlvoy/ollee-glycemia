@@ -6,10 +6,12 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import pl.cukrzycowy.ollee.glycemia.DisclaimerStore
 import pl.cukrzycowy.ollee.glycemia.PreferencesBackupManager
 import pl.cukrzycowy.ollee.glycemia.StoragePermissionHelper
 import pl.cukrzycowy.ollee.glycemia.StoragePermissionStore
 import pl.cukrzycowy.ollee.glycemia.WatchStore
+import pl.cukrzycowy.ollee.glycemia.ui.components.DisclaimerDialog
 import pl.cukrzycowy.ollee.glycemia.ui.components.FirstRunImportDialog
 import pl.cukrzycowy.ollee.glycemia.ui.components.StorageAccessDialog
 import pl.cukrzycowy.ollee.glycemia.ui.screens.MainScreen
@@ -42,21 +44,28 @@ fun AppNavHost(startDestination: Route = Route.Main) {
     val context = LocalContext.current
     val backStack = remember { mutableStateListOf(startDestination) }
     val nav = remember(backStack) { AppNavController(backStack) }
+    val showDisclaimer = remember { mutableStateOf(false) }
     val showFirstRunImport = remember { mutableStateOf(false) }
     val showStorageAccessDialog = remember { mutableStateOf(false) }
 
-    // Check if this is first run (no watches configured) and if backups might exist
+    // Check if user has accepted disclaimer, and if first run with backups
     remember {
-        val watches = WatchStore.getAll(context)
-        if (watches.isEmpty()) {
-            val hasAllFilesAccess = StoragePermissionHelper.hasAllFilesAccess()
-            if (hasAllFilesAccess) {
-                val hasBackup = PreferencesBackupManager.findLatestBackup(context) != null
-                showFirstRunImport.value = hasBackup
-            } else {
-                val userDeclinedPrompt = StoragePermissionStore.hasUserDeclinedPrompt(context)
-                if (!userDeclinedPrompt) {
-                    showStorageAccessDialog.value = true
+        val hasAcceptedDisclaimer = DisclaimerStore.hasUserAcceptedDisclaimer(context)
+        if (!hasAcceptedDisclaimer) {
+            showDisclaimer.value = true
+        } else {
+            // Only proceed to first run checks if disclaimer is already accepted
+            val watches = WatchStore.getAll(context)
+            if (watches.isEmpty()) {
+                val hasAllFilesAccess = StoragePermissionHelper.hasAllFilesAccess()
+                if (hasAllFilesAccess) {
+                    val hasBackup = PreferencesBackupManager.findLatestBackup(context) != null
+                    showFirstRunImport.value = hasBackup
+                } else {
+                    val userDeclinedPrompt = StoragePermissionStore.hasUserDeclinedPrompt(context)
+                    if (!userDeclinedPrompt) {
+                        showStorageAccessDialog.value = true
+                    }
                 }
             }
         }
@@ -92,5 +101,27 @@ fun AppNavHost(startDestination: Route = Route.Main) {
 
     if (showFirstRunImport.value) {
         FirstRunImportDialog(onDismiss = { showFirstRunImport.value = false })
+    }
+
+    if (showDisclaimer.value) {
+        DisclaimerDialog(
+            onDismiss = {
+                showDisclaimer.value = false
+                // After disclaimer is accepted, proceed to check first run dialogs
+                val watches = WatchStore.getAll(context)
+                if (watches.isEmpty()) {
+                    val hasAllFilesAccess = StoragePermissionHelper.hasAllFilesAccess()
+                    if (hasAllFilesAccess) {
+                        val hasBackup = PreferencesBackupManager.findLatestBackup(context) != null
+                        showFirstRunImport.value = hasBackup
+                    } else {
+                        val userDeclinedPrompt = StoragePermissionStore.hasUserDeclinedPrompt(context)
+                        if (!userDeclinedPrompt) {
+                            showStorageAccessDialog.value = true
+                        }
+                    }
+                }
+            }
+        )
     }
 }

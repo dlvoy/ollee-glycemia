@@ -220,4 +220,10 @@
     <string name="first_run_skip_button">Nowa konfiguracja</string>
     <string name="first_run_restore_success">Ustawienia przywrócone. Proszę uruchomić ponownie aplikację.</string>
     <string name="first_run_restore_failed">Przywracanie nie powiodło się: %s</string>
+
+    <!-- Disclaimer -->
+    <string name="disclaimer_title">ZASTRZEŻENIE</string>
+    <string name="disclaimer_body">**Nie używaj żadnych danych wyświetlanych na zegarku do podejmowania decyzji medycznych.** Wartości glikemii pokazywane na zegarku mogą być niedokładne z powodu problemów z synchronizacją lub opóźnień źródła danych. Zawsze weryfikuj odczyty za pomocą swojego głównego urządzenia do monitorowania glikemii.\n\n**Ważne**: Oprogramowanie zegarka zależy od aplikacji w celu aktualizacji wyświetlanych danych glikemii. Jeśli połączenie zostanie utracone lub synchronizacja się nie powiedzie, zegarek będzie nadal wyświetlać ostatnią otrzymaną wartość glikemii—**bez żadnej informacji, że dane są przestarzałe lub nieaktualne**. Zegarek nie ma możliwości poznania wieku wyświetlanych danych. Oznacza to, że możesz zobaczyć nieprawidłowe odczyty glikemii, jeśli zegarek i telefon będą rozłączone, a zegarek nie będzie aktualizował się do czasu pomyślnej resynchronizacji.</string>
+    <string name="disclaimer_checkbox">Przeczytałem i rozumiem zastrzeżenie</string>
+    <string name="disclaimer_button">Rozumiem</string>
 </resources>
