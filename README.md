@@ -2,6 +2,8 @@
 
 Ollee Glycemia is an Android app that bridges your glucose monitoring system (xDrip, GlucoDataHandler, or Nightscout) with your Ollee Watch, enabling real-time glucose data display on your wrist.
 
+<img src="docs/ollee_glycemia_main_screen.png" width="250" alt="Ollee Glycemia main screen - using xDrip glycemia provider with two watches paired - gold Casio F-91W (stopped) and silver Casio A158WE (synced)">
+
 ## Features
 
 - **Multiple data sources**: Receive glucose data from xDrip+, GlucoDataHandler, or Nightscout

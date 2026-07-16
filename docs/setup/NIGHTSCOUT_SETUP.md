@@ -52,11 +52,15 @@ After saving, the subject will appear in the subjects list. Look for the **"Acce
 1. Open **Ollee Glycemia** on your Android device
 2. In **Glycemia Source** tap on change icon (two arrows)
 3. Select **Nightscout** from the list of available providers
-4. Enter your Nightscout details:
+4. In provider pill, click edit icon to open **Nightscout settings**
+
+<img src="nightscout_provider_settings.png" width="250" alt="Nightscout provider settings screen">
+
+5. Enter your Nightscout details:
    - **Nightscout URL**: Your full Nightscout instance URL (e.g., `https://myname.herokuapp.com` or `https://nightscout.example.com`)
    - **Nightscout Token**: Paste the access token you copied in Step 5
-5. Tap **Test connection** to verify the settings
-6. Tap **Save** to apply the configuration
+6. Tap **Test connection** to verify the settings
+7. Tap **Save** to apply the configuration
 
 ## Testing the Connection
 
