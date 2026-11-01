@@ -17,7 +17,7 @@ They don't fit together:
 One release path: `/commit` for every change, `/commit as <level>` (then `/commit-tag-push` or a manual push) to release. The gradle default version, CHANGELOG section, tag link and tag all stay consistent.
 
 ## Scope
-- Teach the global `/commit` (and `/commit-tag-push`) about this repo's version location and changelog conventions
+- Teach `/commit` and `/commit-tag-push` this repo's version location and changelog conventions through the project `CLAUDE.md`, without changing the global skills
 - Reduce `bump-version.sh` to the version-only and link operations those skills need
 - Retire or thin the project `/changelog-*` skills
 - Update `RELEASING.md` and `.claude/skills/README.md`

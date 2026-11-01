@@ -1,117 +1,92 @@
 #!/bin/bash
-# Semantic version bumper for OlleeGlycemia
-# Usage: bump-version.sh major|minor|patch
+# Version helper for OlleeGlycemia, run during /commit releases (see CLAUDE.md).
+#
+# Usage:
+#   bump-version.sh --current        print the default appVersionName from gradle
+#   bump-version.sh --release X.Y.Z  --set and --link in one go
+#   bump-version.sh --set X.Y.Z      set the default appVersionName in gradle
+#   bump-version.sh --link X.Y.Z     add the [X.Y.Z] release link to CHANGELOG.md
+#                                    and repoint [Unreleased] at vX.Y.Z
+#
+# Changelog sections are written by /commit, not by this script.
 
 set -e
 
-BUMP_TYPE="${1:-patch}"
 GRADLE_FILE="app/build.gradle.kts"
 CHANGELOG_FILE="CHANGELOG.md"
+REPO_URL="https://github.com/dlvoy/ollee-glycemia"
 
-if [ ! -f "$GRADLE_FILE" ]; then
-    echo "❌ Error: $GRADLE_FILE not found"
+usage() {
+    sed -n '4,10p' "$0" | sed 's/^# \{0,1\}//'
     exit 1
-fi
+}
 
-if [ ! -f "$CHANGELOG_FILE" ]; then
-    echo "❌ Error: $CHANGELOG_FILE not found"
-    exit 1
-fi
+require_semver() {
+    if ! [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "Error: '$1' is not X.Y.Z" >&2
+        exit 1
+    fi
+}
 
-# Extract current version from gradle file (macOS compatible)
-CURRENT_VERSION=$(grep "val appVersionName:" "$GRADLE_FILE" | awk -F'"' '{print $(NF-1)}')
+current_version() {
+    grep "val appVersionName:" "$GRADLE_FILE" | awk -F'"' '{print $(NF-1)}'
+}
 
-if [ -z "$CURRENT_VERSION" ]; then
-    echo "❌ Error: Could not extract version from $GRADLE_FILE"
-    exit 1
-fi
+[ -f "$GRADLE_FILE" ] || { echo "Error: $GRADLE_FILE not found (run from repo root)" >&2; exit 1; }
 
-echo "Current version: $CURRENT_VERSION"
-
-# Parse semver
-IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-
-# Bump version based on type
-case "$BUMP_TYPE" in
-    major)
-        MAJOR=$((MAJOR + 1))
-        MINOR=0
-        PATCH=0
+case "$1" in
+    --current)
+        current_version
         ;;
-    minor)
-        MINOR=$((MINOR + 1))
-        PATCH=0
+    --release)
+        bash "$0" --set "$2"
+        bash "$0" --link "$2"
         ;;
-    patch)
-        PATCH=$((PATCH + 1))
+    --set)
+        NEW="${2#v}"
+        require_semver "$NEW"
+        OLD=$(current_version)
+        [ -n "$OLD" ] || { echo "Error: appVersionName not found in $GRADLE_FILE" >&2; exit 1; }
+        TMP="$GRADLE_FILE.tmp.$$"
+        awk -v new="$NEW" '
+            /val appVersionName:/ && !done { sub(/"[^"]*"[[:space:]]*$/, "\"" new "\""); done=1 }
+            { print }
+        ' "$GRADLE_FILE" > "$TMP" && mv "$TMP" "$GRADLE_FILE"
+        echo "$OLD -> $(current_version)"
+        ;;
+    --link)
+        NEW="${2#v}"
+        require_semver "$NEW"
+        [ -f "$CHANGELOG_FILE" ] || { echo "Error: $CHANGELOG_FILE not found" >&2; exit 1; }
+        if grep -q "^\[$NEW\]: " "$CHANGELOG_FILE"; then
+            echo "Link for $NEW already present"
+            exit 0
+        fi
+        TMP="$CHANGELOG_FILE.tmp.$$"
+        awk -v new="$NEW" -v url="$REPO_URL" '
+            /^\[Unreleased\]: / {
+                if (added) next
+                print "[Unreleased]: " url "/compare/v" new "...HEAD"
+                print "[" new "]: " url "/releases/tag/v" new
+                added=1; next
+            }
+            /^\[[^]]+\]: https:\/\// && !added {
+                print "[Unreleased]: " url "/compare/v" new "...HEAD"
+                print "[" new "]: " url "/releases/tag/v" new
+                added=1
+            }
+            { print }
+            END {
+                if (!added) {
+                    print ""
+                    print "[Unreleased]: " url "/compare/v" new "...HEAD"
+                    print "[" new "]: " url "/releases/tag/v" new
+                }
+            }
+        ' "$CHANGELOG_FILE" > "$TMP" && mv "$TMP" "$CHANGELOG_FILE"
+        echo "Added [$NEW] link, [Unreleased] now compares from v$NEW"
         ;;
     *)
-        echo "❌ Error: Invalid bump type '$BUMP_TYPE'. Use: major, minor, or patch"
-        exit 1
+        usage
         ;;
 esac
-
-NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-TODAY=$(date +%Y-%m-%d)
-
-echo "New version: $NEW_VERSION"
-
-# Update gradle file (cross-platform sed)
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/val appVersionName.*= .*/val appVersionName: String = (project.findProperty(\"appVersionName\") as String?) ?: \"$NEW_VERSION\"/" "$GRADLE_FILE"
-else
-    sed -i "s/val appVersionName.*= .*/val appVersionName: String = (project.findProperty(\"appVersionName\") as String?) ?: \"$NEW_VERSION\"/" "$GRADLE_FILE"
-fi
-
-echo "✓ Updated $GRADLE_FILE"
-
-# Add CHANGELOG entry (use scratchpad directory to avoid permission issues)
-TEMP_CHANGELOG=".changelog.tmp.$$"
-
-# Copy header and then add new version section
-head -n 6 "$CHANGELOG_FILE" > "$TEMP_CHANGELOG"
-
-cat >> "$TEMP_CHANGELOG" << EOF
-
-## [$NEW_VERSION] - $TODAY
-
-### Added
-
-- (Add your changes here)
-
-### Fixed
-
-- (Add fixes here)
-
-EOF
-
-# Add rest of original changelog (skip first 6 lines which are headers)
-tail -n +7 "$CHANGELOG_FILE" >> "$TEMP_CHANGELOG"
-
-# Check if link definitions section exists (lines starting with [version]:)
-if grep -q "^\[.*\]: https://" "$TEMP_CHANGELOG"; then
-    # Insert the new link definition before the first existing link (only once)
-    # Use a marker to find the first occurrence and insert before it
-    LINE_NUM=$(grep -n "^\[.*\]: https://" "$TEMP_CHANGELOG" | head -1 | cut -d: -f1)
-    if [ -n "$LINE_NUM" ]; then
-        # Use awk to insert at the specific line
-        awk -v line="$LINE_NUM" -v newline="[$NEW_VERSION]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v$NEW_VERSION" \
-            'NR == line {print newline} {print}' "$TEMP_CHANGELOG" > "$TEMP_CHANGELOG.tmp" && mv "$TEMP_CHANGELOG.tmp" "$TEMP_CHANGELOG"
-    fi
-else
-    # Add link definition at the end if none exist
-    echo "" >> "$TEMP_CHANGELOG"
-    echo "[$NEW_VERSION]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v$NEW_VERSION" >> "$TEMP_CHANGELOG"
-fi
-
-mv "$TEMP_CHANGELOG" "$CHANGELOG_FILE"
-
-echo "✓ Updated $CHANGELOG_FILE with tag link"
-echo ""
-echo "✅ Version bumped: $CURRENT_VERSION → $NEW_VERSION"
-echo ""
-echo "Next steps:"
-echo "1. Edit CHANGELOG.md to describe the changes"
-echo "2. Review changes: git status"
-echo "3. Commit: git commit -m 'chore: Release v$NEW_VERSION'"
-echo "4. Tag: git tag v$NEW_VERSION"

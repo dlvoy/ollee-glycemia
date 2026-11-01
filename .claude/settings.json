@@ -2,9 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cd *)",
-      "Bash(bash scripts/bump-version.sh patch)",
-      "Bash(bash scripts/bump-version.sh minor)",
-      "Bash(bash scripts/bump-version.sh major)",
+      "Bash(bash scripts/bump-version.sh *)",
+      "Bash(bash scripts/extract-changelog.sh *)",
       "Bash(git log *)",
       "Bash(git diff *)",
       "Bash(git rev-parse *)"

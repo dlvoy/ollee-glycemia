@@ -10,18 +10,22 @@ Releases are produced by pushing a git tag that matches `vMAJOR.MINOR.PATCH` (e.
 
 ## Cutting a release
 
-1. Decide the next version number, following [semantic versioning](https://semver.org/):
-   - **MAJOR** — breaking changes
-   - **MINOR** — new features, backward compatible
-   - **PATCH** — bug fixes only
-2. Tag the commit you want to release and push the tag:
-   ```bash
-   git tag v1.2.3
-   git push origin v1.2.3
-   ```
-3. Watch the **Release APK** workflow run under the **Actions** tab. When it finishes, the signed (or unsigned) APK is attached to the new entry under **Releases**.
+There is one release path, built on the Claude Code `/commit` skills. The global skills don't know this repo's version location or changelog style; the "Releases" section of [`CLAUDE.md`](CLAUDE.md) supplies them.
 
-The version baked into the APK (`versionName`/`versionCode`, and the version shown in Settings → About) always comes from the tag itself — you don't need to edit `app/build.gradle.kts` before tagging. Updating the default `appVersionName` there is optional and only affects local/debug builds you run without `-PappVersionName=...`.
+1. **During development**, commit with `/commit`. Each run adds an entry under `## [Unreleased]` in `CHANGELOG.md`.
+2. **Cut the release** with `/commit as patch|minor|major` (or `as X.Y.Z`), following [semantic versioning](https://semver.org/):
+   - **MAJOR**: breaking changes
+   - **MINOR**: new features, backward compatible
+   - **PATCH**: bug fixes only
+
+   This one commit sets `appVersionName` in `app/build.gradle.kts`, renames `[Unreleased]` to `[X.Y.Z] - date`, adds the `[X.Y.Z]` tag link and creates the tag `vX.Y.Z` locally.
+3. **Review** the commit and the release notes: `bash scripts/extract-changelog.sh X.Y.Z`.
+4. **Push** the commits and the tag: `git push --follow-tags`. Or do steps 2 and 4 in one go with `/commit-tag-push <level>`.
+5. Watch the **Release APK** workflow run under the **Actions** tab. When it finishes, the signed (or unsigned) APK is attached to the new entry under **Releases**, with the CHANGELOG section as its notes.
+
+Without Claude Code, do the same by hand: edit the CHANGELOG, then `bash scripts/bump-version.sh --release X.Y.Z` (sets gradle and the links), commit, `git tag vX.Y.Z`, push.
+
+The version baked into the APK (`versionName`/`versionCode`, and the version shown in Settings → About) always comes from the tag. The default `appVersionName` in gradle only affects local builds run without `-PappVersionName=...`; the release flow keeps it in sync anyway.
 
 ## One-time setup: configuring the release GitHub Action
 

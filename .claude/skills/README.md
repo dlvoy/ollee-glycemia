@@ -1,48 +1,11 @@
 # Claude Code Skills for OlleeGlycemia
 
-## Version Bumping
+This repo has no project skills of its own for releases. Use the global ones:
 
-Three skills for semantic versioning:
+- `/commit`: Conventional Commit plus a CHANGELOG entry under `[Unreleased]`. Never pushes.
+- `/commit as patch|minor|major|X.Y.Z`: the same, and also cuts the release: sets the gradle version, turns `[Unreleased]` into the version section, adds the tag link and creates the tag locally.
+- `/commit-tag-push <level>`: cuts the release and pushes the commits and the tag.
 
-### `/changelog-patch`
-Bump patch version: 1.2.0 → 1.2.1
-```bash
-/changelog-patch
-```
+The global skills stay generic. The repo-specific rules (version location, changelog style, links) are in the "Releases" section of the root `CLAUDE.md`, which is in context whenever the skills run. The helpers are `scripts/bump-version.sh` (`--current`, `--release`, `--set`, `--link`) and `scripts/extract-changelog.sh`.
 
-### `/changelog-minor`
-Bump minor version: 1.2.0 → 1.3.0
-```bash
-/changelog-minor
-```
-
-### `/changelog-major`
-Bump major version: 1.2.0 → 2.0.0
-```bash
-/changelog-major
-```
-
-## What Each Skill Does
-
-1. Reads current version from `app/build.gradle.kts`
-2. Increments the appropriate semver field
-3. Updates the version in gradle file
-4. Adds new section to `CHANGELOG.md` with today's date and empty change placeholders
-5. **Does NOT commit** — you review and fill in changelog before committing
-
-## Usage Workflow
-
-```bash
-# Bump version
-/changelog-minor
-
-# Edit CHANGELOG.md to add your changes
-# Then commit
-git commit -m "chore: Release v1.3.0"
-git tag v1.3.0
-```
-
-## Implementation
-
-- **Core script**: `scripts/bump-version.sh` — Handles version parsing and file updates
-- **Skills**: `.claude/skills/changelog-{patch,minor,major}.sh` — Call the core script
+The old `/changelog-patch|minor|major` skills were removed in spec 14; use `/commit as <level>` instead.

@@ -102,4 +102,4 @@ Note: tags `v1.0.0`–`v1.3.0` point at commits from before a history rewrite (a
 | 11 | [nightscout-provider](11-nightscout-provider/intent.md) | done | v1.5.0 |
 | 12 | [disclaimer-and-docs](12-disclaimer-and-docs/intent.md) | done | v1.6.0 |
 | 13 | [spec-driven-workflow](13-spec-driven-workflow/intent.md) | done | Unreleased |
-| 14 | [unify-commit-skill](14-unify-commit-skill/intent.md) | planned | – |
+| 14 | [unify-commit-skill](14-unify-commit-skill/intent.md) | in-progress | – |

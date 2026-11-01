@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-VERSION="$1"
+VERSION="${1#v}"
 CHANGELOG_FILE="CHANGELOG.md"
 
 if [ ! -f "$CHANGELOG_FILE" ]; then
@@ -15,5 +15,16 @@ if [ ! -f "$CHANGELOG_FILE" ]; then
   exit 1
 fi
 
-# Extract section for the version (from version header to next version header)
-sed -n "/^## \[${VERSION}\]/,/^## \[/p" "$CHANGELOG_FILE" | sed '1d;$d' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'
+# Print the section body: after the version header, up to the next "## [" header
+# or the reference-link block ("[x]: url"), whichever comes first.
+# Leading and trailing blank lines are dropped.
+awk -v ver="$VERSION" '
+  index($0, "## [" ver "]") == 1 { on=1; next }
+  on && (/^## \[/ || /^\[[^]]+\]: /) { exit }
+  on { lines[++n]=$0 }
+  END {
+    s=1; while (s<=n && lines[s] ~ /^[[:space:]]*$/) s++
+    e=n; while (e>=s && lines[e] ~ /^[[:space:]]*$/) e--
+    for (i=s; i<=e; i++) print lines[i]
+  }
+' "$CHANGELOG_FILE"
