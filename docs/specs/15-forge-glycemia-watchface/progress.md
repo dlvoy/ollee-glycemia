@@ -1,7 +1,7 @@
 # 15: Forge glycemia watchface (progress)
 
 **Status:** in-progress
-**Release:** –
+**Release:** v1.7.0
 
 ## Checklist
 - [x] Protocol and encoders (`OapProtocol`, `ForgeProtocol`, shared fixtures)
@@ -20,6 +20,8 @@
 - 2026-11-01: implementation started after approval. Steps 1 to 7 coded, all unit tests green (Gradle and `node --test`)
 - 2026-11-01: plan deviations, see below
 - 2026-11-01: end-to-end run on Windows with the Pixel_10 AVD: `Start-ForgeTest.ps1` built, installed and set up the app, the relay served frames, forge_emulator showed the tag, Day and LAP; `-Link off` gave `no bLE` with LAP off, `-Link on` recovered, `-Pause on` showed ` pause` and Day `--`. 167 unit tests green
+- 2026-11-01: acceptance criteria checked against code and tests: 10 of 12 ticked (both suites green). Open: Start/Stop script run, real-time OUTDATED/NO_APP walkthrough
+- 2026-11-01: released as v1.7.0
 
 ### Deviations from the plan
 - The "watchface" marker reads `PairedWatch.forgeSupported` (persisted by `WatchStore`) instead of a new `WatchStatus` field, so the marker also shows while the watch is offline.

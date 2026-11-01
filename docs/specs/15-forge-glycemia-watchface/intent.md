@@ -39,16 +39,16 @@ A Forge watchface that shows exactly the text the app sends today as the screens
 - Running the new tests in CI. CI only builds today, so wiring Gradle and Node tests into it is its own spec.
 
 ## Acceptance criteria
-- [ ] On firmware without Forge the app behaves exactly as before. The screensaver packet bytes don't change (golden test).
-- [ ] When the Forge service is present, each tag change sends one frame, each (re)connect sends one, and a keepalive goes out at least every 5 minutes.
-- [ ] The face's Main shows exactly the 6 characters of the tag.
-- [ ] Day shows the age in whole minutes and advances on each minute tick with no new BLE data. Ages of 40 minutes and up, or an unknown age, show `--`.
-- [ ] On a BLE disconnect, Day counts minutes since the disconnect, LAP goes off and Main flashes `no bLE`.
-- [ ] When BLE is up but no frame arrives for 11 minutes, Main flashes `no APP` and Day counts minutes since the last frame.
-- [ ] A reading older than 10.5 minutes turns PM on and flashes ` old  `.
-- [ ] Pause/stop labels show on Main with Day `--` and no lost-link flash.
-- [ ] No malformed frame makes the face throw, and the script is at most 8158 bytes.
-- [ ] `node --test watchface/test/` and `gradlew testDebugUnitTest` pass.
+- [x] On firmware without Forge the app behaves exactly as before. The screensaver packet bytes don't change (golden test). Unit level only; the real-watch check is still open.
+- [x] When the Forge service is present, each tag change sends one frame, each (re)connect sends one, and a keepalive goes out at least every 5 minutes.
+- [x] The face's Main shows exactly the 6 characters of the tag.
+- [x] Day shows the age in whole minutes and advances on each minute tick with no new BLE data. Ages of 40 minutes and up, or an unknown age, show `--`.
+- [x] On a BLE disconnect, Day counts minutes since the disconnect, LAP goes off and Main flashes `no bLE`.
+- [x] When BLE is up but no frame arrives for 11 minutes, Main flashes `no APP` and Day counts minutes since the last frame.
+- [x] A reading older than 10.5 minutes turns PM on and flashes ` old  `.
+- [x] Pause/stop labels show on Main with Day `--` and no lost-link flash.
+- [x] No malformed frame makes the face throw, and the script is at most 8158 bytes.
+- [x] `node --test "watchface/test/*.test.js"` and `gradlew testDebugUnitTest` pass.
 - [ ] On Windows, `scripts/forge/Start-ForgeTest.ps1` brings up the full loop (Android emulator with a synthetic provider, app, relay, forge_emulator) and `Stop-ForgeTest.ps1` tears it down, with no manual steps beyond loading the face and pasting the bridge snippet.
 - [ ] `TESTING.md` has a walkthrough that reproduces every watchface mode (LIVE, OUTDATED, NO_DATA, NO_APP, NO_LINK, PAUSED) in forge_emulator, each with the script command that triggers it and the expected display.
 
