@@ -3,12 +3,12 @@
 ## Commit Policy
 **Do NOT auto-commit changes.** Always ask the user before creating any commits. The user will decide when to commit and what to include.
 
-## Build & Test Policy
-**Do NOT run tests or builds automatically.** Instead:
-1. Tell the user what tests/builds are recommended
-2. Provide the exact commands to run
-3. Only execute if the user explicitly asks
-4. Wait for user feedback before proceeding based on test results
+## Spec-Driven Development
+Every non-trivial change starts as a spec in `docs/specs/` (see `docs/specs/README.md`):
+1. Create `docs/specs/NN-kebab-name/` (next free two-digit number, never reused)
+2. Write `intent.md` (what and why), then `plan.md` (how), and get them agreed before coding
+3. Update `progress.md` during the work (checklist, dated log, commits, release)
+4. Keep the index table in `docs/specs/README.md` current
 
 ## Project Context
 - **Type**: Android app (Kotlin)

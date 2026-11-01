@@ -5,14 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [1.6.0] - 2026-07-16
 
 ### Added
 
 - **Disclaimer dialog with user acceptance storage**: New on-launch disclaimer dialog for legal acknowledgment
-  - Dialog shown on first app launch with accept/decline options
-  - User acceptance state persisted in shared preferences
-  - Only shown once per app lifecycle unless explicitly reset
+  - Shown on launch until accepted, and cannot be dismissed without accepting
+  - Acceptance is remembered, so the dialog does not appear again
+  - First-run prompts (backup import, storage access) appear only after acceptance
+  - Translated into Polish and French
 - **Documentation enhancements**: Screensaver functionality documentation and visual guides
   - Updated README with description of screensaver features and display modes
   - Added screenshots and setup instructions for improved clarity
@@ -28,10 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Test connection button to verify Nightscout access before saving
   - Adaptive fetch scheduling with intelligent retry and delay calculation
   - Comprehensive error handling and logging for debugging
-  - 19 integration tests verifying HTTP client, parsing, and scheduling logic
-  - Complete setup documentation with step-by-step screenshots and troubleshooting
+  - Last fetch status shown on the Nightscout configuration screen
+  - Translated into Polish and French
 - **Provider configuration backup/restore**: Save and restore settings for all configured providers
-  - Backs up configurations for all providers (xDrip, GlucoDataHandler, Nightscout, VirtualHuman)
+  - Backs up the settings of every configurable provider (Nightscout, Constant, VirtualHuman)
   - Previously only backed up the active provider; now includes all provider configurations
   - Restore automatically applies each provider's saved settings to the correct provider instance
 - **Documentation**: Added comprehensive Nightscout setup guide
@@ -39,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Instructions for creating API tokens and configuring Ollee Glycemia
   - Troubleshooting section for common connection and access issues
   - Updated README to mention Nightscout as a supported data source alongside xDrip+ and GlucoDataHandler
+- **xDrip+ setup guide**: Step-by-step guide with screenshots for enabling xDrip+ broadcasts
+
+### Changed
+
+- **Developer options**: The tap-to-unlock gesture on the version number now works only in debug builds
 
 ### Fixed
 
@@ -65,10 +73,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Developer options unlock status shown in About section
   - Added debug functionality in BleService for connection troubleshooting
 
+### Changed
+
+- **Release notes**: GitHub Releases now use the matching CHANGELOG section as their description
+
 ### Fixed
 
 - **BleService timeout handling**: Improved error handling in connection timeout logic
   - Better stability during watch reconnection scenarios
+- **Offline watch reconnect**: Active watches that went offline reconnect as soon as a new reading arrives
 
 
 ## [1.3.0] - 2026-07-12
@@ -165,6 +178,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Improved sync status reporting**:
   - Status indicator and notification only count active watches
   - More accurate representation of device synchronization status
+- **Manual sync**: Tap an offline watch to force a reconnect and resend the current value
 
 ### Changed
 
@@ -172,6 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Glycemia broadcasts filtered to only active watches
 - Offline timeout calculation only applies to active watches
 - Click behavior on watch pill: synced watches open menu, offline watches trigger manual sync
+- A watch is marked offline only after 30 minutes without a successful sync
 
 ### Fixed
 
@@ -190,8 +205,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Glucose history visualization**: Graph display of historical glucose readings
 - **Pluggable provider architecture**: Extensible design for adding new glucose data sources
 - **Bluetooth permission management**: Comprehensive Bluetooth Connect and Scan permission handling
-- **Smooth data interpolation**: Synthetic glucose value generation using Hermite interpolation
+- **Test data providers**: Constant-value provider and a virtual-human provider that generates realistic synthetic glucose curves (Hermite interpolation with noise), for trying the app without a sensor
+- **Watch display**: Glucose value with trend arrow and delta, in mg/dL or mmol/L
+  - Invalid or missing readings show an error marker instead of a stale value
+- **Compatible broadcasts**: Accepts xDrip+-compatible broadcasts (`BROADCAST`, `org.nightscout.android.broadcast`), which is how GlucoDataHandler is supported
+- **Watch status per device**: Connection state, last sent value and stale-data indicator for each paired watch
+  - Resend action pushes the current value to all watches again
+- **Translations**: English, Polish and French
 
+[Unreleased]: https://github.com/dlvoy/ollee-glycemia/compare/v1.6.0...HEAD
 [1.6.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.6.0
 [1.5.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.5.0
 [1.4.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.4.0
