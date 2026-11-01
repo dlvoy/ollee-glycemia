@@ -8,5 +8,7 @@ data class PairedWatch(
     val isCustomName: Boolean = false,
     val lastSuccessfulSyncTimeMs: Long = 0L,
     val activityState: WatchActivityState = WatchActivityState.ACTIVE,
-    val activityLabelSent: Boolean = false
+    val activityLabelSent: Boolean = false,
+    /** Last known: the watch exposed the Forge BLE service on its previous connection. */
+    val forgeSupported: Boolean = false
 )

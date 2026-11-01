@@ -75,6 +75,10 @@ class BleService : Service() {
         syncConnectionsWithStore()
         startTimeoutWatcher()
 
+        if (BuildConfig.DEBUG && DebugStore.isForgeRelayEnabled(this)) {
+            ForgeDebugRelay.instance.start()
+        }
+
         if (NightAutoPauseStore.isEnabled(this)) {
             NightAutoPauseScheduler.scheduleNextCheck(this)
         }
@@ -180,11 +184,11 @@ class BleService : Service() {
                 connections[watch.address] = connection
                 connection.connect(staggerIndex = index)
                 val toSubmit = when {
-                    watch.activityState == WatchActivityState.ACTIVE -> lastSent
-                    !watch.activityLabelSent -> labelFor(watch.activityState)
+                    watch.activityState == WatchActivityState.ACTIVE -> lastSent?.let(::payloadFor)
+                    !watch.activityLabelSent -> labelPayload(watch.activityState)
                     else -> null
                 }
-                toSubmit?.let { connection.submitReading(it) }
+                toSubmit?.let { connection.submit(it) }
             }
         }
 
@@ -270,10 +274,24 @@ class BleService : Service() {
             }
         }
 
-        activeWatches.forEach { it.submitReading(formatted) }
+        val payload = payloadFor(formatted)
+        activeWatches.forEach { it.submit(payload) }
+        relaySubmit(payload)
         publishStatuses()
         sendBroadcast(Intent("GLYCEMIA_UPDATED"))
     }
+
+    /** Debug builds only: the same payload a watch gets, for the forge_emulator relay. */
+    private fun relaySubmit(payload: WatchPayload) {
+        if (BuildConfig.DEBUG) ForgeDebugRelay.instance.submit(payload)
+    }
+
+    /** The text for a watch plus when it was measured (pref `last_time`, 0 = unknown). */
+    private fun payloadFor(text: String): WatchPayload =
+        WatchPayload(text, prefs.getLong("last_time", 0L).takeIf { it > 0L })
+
+    private fun labelPayload(state: WatchActivityState): WatchPayload =
+        WatchPayload(labelFor(state), measuredAtMs = null, paused = true)
 
     private fun formatBg(bg: String?, trend: String?, delta: Double? = null): String {
 
@@ -322,14 +340,18 @@ class BleService : Service() {
 
     private fun sendClearGlycemiaToAllWatches() {
         val clearValue = "--- --"
-        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading(clearValue) }
+        val payload = WatchPayload(clearValue) // no measurement time: the face shows "--" for the age
+        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submit(payload) }
+        relaySubmit(payload)
         publishStatuses()
     }
 
     private fun resendGlycemiaToAllWatches() {
         val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
         if (lastSent != null) {
-            connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading(lastSent) }
+            val payload = payloadFor(lastSent)
+            connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submit(payload) }
+            relaySubmit(payload)
             publishStatuses()
         }
     }
@@ -344,7 +366,8 @@ class BleService : Service() {
         connection.updateWatch(connection.watch.copy(lastSuccessfulSyncTimeMs = now))
 
         connection.connect()
-        connection.submitReading(lastSent)
+        connection.submit(payloadFor(lastSent))
+        connection.resendToForge()
         publishStatuses()
     }
 
@@ -378,7 +401,9 @@ class BleService : Service() {
                         isInErrorState = true
 
                         prefs.edit().putString("last_sent", "Err   ").apply()
-                        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submitReading("Err   ") }
+                        val payload = payloadFor("Err   ")
+                        connections.values.filter { it.watch.activityState == WatchActivityState.ACTIVE }.forEach { it.submit(payload) }
+                        relaySubmit(payload)
                         publishStatuses()
                     }
                 } else {
@@ -387,6 +412,10 @@ class BleService : Service() {
                         log("Error cleared - back to normal")
                     }
                 }
+
+                // Forge keepalive: the watchface treats a long silence as "app lost"
+                connections.values.forEach { it.tick() }
+                if (BuildConfig.DEBUG) ForgeDebugRelay.instance.tick()
 
                 handler.postDelayed(this, 60_000)
             }
@@ -484,11 +513,11 @@ class BleService : Service() {
         connections[watchAddress]?.let { conn ->
             conn.connect()
             val toSubmit = if (newState == WatchActivityState.ACTIVE) {
-                prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
+                prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }?.let(::payloadFor)
             } else {
-                labelFor(newState)
+                labelPayload(newState)
             }
-            toSubmit?.let { conn.submitReading(it) }
+            toSubmit?.let { conn.submit(it) }
         }
         publishStatuses()
     }
@@ -504,7 +533,7 @@ class BleService : Service() {
             connection.connect()
             val lastSent = prefs.getString("last_sent", null)?.takeIf { it.isNotBlank() }
             if (lastSent != null) {
-                connection.submitReading(lastSent)
+                connection.submit(payloadFor(lastSent))
             }
             publishStatuses()
             log("Debug: Watch $watchAddress turned ONLINE")

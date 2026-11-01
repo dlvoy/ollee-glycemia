@@ -601,6 +601,13 @@ fun MainScreen(nav: AppNavController) {
                                             fontFamily = FontFamily.Monospace
                                         )
                                     }
+                                    if (status.watch.forgeSupported) {
+                                        Text(
+                                            text = stringResource(R.string.watch_watchface_marker),
+                                            color = OlleeColors.TextSecondary,
+                                            fontSize = 11.sp
+                                        )
+                                    }
                                 }
                             }
 

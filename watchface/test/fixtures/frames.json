@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "encode": [
+    { "name": "typical", "kind": "G", "ageSec": 83, "text": "120 -5", "frame": "G83,120 -5" },
+    { "name": "zero age", "kind": "G", "ageSec": 0, "text": "120  5", "frame": "G0,120  5" },
+    { "name": "unknown age", "kind": "G", "ageSec": null, "text": "--- --", "frame": "G-,--- --" },
+    { "name": "age clamped high", "kind": "G", "ageSec": 999999, "text": "120   ", "frame": "G86400,120   " },
+    { "name": "negative age clamped", "kind": "G", "ageSec": -5, "text": "120   ", "frame": "G0,120   " },
+    { "name": "error tag", "kind": "G", "ageSec": 900, "text": "Err   ", "frame": "G900,Err   " },
+    { "name": "non-ascii replaced", "kind": "G", "ageSec": 1, "text": "12ö0  ", "frame": "G1,12?0  " },
+    { "name": "paused label", "kind": "P", "text": " pause", "frame": "P, pause" },
+    { "name": "stopped label", "kind": "P", "text": "  stop", "frame": "P,  stop" }
+  ],
+  "decode": [
+    { "name": "typical", "frame": "G83,120 -5", "valid": true, "kind": "G", "ageSec": 83, "text": "120 -5" },
+    { "name": "unknown age", "frame": "G-,--- --", "valid": true, "kind": "G", "ageSec": null, "text": "--- --" },
+    { "name": "paused", "frame": "P, pause", "valid": true, "kind": "P", "text": " pause" },
+    { "name": "text with comma", "frame": "G5,1,2,3,4", "valid": true, "kind": "G", "ageSec": 5, "text": "1,2,3,4" },
+    { "name": "empty", "frame": "", "valid": false },
+    { "name": "type only", "frame": "G", "valid": false },
+    { "name": "no comma", "frame": "G83", "valid": false },
+    { "name": "bad age", "frame": "Gx,120 -5", "valid": false },
+    { "name": "negative age", "frame": "G-5,120 -5", "valid": false },
+    { "name": "unknown type", "frame": "Z1,abc", "valid": false },
+    { "name": "empty text", "frame": "G5,", "valid": false }
+  ]
+}

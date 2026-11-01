@@ -80,6 +80,14 @@ object WatchStore {
         writeAll(context, updated)
     }
 
+    @Synchronized
+    fun setForgeSupported(context: Context, address: String, supported: Boolean) {
+        val updated = readAll(context).map {
+            if (it.address == address) it.copy(forgeSupported = supported) else it
+        }
+        writeAll(context, updated)
+    }
+
     private fun migrateLegacyIfNeeded(context: Context) {
         val prefs = prefs(context)
         if (prefs.getBoolean(KEY_MIGRATION_DONE, false)) return
@@ -110,7 +118,8 @@ object WatchStore {
                             isCustomName = item.optBoolean("isCustomName", false),
                             lastSuccessfulSyncTimeMs = item.optLong("lastSuccessfulSyncTimeMs", 0L),
                             activityState = try { WatchActivityState.valueOf(activityStateName) } catch (e: Exception) { WatchActivityState.ACTIVE },
-                            activityLabelSent = item.optBoolean("activityLabelSent", false)
+                            activityLabelSent = item.optBoolean("activityLabelSent", false),
+                            forgeSupported = item.optBoolean("forgeSupported", false)
                         )
                     )
                 }
@@ -131,6 +140,7 @@ object WatchStore {
                     .put("lastSuccessfulSyncTimeMs", watch.lastSuccessfulSyncTimeMs)
                     .put("activityState", watch.activityState.name)
                     .put("activityLabelSent", watch.activityLabelSent)
+                    .put("forgeSupported", watch.forgeSupported)
             )
         }
         prefs(context).edit().putString(KEY_WATCHES, array.toString()).apply()

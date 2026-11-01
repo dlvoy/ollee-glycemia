@@ -20,3 +20,6 @@ local.properties
 project/screens/*
 project/prompts/*
 project/release.keystore
+
+# Forge watchface test loop state (forge_emulator clone, server pid/logs)
+/.forge-test/

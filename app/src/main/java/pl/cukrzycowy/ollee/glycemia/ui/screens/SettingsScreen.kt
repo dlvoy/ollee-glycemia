@@ -41,6 +41,8 @@ import pl.cukrzycowy.ollee.glycemia.WatchStore
 import pl.cukrzycowy.ollee.glycemia.WatchActivityState
 import pl.cukrzycowy.ollee.glycemia.BleService
 import pl.cukrzycowy.ollee.glycemia.DebugStore
+import pl.cukrzycowy.ollee.glycemia.ForgeDebugRelay
+import pl.cukrzycowy.ollee.glycemia.ui.components.ToggleRow
 import pl.cukrzycowy.ollee.glycemia.PreferencesBackupManager
 import pl.cukrzycowy.ollee.glycemia.StoragePermissionHelper
 import pl.cukrzycowy.ollee.glycemia.StoragePermissionStore
@@ -75,6 +77,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     var versionClickCount by remember { mutableIntStateOf(0) }
     var devOptionsUnlocked by remember { mutableStateOf(DebugStore.isDeveloperOptionsUnlocked(context)) }
     var debugModeEnabled by remember { mutableStateOf(DebugStore.isDebugModeEnabled(context)) }
+    var forgeRelayEnabled by remember { mutableStateOf(DebugStore.isForgeRelayEnabled(context)) }
+    var forgeRelayLink by remember { mutableStateOf(ForgeDebugRelay.instance.link) }
     var lastToast by remember { mutableStateOf<Toast?>(null) }
 
     var showImportConfirmDialog by remember { mutableStateOf(false) }
@@ -327,6 +331,32 @@ fun SettingsScreen(onBack: () -> Unit) {
                         ) {
                             Text(if (debugModeEnabled) stringResource(R.string.dev_mode_enable) else stringResource(R.string.dev_mode_disable))
                         }
+                        // Forge watchface testing (docs/watchface/TESTING.md); debug builds only
+                        ToggleRow(
+                            label = "Forge relay (127.0.0.1:${ForgeDebugRelay.DEFAULT_PORT})",
+                            checked = forgeRelayEnabled,
+                            onCheckedChange = { on ->
+                                forgeRelayEnabled = on
+                                DebugStore.setForgeRelayEnabled(context, on)
+                                if (on) {
+                                    try { ForgeDebugRelay.instance.start() } catch (e: java.io.IOException) {
+                                        forgeRelayEnabled = false
+                                        DebugStore.setForgeRelayEnabled(context, false)
+                                    }
+                                } else {
+                                    ForgeDebugRelay.instance.stop()
+                                    forgeRelayLink = true
+                                }
+                            }
+                        )
+                        ToggleRow(
+                            label = "Relay: watch connected",
+                            checked = forgeRelayLink,
+                            onCheckedChange = { on ->
+                                forgeRelayLink = on
+                                ForgeDebugRelay.instance.setLink(on)
+                            }
+                        )
                     }
                 }
             }

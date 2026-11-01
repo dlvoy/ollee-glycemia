@@ -165,6 +165,7 @@
     <string name="watch_state_error">Błąd</string>
     <string name="watch_state_paused">Pauza</string>
     <string name="watch_state_stopped">Stop</string>
+    <string name="watch_watchface_marker">Tarcza</string>
     <string name="watch_delete_confirm_title">Usuń zegarek</string>
     <string name="watch_delete_confirm_message">Czy na pewno chcesz usunąć ten zegarek?</string>
     <string name="watch_pause_confirm_title">Pauzuj zegarek</string>

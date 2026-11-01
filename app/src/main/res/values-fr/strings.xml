@@ -165,6 +165,7 @@
     <string name="watch_state_error">Erreur</string>
     <string name="watch_state_paused">En pause</string>
     <string name="watch_state_stopped">Arrêtée</string>
+    <string name="watch_watchface_marker">Cadran</string>
     <string name="watch_delete_confirm_title">Supprimer la montre</string>
     <string name="watch_delete_confirm_message">Êtes-vous sûr de vouloir supprimer cette montre ?</string>
     <string name="watch_pause_confirm_title">Mettre en pause la montre</string>

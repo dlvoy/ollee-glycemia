@@ -130,6 +130,19 @@ Once configured, when a new glucose reading is received:
 
 > **ℹ️ Strange digits** Because of limitations of Casio's `Module 593` compatible displays used by Ollee Watch mod - not all segments of the display can be independently turned on. Some digits in some positions look strange - like the `7` in the example above - it appears "shorter". 
 
+### Forge watchface (beta)
+
+Ollee's Forge beta lets a watch run custom watchfaces. Once your watch firmware supports it, the app can feed the [glycemia watchface](watchface/glycemia.js), which fixes the "outdated screensaver" problem above:
+
+- **Main** shows the same 6 characters as the screensaver text
+- **Day** shows how many minutes old the reading is, and keeps counting on the watch even when the phone is out of range (`--` from 40 minutes on)
+- **LAP** means the app is feeding live data, **PM** means the reading is outdated
+- When the Bluetooth link is lost, the app goes silent or the reading is old, the status flashes on Main: `no bLE`, `no APP`, ` old  `
+
+The app detects the Forge service on its own, and a "Watchface" marker appears on the watch row. Watches without Forge keep working exactly as before.
+
+Forge Beta 1 only runs in a browser emulator, and uploading a face to a watch comes with Beta 2. You can already try the face with the emulator: [docs/watchface/TESTING.md](docs/watchface/TESTING.md) (Windows scripts included). The frame format is described in [docs/watchface/PROTOCOL.md](docs/watchface/PROTOCOL.md).
+
 ### Reconnecting Your Watch
 
 If Bluetooth is disconnected (the watch appears offline or the Bluetooth indicator is not visible):

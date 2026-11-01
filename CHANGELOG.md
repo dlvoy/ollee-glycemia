@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Forge watchface**: Glycemia watchface for Ollee's Forge beta, fed by the app over Bluetooth
+  - Main shows the same text as the screensaver, Day shows the reading age in minutes and keeps counting on the watch
+  - LAP and PM icons plus a status flash for a lost link, a silent app and an outdated reading
+  - The app finds the Forge service on its own and marks such watches in the watch list; other watches are unaffected
+  - Local testing with the Android emulator and forge_emulator: debug-only relay, Windows scripts in `scripts/forge`, manual in `docs/watchface/TESTING.md`
+
+### Fixed
+
+- **Watch writes**: Bluetooth writes now go through a queue and wait for completion, and Nightscout readings are handed to the watch connection on the main thread
+
 ## [1.6.0] - 2026-07-16
 
 ### Added
