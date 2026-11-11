@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-11
+
+### Added
+
+- **Watch status icons**: Each watch row shows an icon for its state, in the state's color, left of the label
+  - Forge watches also get a watch icon: in the status color when the glycemia face is detected, gray and crossed out when it isn't
+  - The icon replaces the "Watchface" text marker
+- **Forge face handshake**: The app asks a Forge watch whether the glycemia face is installed and remembers the answer per watch
+  - The face (version 2) answers a `Q` query with `H1,gly,2` over the Forge TX characteristic, and says hello when it is installed
+  - The app asks on every connection, with every reading while the face is missing, and on sync; watches without Forge are unaffected
+
+### Changed
+
+- **Forge emulator**: forge_emulator is now a git submodule in `tools/forge_emulator`, pinned to Beta 2, instead of a clone the test script pulled on every run
+  - New Node test checks the bridge snippet and the watchface harness against the pinned emulator
+
 ## [1.7.0] - 2026-11-01
 
 ### Added
@@ -227,7 +243,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resend action pushes the current value to all watches again
 - **Translations**: English, Polish and French
 
-[Unreleased]: https://github.com/dlvoy/ollee-glycemia/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/dlvoy/ollee-glycemia/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v2.0.0
 [1.7.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.7.0
 [1.6.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.6.0
 [1.5.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.5.0

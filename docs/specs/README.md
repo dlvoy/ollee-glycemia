@@ -104,3 +104,6 @@ Note: tags `v1.0.0`–`v1.3.0` point at commits from before a history rewrite (a
 | 13 | [spec-driven-workflow](13-spec-driven-workflow/intent.md) | done | Unreleased |
 | 14 | [unify-commit-skill](14-unify-commit-skill/intent.md) | in-progress | – |
 | 15 | [forge-glycemia-watchface](15-forge-glycemia-watchface/intent.md) | in-progress | v1.7.0 |
+| 16 | [forge-face-handshake](16-forge-face-handshake/intent.md) | in-progress | v2.0.0 |
+| 17 | [watch-row-status-icons](17-watch-row-status-icons/intent.md) | done | v2.0.0 |
+| 18 | [forge-emulator-submodule](18-forge-emulator-submodule/intent.md) | done | v2.0.0 |

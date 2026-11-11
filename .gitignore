@@ -21,5 +21,5 @@ project/screens/*
 project/prompts/*
 project/release.keystore
 
-# Forge watchface test loop state (forge_emulator clone, server pid/logs)
+# Forge watchface test loop state (web server pid/logs; the emulator is the tools/forge_emulator submodule)
 /.forge-test/

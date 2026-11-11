@@ -31,6 +31,7 @@ function createHarness(opts = {}) {
   const screen = { main: '      ', day: '  ', lap: false, pm: false };
   const timers = new Array(opts.timerSlots === undefined ? 4 : opts.timerSlots).fill(null);
   const calls = [];
+  const sent = [];
   let ctx;
 
   const rec = (name, fn) => (...args) => { calls.push(name); return fn(...args); };
@@ -58,6 +59,13 @@ function createHarness(opts = {}) {
       return true;
     }),
     unsubscribe: rec('unsubscribe', (bits) => { state.background &= ~bits; }),
+    // Like the emulator: false when no phone is connected, the data is empty or over 256 bytes
+    send: rec('send', (data) => {
+      const s = String(data);
+      if (!state.connected || s.length === 0 || s.length > 256) return false;
+      sent.push(s);
+      return true;
+    }),
     setTimeout: rec('setTimeout', (fn, ms) => {
       const id = timers.findIndex((t) => t === null);
       if (id === -1) return -1;
@@ -98,7 +106,7 @@ function createHarness(opts = {}) {
   }
 
   const h = {
-    ollee, ctx, clock, state, screen, calls, E, T0, MINUTE,
+    ollee, ctx, clock, state, screen, calls, sent, E, T0, MINUTE,
     load() {
       const src = fs.readFileSync(scriptPath, 'utf8');
       h.source = src;
@@ -158,4 +166,4 @@ function openFace(opts = {}) {
   return h;
 }
 
-module.exports = { createHarness, openFace, FACE_PATH, MINUTE, T0 };
+module.exports = { createHarness, openFace, FACE_PATH, MINUTE, T0, E, BACKGROUND_BITS };

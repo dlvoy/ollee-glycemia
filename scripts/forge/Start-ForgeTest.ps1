@@ -7,7 +7,7 @@
   2. Builds and installs the debug app (gradlew installDebug)
   3. Grants permissions, accepts the disclaimer, selects the synthetic provider and turns the relay on
   4. Forwards the relay port with adb
-  5. Clones/updates forge_emulator into .forge-test\ and serves it on 127.0.0.1
+  5. Checks out the forge_emulator submodule (tools\forge_emulator) if needed and serves it on 127.0.0.1
   6. Copies tools\forge-bridge\forge-bridge.js to the clipboard and opens the emulator page
 
   Afterwards three manual steps remain (printed at the end): load watchface\glycemia.js,
@@ -36,8 +36,6 @@ $ErrorActionPreference = 'Stop'
 
 $adb = Get-AdbExe
 $python = Get-PythonExe
-$git = (Get-Command git -ErrorAction SilentlyContinue)
-if (-not $git) { throw 'git not found (needed to fetch forge_emulator).' }
 New-Item -ItemType Directory -Force -Path $script:StateDir | Out-Null
 
 # 1. Device ------------------------------------------------------------------
@@ -112,16 +110,14 @@ try {
 
 # 5. forge_emulator -----------------------------------------------------------
 Write-Step 'forge_emulator'
-$emuDir = Join-Path $script:StateDir 'forge_emulator'
-if (Test-Path (Join-Path $emuDir '.git')) {
-    & $git.Source -C $emuDir pull --ff-only --quiet 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { Write-Warn 'Could not update forge_emulator (offline?). Using the existing copy.' }
-} else {
-    & $git.Source clone --depth 1 https://github.com/olleewatch/forge_emulator $emuDir
-    if ($LASTEXITCODE -ne 0) { throw 'git clone of forge_emulator failed.' }
+$emu = Initialize-ForgeEmulator
+$emuDir = $script:EmulatorDir
+if ($emu) {
+    Write-Ok "forge_emulator at $($emu.Commit) ($($script:EmulatorRel))"
+    if ($emu.State -eq '+') {
+        Write-Warn "That is not the commit this repo pins. 'git submodule update $($script:EmulatorRel)' goes back to the pin."
+    }
 }
-$emuCommit = (& $git.Source -C $emuDir rev-parse --short HEAD)
-Write-Ok "forge_emulator at $emuCommit"
 
 $pidFile = Join-Path $script:StateDir 'webserver.pid'
 $running = $false

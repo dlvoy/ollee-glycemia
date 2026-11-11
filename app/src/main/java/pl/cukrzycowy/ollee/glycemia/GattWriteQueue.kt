@@ -4,8 +4,10 @@ import android.os.Handler
 import android.os.Looper
 
 /**
- * Serializes GATT characteristic writes: Android rejects a write while another is in flight, and
- * each update now makes two (OAP tag text, then the Forge frame).
+ * Serializes GATT writes: Android rejects a write while another is in flight, and each update now
+ * makes two (OAP tag text, then the Forge frame). Descriptor writes (turning on Forge TX
+ * notifications) go through it too; the caller's `issue` decides what a key writes, and both
+ * write callbacks end in [onWriteComplete].
  *
  * The next write starts when the previous one completes ([onWriteComplete]) or after [timeoutMs].
  * A queued write with the same key as a new one is replaced, so the queue never holds stale

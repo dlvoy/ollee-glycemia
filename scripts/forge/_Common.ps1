@@ -4,7 +4,9 @@
 Set-StrictMode -Version Latest
 
 $script:RepoRoot  = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$script:StateDir  = Join-Path $script:RepoRoot '.forge-test'
+$script:StateDir  = Join-Path $script:RepoRoot '.forge-test'   # web server pid and logs
+$script:EmulatorRel = 'tools/forge_emulator'                   # git submodule, pinned
+$script:EmulatorDir = Join-Path $script:RepoRoot 'tools\forge_emulator'
 $script:PackageId = 'pl.cukrzycowy.ollee.glycemia'
 $script:Receiver  = "$($script:PackageId)/.ForgeDebugReceiver"
 $script:ReceiverAction = "$($script:PackageId).debug.FORGE"
@@ -12,6 +14,32 @@ $script:ReceiverAction = "$($script:PackageId).debug.FORGE"
 function Write-Step([string]$Message) { Write-Host "==> $Message" -ForegroundColor Cyan }
 function Write-Ok([string]$Message)   { Write-Host "    $Message" -ForegroundColor Green }
 function Write-Warn([string]$Message) { Write-Host "    $Message" -ForegroundColor Yellow }
+
+# State of the forge_emulator submodule from `git submodule status`, or $null without git.
+# State: ' ' at the pinned commit, '+' checked out at another commit, '-' not initialized.
+function Get-ForgeEmulatorStatus {
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $git) { return $null }
+    $line = & $git.Source -C $script:RepoRoot submodule status -- $script:EmulatorRel 2>$null | Select-Object -First 1
+    if (-not $line -or $line -notmatch '^([ +\-U])([0-9a-f]{40}) ') { return $null }
+    return [pscustomobject]@{ State = $Matches[1]; Commit = $Matches[2].Substring(0, 7) }
+}
+
+# Checks out the forge_emulator submodule if it is missing (fresh clone without --recurse-submodules)
+function Initialize-ForgeEmulator {
+    $index = Join-Path $script:EmulatorDir 'index.html'
+    if (-not (Test-Path $index)) {
+        $git = Get-Command git -ErrorAction SilentlyContinue
+        if (-not $git) { throw 'git not found (needed to check out the forge_emulator submodule).' }
+        Write-Ok "Checking out the $($script:EmulatorRel) submodule"
+        # Out-Host: git's progress lines must not become part of this function's return value
+        & $git.Source -C $script:RepoRoot submodule update --init -- $script:EmulatorRel 2>&1 | Out-Host
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $index)) {
+            throw "Could not check out $($script:EmulatorRel). Run: git submodule update --init $($script:EmulatorRel)"
+        }
+    }
+    return Get-ForgeEmulatorStatus
+}
 
 function Get-SdkRoot {
     $candidates = @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT)

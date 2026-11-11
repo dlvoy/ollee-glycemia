@@ -428,36 +428,10 @@ fun MainScreen(nav: AppNavController) {
 
                 watchStatuses.forEach { status ->
                     val activityState = status.watch.activityState
-                    val isStaleData = status.state == WatchConnState.SYNCED && (status.lastSentValue == "--- --" || status.lastSentValue == "Err   ")
-                    val effectiveState = if (status.isOfflineByTimeout) WatchConnState.OFFLINE else status.state
-
-                    val (stateColor, stateLabel, pillBg) = if (activityState != WatchActivityState.ACTIVE) {
-                        val label = when (activityState) {
-                            WatchActivityState.PAUSED -> stringResource(R.string.watch_state_paused)
-                            WatchActivityState.STOPPED -> stringResource(R.string.watch_state_stopped)
-                            else -> ""
-                        }
-                        Triple(Color(0xFF999999), label, OlleeColors.SurfaceDisabled)
-                    } else {
-                        val color = when {
-                            status.state == WatchConnState.ERROR -> Color(0xFFCC0000)
-                            isStaleData -> Color(0xFF999999)
-                            status.isOfflineByTimeout -> Color(0xFF999999)
-                            status.state == WatchConnState.SYNCED -> Color(0xFF00AA00)
-                            status.state == WatchConnState.CONNECTING -> Color(0xFF0099CC)
-                            status.state == WatchConnState.OFFLINE -> Color(0xFF999999)
-                            else -> Color(0xFF999999)
-                        }
-                        val label = when {
-                            status.state == WatchConnState.CONNECTING -> stringResource(R.string.watch_state_connecting)
-                            status.state == WatchConnState.SYNCED -> stringResource(R.string.watch_state_synced)
-                            status.state == WatchConnState.ERROR -> stringResource(R.string.watch_state_error)
-                            status.isOfflineByTimeout -> stringResource(R.string.watch_state_offline)
-                            status.state == WatchConnState.OFFLINE -> stringResource(R.string.watch_state_offline)
-                            else -> stringResource(R.string.watch_state_offline)
-                        }
-                        Triple(color, label, OlleeColors.SurfaceCard)
-                    }
+                    val isStaleData = status.isStaleData
+                    val style = watchStatusStyle(status)
+                    val stateColor = style.color
+                    val pillBg = style.pillBg
 
                     if (editingWatchId == status.watch.address) {
                         Row(
@@ -568,12 +542,31 @@ fun MainScreen(nav: AppNavController) {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(OlleeSpacing.sm)
                                 ) {
-                                    Text(
-                                        text = stateLabel,
-                                        color = stateColor,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = style.icon,
+                                            contentDescription = null,
+                                            tint = stateColor,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        style.faceBadge?.let { badge ->
+                                            Icon(
+                                                imageVector = badge.icon,
+                                                contentDescription = stringResource(badge.descriptionRes),
+                                                tint = badge.tint,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
+                                        Text(
+                                            text = stringResource(style.labelRes),
+                                            color = stateColor,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
                                     val detailText = when {
                                         activityState != WatchActivityState.ACTIVE -> ""
                                         status.isOfflineByTimeout && status.watch.lastSuccessfulSyncTimeMs > 0 ->
@@ -599,13 +592,6 @@ fun MainScreen(nav: AppNavController) {
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = FontFamily.Monospace
-                                        )
-                                    }
-                                    if (status.watch.forgeSupported) {
-                                        Text(
-                                            text = stringResource(R.string.watch_watchface_marker),
-                                            color = OlleeColors.TextSecondary,
-                                            fontSize = 11.sp
                                         )
                                     }
                                 }

@@ -2,6 +2,7 @@ package pl.cukrzycowy.ollee.glycemia
 
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -85,5 +86,34 @@ class WatchStoreTest {
 
         WatchStore.getAll(context)
         assertEquals(0, WatchStore.getAll(context).size)
+    }
+
+    @Test
+    fun faceDetected_roundTrip() {
+        WatchStore.add(context, "AA:BB:CC:DD:EE:FF")
+        WatchStore.add(context, "11:11:11:11:11:11")
+        WatchStore.setFaceDetected(context, "AA:BB:CC:DD:EE:FF", true)
+
+        val all = WatchStore.getAll(context).associateBy { it.address }
+        assertTrue(all.getValue("AA:BB:CC:DD:EE:FF").faceDetected)
+        assertFalse(all.getValue("11:11:11:11:11:11").faceDetected)
+
+        WatchStore.setFaceDetected(context, "AA:BB:CC:DD:EE:FF", false)
+        assertFalse(WatchStore.getAll(context).first { it.address == "AA:BB:CC:DD:EE:FF" }.faceDetected)
+    }
+
+    @Test
+    fun faceDetected_missingInOldData_readsFalse() {
+        context.getSharedPreferences("data", 0).edit()
+            .putBoolean("paired_watches_migration_done", true)
+            .putString(
+                "paired_watches",
+                """[{"address":"AA:BB:CC:DD:EE:FF","name":"Old","forgeSupported":true}]"""
+            )
+            .apply()
+
+        val watch = WatchStore.getAll(context).single()
+        assertTrue(watch.forgeSupported)
+        assertFalse(watch.faceDetected)
     }
 }

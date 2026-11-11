@@ -23,5 +23,21 @@
     { "name": "negative age", "frame": "G-5,120 -5", "valid": false },
     { "name": "unknown type", "frame": "Z1,abc", "valid": false },
     { "name": "empty text", "frame": "G5,", "valid": false }
-  ]
+  ],
+  "handshake": {
+    "query": "Q",
+    "hello": "H1,gly,2",
+    "parse": [
+      { "name": "current face", "data": "H1,gly,2", "valid": true, "protocol": 1, "faceVersion": 2 },
+      { "name": "later face with extra fields", "data": "H1,gly,12,x", "valid": true, "protocol": 1, "faceVersion": 12 },
+      { "name": "another face", "data": "H1,abc,2", "valid": false },
+      { "name": "no version", "data": "H1,gly", "valid": false },
+      { "name": "empty version", "data": "H1,gly,", "valid": false },
+      { "name": "bad version", "data": "H1,gly,x", "valid": false },
+      { "name": "bad protocol", "data": "Hx,gly,2", "valid": false },
+      { "name": "no protocol", "data": "H,gly,2", "valid": false },
+      { "name": "a frame, not a hello", "data": "G83,120 -5", "valid": false },
+      { "name": "empty", "data": "", "valid": false }
+    ]
+  }
 }

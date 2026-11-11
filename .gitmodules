@@ -1,0 +1,4 @@
+[submodule "tools/forge_emulator"]
+	path = tools/forge_emulator
+	url = https://github.com/olleewatch/forge_emulator
+	branch = main

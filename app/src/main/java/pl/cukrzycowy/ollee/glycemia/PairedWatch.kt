@@ -10,5 +10,7 @@ data class PairedWatch(
     val activityState: WatchActivityState = WatchActivityState.ACTIVE,
     val activityLabelSent: Boolean = false,
     /** Last known: the watch exposed the Forge BLE service on its previous connection. */
-    val forgeSupported: Boolean = false
+    val forgeSupported: Boolean = false,
+    /** Last known: the glycemia watchface answered the handshake (set by spec 16's handshake). */
+    val faceDetected: Boolean = false
 )

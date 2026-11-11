@@ -88,6 +88,14 @@ object WatchStore {
         writeAll(context, updated)
     }
 
+    @Synchronized
+    fun setFaceDetected(context: Context, address: String, detected: Boolean) {
+        val updated = readAll(context).map {
+            if (it.address == address) it.copy(faceDetected = detected) else it
+        }
+        writeAll(context, updated)
+    }
+
     private fun migrateLegacyIfNeeded(context: Context) {
         val prefs = prefs(context)
         if (prefs.getBoolean(KEY_MIGRATION_DONE, false)) return
@@ -119,7 +127,8 @@ object WatchStore {
                             lastSuccessfulSyncTimeMs = item.optLong("lastSuccessfulSyncTimeMs", 0L),
                             activityState = try { WatchActivityState.valueOf(activityStateName) } catch (e: Exception) { WatchActivityState.ACTIVE },
                             activityLabelSent = item.optBoolean("activityLabelSent", false),
-                            forgeSupported = item.optBoolean("forgeSupported", false)
+                            forgeSupported = item.optBoolean("forgeSupported", false),
+                            faceDetected = item.optBoolean("faceDetected", false)
                         )
                     )
                 }
@@ -141,6 +150,7 @@ object WatchStore {
                     .put("activityState", watch.activityState.name)
                     .put("activityLabelSent", watch.activityLabelSent)
                     .put("forgeSupported", watch.forgeSupported)
+                    .put("faceDetected", watch.faceDetected)
             )
         }
         prefs(context).edit().putString(KEY_WATCHES, array.toString()).apply()

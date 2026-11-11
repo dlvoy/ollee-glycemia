@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
   Runs every automated check for the Forge watchface work and prints a one-line summary for each:
-  the PowerShell parse check, the Node watchface tests and the Gradle unit tests.
+  the PowerShell parse check, the forge_emulator submodule state, the Node watchface tests
+  (including the checks against the pinned emulator) and the Gradle unit tests.
 #>
 [CmdletBinding()]
 param([switch]$SkipGradle)
@@ -22,6 +23,17 @@ foreach ($file in Get-ChildItem $PSScriptRoot -Filter *.ps1) {
 if ($parseErrors -eq 0) { Write-Ok 'ok' } else { $failed += 'powershell' }
 
 # Watchface (Node)
+# forge_emulator submodule: the emulator-compat tests skip themselves without it
+Write-Step 'forge_emulator submodule'
+$emu = Get-ForgeEmulatorStatus
+if (-not $emu -or $emu.State -eq '-') {
+    Write-Warn "not checked out, emulator-compat tests will skip (git submodule update --init $($script:EmulatorRel))"
+} elseif ($emu.State -eq '+') {
+    Write-Warn "at $($emu.Commit), not at the pinned commit"
+} else {
+    Write-Ok "at $($emu.Commit)"
+}
+
 Write-Step 'Watchface: node --test'
 $node = Get-Command node -ErrorAction SilentlyContinue
 if (-not $node) {

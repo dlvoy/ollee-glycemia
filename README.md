@@ -139,9 +139,9 @@ Ollee's Forge beta lets a watch run custom watchfaces. Once your watch firmware 
 - **LAP** means the app is feeding live data, **PM** means the reading is outdated
 - When the Bluetooth link is lost, the app goes silent or the reading is old, the status flashes on Main: `no bLE`, `no APP`, ` old  `
 
-The app detects the Forge service on its own, and a "Watchface" marker appears on the watch row. Watches without Forge keep working exactly as before.
+The app detects the Forge service on its own. Such watches get a second icon next to the status icon on the watch row: a watch in the status color when the glycemia face answered the app's handshake, a crossed-out gray watch when it didn't (not installed, or the older face from app v1.7.0). The app asks on every connection, with every reading while the face is missing, and when you tap sync. Watches without Forge keep working exactly as before and show no watch icon.
 
-Forge Beta 1 only runs in a browser emulator, and uploading a face to a watch comes with Beta 2. You can already try the face with the emulator: [docs/watchface/TESTING.md](docs/watchface/TESTING.md) (Windows scripts included). The frame format is described in [docs/watchface/PROTOCOL.md](docs/watchface/PROTOCOL.md).
+Forge Beta 2 can put faces on the watch: open `glycemia.js` in forge_emulator, upload it to your Ollee account (or save the file), then send it to a Forge slot from the Ollee Watch app under Settings > Forge Apps. Upstream's guide is [Deploying to your watch](https://github.com/olleewatch/forge_emulator/blob/main/docs/guides/deploying-to-watch.md). This hasn't been tested with this app on a real watch yet. To try the face without a watch, use the emulator (a git submodule in `tools/forge_emulator`): [docs/watchface/TESTING.md](docs/watchface/TESTING.md) (Windows scripts included). The frame format is described in [docs/watchface/PROTOCOL.md](docs/watchface/PROTOCOL.md).
 
 ### Reconnecting Your Watch
 

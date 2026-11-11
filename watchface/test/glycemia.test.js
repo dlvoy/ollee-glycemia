@@ -248,3 +248,62 @@ test('a new frame during a flash replaces it immediately', () => {
   assert.equal(h.screen.main, '119  1');
   assert.equal(h.pendingTimers(), 0);
 });
+
+// Handshake (spec 16)
+
+test('Q is answered with the hello from the shared fixtures', () => {
+  const h = openFace();
+  h.sent.length = 0; // init already said hello
+  assert.equal(h.rx(fixtures.handshake.query), true);
+  assert.deepEqual(h.sent, [fixtures.handshake.hello]);
+  assert.equal(h.state.disabled, null);
+});
+
+test('Q is answered while another face is on screen', () => {
+  const h = openFace({ onScreen: false });
+  h.sent.length = 0;
+  assert.equal(h.rx('Q'), true);
+  assert.deepEqual(h.sent, [fixtures.handshake.hello]);
+});
+
+test('Q leaves the tag, Day and mode alone', () => {
+  const h = openFace();
+  h.rx('G60,120 -5');
+  const before = h.snapshot();
+  h.advance(10.5 * MINUTE); // NO_APP would be 11 min after the last G frame
+  h.rx('Q');
+  assert.equal(h.screen.main, before.main);
+  h.advance(0.5 * MINUTE + 1);
+  assert.equal(h.screen.lap, false, 'Q must not count as app traffic');
+});
+
+test('init says hello only when a phone is connected', () => {
+  const on = createHarness();
+  on.load();
+  on.init();
+  assert.deepEqual(on.sent, [fixtures.handshake.hello]);
+
+  const off = createHarness({ connected: false });
+  off.load();
+  off.init();
+  assert.deepEqual(off.sent, []);
+  assert.equal(off.state.disabled, null);
+});
+
+test('firmware without Ollee.send: no hello, face keeps working', () => {
+  const h = createHarness();
+  delete h.ollee.send;
+  h.load();
+  h.init();
+  h.enter();
+  h.rx('Q');
+  h.rx('G30,120 -5');
+  assert.equal(h.state.disabled, null);
+  assert.equal(h.screen.main, '120 -5');
+});
+
+test('the hello carries the face version from the script', () => {
+  const h = createHarness();
+  h.load();
+  assert.equal(fixtures.handshake.hello, `H1,${h.ctx.FACE_ID},${h.ctx.FACE_VERSION}`);
+});

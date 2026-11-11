@@ -8,6 +8,7 @@
 // Frames (BLE write, printable ASCII, max 20 bytes), see docs/watchface/PROTOCOL.md:
 //   G<ageSeconds|->,<tag>   live state
 //   P,<label>               the user paused/stopped the watch in the app
+//   Q                       handshake query, answered with the notification H1,gly,<FACE_VERSION>
 //
 // Espruino rules: hooks are top-level function declarations, no top-level calls (no hoisting),
 // every hook catches its own errors (an uncaught error disables the face).
@@ -18,6 +19,8 @@ var OUTDATED_MS = 630000;   // 10.5 min, same as the app's STALE boundary
 var LINK_TIMEOUT_MS = 660000; // 11 min without any frame: the app keeps sending at least every 5
 var FLASH_MS = 2000;
 var DAY_MAX = 39;           // the first Day digit can only show 1-3
+var FACE_ID = 'gly';
+var FACE_VERSION = 2;       // 1 = the face in app v1.7.0, without the handshake
 
 var text = '--- --';
 var measuredAt = 0;         // watch-clock ms of the reading, 0 = unknown
@@ -76,6 +79,11 @@ function flashWord(mode) {
   return '';
 }
 
+// Handshake reply: tells the app this face is installed. Firmware without Ollee.send skips it.
+function hello() {
+  if (typeof Ollee.send === 'function') Ollee.send('H1,' + FACE_ID + ',' + FACE_VERSION);
+}
+
 function cancelFlash() {
   if (flashId !== -1) Ollee.clearTimeout(flashId);
   flashId = -1;
@@ -119,6 +127,7 @@ function init() {
   try {
     Ollee.subscribe(E_BLE_RX + E_BLE_CONNECT + E_BLE_DISCONNECT);
     lostAt = Ollee.connected() ? 0 : nowMs();
+    if (lostAt === 0) hello();
   } catch (e) {}
 }
 
@@ -138,6 +147,10 @@ function exit() {
 
 function ble_rx(data) {
   try {
+    if (typeof data === 'string' && data.charAt(0) === 'Q') {
+      hello();
+      return;
+    }
     var f = parseFrame(data);
     if (f === null) return;
     var now = nowMs();
