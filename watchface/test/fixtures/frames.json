@@ -26,7 +26,7 @@
   ],
   "handshake": {
     "query": "Q",
-    "hello": "H1,gly,2",
+    "hello": "H1,gly,3",
     "parse": [
       { "name": "current face", "data": "H1,gly,2", "valid": true, "protocol": 1, "faceVersion": 2 },
       { "name": "later face with extra fields", "data": "H1,gly,12,x", "valid": true, "protocol": 1, "faceVersion": 12 },

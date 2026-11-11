@@ -107,3 +107,4 @@ Note: tags `v1.0.0`–`v1.3.0` point at commits from before a history rewrite (a
 | 16 | [forge-face-handshake](16-forge-face-handshake/intent.md) | in-progress | v2.0.0 |
 | 17 | [watch-row-status-icons](17-watch-row-status-icons/intent.md) | done | v2.0.0 |
 | 18 | [forge-emulator-submodule](18-forge-emulator-submodule/intent.md) | done | v2.0.0 |
+| 19 | [forge-face-backlight-versions](19-forge-face-backlight-versions/intent.md) | in-progress | v2.1.0 |

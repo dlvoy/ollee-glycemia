@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-11
+
+### Added
+
+- **Watchface backlight**: The L button lights the watch for 3 seconds on the glycemia face (face version 3, Forge Apps 0.3)
+  - Releases now attach the matching `glycemia.js` next to the APK
+  - `watchface/VERSIONS.md` maps face versions to Forge Apps versions and the minimum app version
+
 ## [2.0.0] - 2026-11-11
 
 ### Added
@@ -243,7 +251,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resend action pushes the current value to all watches again
 - **Translations**: English, Polish and French
 
-[Unreleased]: https://github.com/dlvoy/ollee-glycemia/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/dlvoy/ollee-glycemia/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v2.1.0
 [2.0.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v2.0.0
 [1.7.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.7.0
 [1.6.0]: https://github.com/dlvoy/ollee-glycemia/releases/tag/v1.6.0

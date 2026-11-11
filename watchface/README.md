@@ -9,8 +9,9 @@
 | LAP | the app is feeding live data |
 | PM | the reading is outdated (10.5 minutes or more) |
 | flash on Main | `no bLE` (link lost), `no APP` (app silent for 11 min), ` old  ` (reading outdated) |
+| L button | lights the watch for 3 seconds (another press restarts the 3 seconds) |
 
-The face also answers the app's handshake query `Q` with the notification `H1,gly,<FACE_VERSION>` (and says hello from `init()` when a phone is connected), so the app can show that the face is installed. Bump `FACE_VERSION` when a change matters to the app.
+The face also answers the app's handshake query `Q` with the notification `H1,gly,<FACE_VERSION>` (and says hello from `init()` when a phone is connected), so the app can show that the face is installed. Every change to the face bumps `FACE_VERSION` and adds a row to [VERSIONS.md](VERSIONS.md), which maps it to the Forge Apps version and the minimum app version.
 
 Frame format and behaviour table: [docs/watchface/PROTOCOL.md](../docs/watchface/PROTOCOL.md).
 
@@ -20,7 +21,8 @@ Forge Beta 2 uploads faces to the watch through the Ollee Watch app (Settings > 
 
 ## Files
 
-- `glycemia.js`: the face, one plain file (limit 8158 bytes), Espruino-safe ES5
+- `glycemia.js`: the face, one plain file (limit 8158 bytes), Espruino-safe ES5. Also attached to every GitHub release
+- `VERSIONS.md`: face version, Forge Apps version and minimum app version
 - `test/`: Node tests (`node --test "watchface/test/*.test.js"`) with a small fake Forge runtime in `test/harness.js`
 - `test/fixtures/frames.json`: protocol vectors shared with the Kotlin tests
 - `test/emulator-compat.test.js`: checks the harness and the bridge against the pinned forge_emulator submodule (skipped when it isn't checked out)

@@ -90,7 +90,10 @@ jobs:
             ${{ steps.changelog.outputs.body }}
 
           generate_release_notes: true
-          files: output/ollee-glycemia-${{ steps.version.outputs.version }}-release.apk
+          # The face keeps its file name: Forge Apps takes the app name from it
+          files: |
+            output/ollee-glycemia-${{ steps.version.outputs.version }}-release.apk
+            watchface/glycemia.js
 
       # ── Cleanup ──────────────────────────────────────────────────────────────
       - name: Remove keystore file

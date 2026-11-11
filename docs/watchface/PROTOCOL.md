@@ -56,9 +56,9 @@ A Forge watch accepts writes whether or not the glycemia face is installed, beca
 | Frame | Direction | Meaning |
 |---|---|---|
 | `Q` | phone to watch, RX write | Which face is listening? The face only looks at the first letter |
-| `H<protocol>,<face id>,<face version>` | watch to phone, TX notification | The reply. Today `H1,gly,2` |
+| `H<protocol>,<face id>,<face version>` | watch to phone, TX notification | The reply. Today `H1,gly,3` |
 
-- `<protocol>` is `1`, the v1 frame family. `<face id>` is `gly`, so replies from other Forge faces are ignored. `<face version>` is `FACE_VERSION` in `glycemia.js`. Version 1 was the face in app v1.7.0, which has no handshake.
+- `<protocol>` is `1`, the v1 frame family. `<face id>` is `gly`, so replies from other Forge faces are ignored. `<face version>` is `FACE_VERSION` in `glycemia.js`. Version 1 was the face in app v1.7.0, which has no handshake. All versions are listed in [watchface/VERSIONS.md](../../watchface/VERSIONS.md).
 - The app accepts extra fields after the version, so later faces can add some.
 - The face answers on and off screen (background subscription). It also says hello from `init()` when a phone is connected, which covers a face installed while the app is connected.
 - `Q` doesn't count as app traffic on the face: the tag, Day, LAP and the 11-minute NO_APP timer ignore it.

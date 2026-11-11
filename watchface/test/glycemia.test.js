@@ -307,3 +307,64 @@ test('the hello carries the face version from the script', () => {
   h.load();
   assert.equal(fixtures.handshake.hello, `H1,${h.ctx.FACE_ID},${h.ctx.FACE_VERSION}`);
 });
+
+const LIGHT_MS = 3000;
+
+test('L lights the watch and the light goes off after 3 s', () => {
+  const h = openFace();
+  assert.equal(h.press('l_short'), true);
+  assert.equal(h.led.on, true);
+  h.advance(LIGHT_MS - 1);
+  assert.equal(h.led.on, true);
+  h.advance(1);
+  assert.equal(h.led.on, false);
+  assert.equal(h.pendingTimers(), 0);
+  assert.equal(h.state.disabled, null);
+});
+
+test('a second L press restarts the 3 s', () => {
+  const h = openFace();
+  h.press('l_short');
+  h.advance(2000);
+  h.press('l_short');
+  assert.equal(h.pendingTimers(), 1);
+  h.advance(2000);
+  assert.equal(h.led.on, true);
+  h.advance(1000);
+  assert.equal(h.led.on, false);
+});
+
+test('L with no free timer slot leaves the LED off', () => {
+  const h = openFace({ timerSlots: 0 });
+  h.press('l_short');
+  assert.equal(h.led.on, false);
+  assert.equal(h.state.disabled, null);
+});
+
+test('leaving the face while lit turns the light off', () => {
+  const h = openFace();
+  h.press('l_short');
+  h.exit();
+  assert.equal(h.led.on, false);
+  assert.equal(h.pendingTimers(), 0);
+});
+
+test('L does not reach the face off screen', () => {
+  const h = openFace({ onScreen: false });
+  assert.equal(h.press('l_short'), false);
+  assert.equal(h.led.on, false);
+});
+
+test('the light and the status flash run side by side', () => {
+  const h = openFace();
+  h.rx('G83,120 -5');
+  h.setConnected(false);
+  assert.equal(h.screen.main, 'no bLE');
+  h.press('l_short');
+  assert.equal(h.pendingTimers(), 2);
+  h.advance(FLASH_MS);
+  assert.equal(h.screen.main, '120 -5');
+  assert.equal(h.led.on, true);
+  h.advance(LIGHT_MS - FLASH_MS);
+  assert.equal(h.led.on, false);
+});

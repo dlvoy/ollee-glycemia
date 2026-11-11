@@ -67,7 +67,8 @@ Every mode of the face, with the command that triggers it and what to expect. Ru
 | NO_LINK | `.\scripts\forge\Set-ForgeScenario.ps1 -Link off` (or untick **phone connected**) | `no bLE` flashes, LAP off, Day counts minutes since the disconnect |
 | Recovery | `.\scripts\forge\Set-ForgeScenario.ps1 -Link on` | LAP on, tag back, Day resets |
 | PAUSED | `.\scripts\forge\Set-ForgeScenario.ps1 -Pause on` (then `-Pause off`) | Main = ` pause`, Day `--`, LAP and PM off, no flash even if the link drops |
-| Handshake | Type `Q` and Send. Pressing **Run** with **phone connected** ticked also works (the `init()` hello) | The log shows `BLE notify -> phone: "H1,gly,2"`; the display doesn't change |
+| Handshake | Type `Q` and Send. Pressing **Run** with **phone connected** ticked also works (the `init()` hello) | The log shows `BLE notify -> phone: "H1,gly,3"`; the display doesn't change |
+| Light | With the face on screen, press **L** (key `l`) | The light icon turns on and goes off after 3 s. Pressing again within 3 s keeps it on 3 s from that press; **M** while lit turns it off |
 
 The relay doesn't send `Q` and forge-bridge doesn't carry the reply back to the app, so in this loop the handshake is checked by hand only. The app side has unit tests (`ForgeHandshakeTest`), and the real check needs a watch (section 8).
 
@@ -135,14 +136,14 @@ Watches without Forge must behave as before. Pair a watch, let it receive a read
 ## 8. A Forge watch with the face (Beta 2)
 
 1. Upload `watchface/glycemia.js` to a Forge slot: forge_emulator's **Upload** (or **Save script**), then the Ollee Watch app, Settings > Forge Apps. See upstream's [Deploying to your watch](https://github.com/olleewatch/forge_emulator/blob/main/docs/guides/deploying-to-watch.md).
-2. Before involving this app, confirm the UUIDs with nRF Connect: connect to the watch, find service `C6FB0001-…`, enable notifications on `C6FB0003-A37D-40AC-89BE-887D25E1F5B3`, write the text `Q` to `C6FB0002-A37D-40AC-89BE-887D25E1F5B3`. Expect the notification `H1,gly,2`. If the last digits differ from the ones in `ForgeProtocol.kt`, fix them there first. Disconnect nRF Connect afterwards.
+2. Before involving this app, confirm the UUIDs with nRF Connect: connect to the watch, find service `C6FB0001-…`, enable notifications on `C6FB0003-A37D-40AC-89BE-887D25E1F5B3`, write the text `Q` to `C6FB0002-A37D-40AC-89BE-887D25E1F5B3`. Expect the notification `H1,gly,3`. If the last digits differ from the ones in `ForgeProtocol.kt`, fix them there first. Disconnect nRF Connect afterwards.
 3. Pair the watch in the app (or tap sync on its row). Within a few seconds the watchface icon next to the status icon turns from a gray crossed-out watch into a watch in the status color.
-4. `adb logcat -s WatchConnection` shows `Glycemia face v2 answered on …`, or `No glycemia face answered on …` after 5 s without a reply.
+4. `adb logcat -s WatchConnection` shows `Glycemia face v3 answered on …`, or `No glycemia face answered on …` after 5 s without a reply.
 5. Remove the face from its slot and tap sync: the icon goes gray again. Install it again: it comes back with the next reading (at most 5 minutes) or on sync.
 
 ## 9. Without a Forge watch: an optional GATT check (untested idea)
 
-To exercise the real GATT path, a second Android phone can act as the watch: run a GATT server app (for example nRF Connect's Advertiser/Server) with service `C6FB0001-A37D-40AC-89BE-887D25E1F5B3` and a writable characteristic `C6FB0002-A37D-40AC-89BE-887D25E1F5B3`, give that phone a Bluetooth name containing "Ollee", and pair it in the app. The watch row should show the gray watchface icon (Forge found, face not detected) and nRF Connect should log the frames. The Nordic UART service must be present too, or the app has nothing to write the tag text to. To play the face in the handshake, add a notify characteristic `C6FB0003-A37D-40AC-89BE-887D25E1F5B3` and send the notification `H1,gly,2` when the `Q` write arrives (or right after the app subscribes): the icon turns on.
+To exercise the real GATT path, a second Android phone can act as the watch: run a GATT server app (for example nRF Connect's Advertiser/Server) with service `C6FB0001-A37D-40AC-89BE-887D25E1F5B3` and a writable characteristic `C6FB0002-A37D-40AC-89BE-887D25E1F5B3`, give that phone a Bluetooth name containing "Ollee", and pair it in the app. The watch row should show the gray watchface icon (Forge found, face not detected) and nRF Connect should log the frames. The Nordic UART service must be present too, or the app has nothing to write the tag text to. To play the face in the handshake, add a notify characteristic `C6FB0003-A37D-40AC-89BE-887D25E1F5B3` and send the notification `H1,gly,3` when the `Q` write arrives (or right after the app subscribes): the icon turns on.
 
 ## 10. What only real hardware can show
 

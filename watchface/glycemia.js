@@ -4,6 +4,7 @@
 // Day   = minutes since the measurement (0-39), minutes since the link was lost, or "--"
 // LAP   = the app is feeding us live data, PM = the reading is outdated
 // A status word flashes on Main when the link is lost, the app went quiet or the reading is old.
+// L (top left) lights the watch for LIGHT_MS.
 //
 // Frames (BLE write, printable ASCII, max 20 bytes), see docs/watchface/PROTOCOL.md:
 //   G<ageSeconds|->,<tag>   live state
@@ -13,14 +14,15 @@
 // Espruino rules: hooks are top-level function declarations, no top-level calls (no hoisting),
 // every hook catches its own errors (an uncaught error disables the face).
 
-var subscribe = E_BLE_RX + E_BLE_CONNECT + E_BLE_DISCONNECT + E_CLOCK_MINUTE;
+var subscribe = E_BLE_RX + E_BLE_CONNECT + E_BLE_DISCONNECT + E_CLOCK_MINUTE + E_L_SHORT;
 
 var OUTDATED_MS = 630000;   // 10.5 min, same as the app's STALE boundary
 var LINK_TIMEOUT_MS = 660000; // 11 min without any frame: the app keeps sending at least every 5
 var FLASH_MS = 2000;
+var LIGHT_MS = 3000;
 var DAY_MAX = 39;           // the first Day digit can only show 1-3
 var FACE_ID = 'gly';
-var FACE_VERSION = 2;       // 1 = the face in app v1.7.0, without the handshake
+var FACE_VERSION = 3;       // keep watchface/VERSIONS.md in sync
 
 var text = '--- --';
 var measuredAt = 0;         // watch-clock ms of the reading, 0 = unknown
@@ -28,6 +30,7 @@ var lastRxAt = 0;           // watch-clock ms of the last frame, 0 = none yet
 var lostAt = 0;             // watch-clock ms of the last disconnect, 0 = connected
 var paused = false;
 var flashId = -1;
+var lightId = -1;
 var lastMode = '';
 
 function nowMs() {
@@ -96,6 +99,19 @@ function endFlash() {
   } catch (e) {}
 }
 
+function cancelLight() {
+  if (lightId !== -1) Ollee.clearTimeout(lightId);
+  lightId = -1;
+  Ollee.led_off();
+}
+
+function lightOff() {
+  try {
+    lightId = -1;
+    Ollee.led_off();
+  } catch (e) {}
+}
+
 // trigger: 'enter', 'minute' (always flash a status word) or 'event' (flash only on a mode change)
 function render(trigger) {
   if (!Ollee.active()) return;
@@ -141,6 +157,7 @@ function enter() {
 function exit() {
   try {
     cancelFlash();
+    cancelLight();
     lastMode = '';
   } catch (e) {}
 }
@@ -184,5 +201,15 @@ function ble_disconnect() {
 function clock_minute() {
   try {
     render('minute');
+  } catch (e) {}
+}
+
+// Restarts the light on every press; with no free timer slot the LED stays off
+function l_short() {
+  try {
+    if (lightId !== -1) Ollee.clearTimeout(lightId);
+    Ollee.led_on();
+    lightId = Ollee.setTimeout(lightOff, LIGHT_MS);
+    if (lightId === -1) Ollee.led_off();
   } catch (e) {}
 }

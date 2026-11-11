@@ -17,7 +17,7 @@ const E = {
 const BACKGROUND_BITS = E.E_BLE_RX | E.E_CLOCK_MINUTE | E.E_CLOCK_HOUR | E.E_BLE_CONNECT | E.E_BLE_DISCONNECT;
 const HOOK_BIT = {
   ble_rx: E.E_BLE_RX, clock_minute: E.E_CLOCK_MINUTE, ble_connect: E.E_BLE_CONNECT,
-  ble_disconnect: E.E_BLE_DISCONNECT,
+  ble_disconnect: E.E_BLE_DISCONNECT, l_short: E.E_L_SHORT,
 };
 const MINUTE = 60000;
 // Aligned to a minute boundary so clock_minute ticks land on whole multiples of 60000
@@ -29,6 +29,7 @@ function createHarness(opts = {}) {
   const clock = { now: opts.start === undefined ? T0 : opts.start };
   const state = { active: false, connected: opts.connected !== false, background: 0, disabled: null };
   const screen = { main: '      ', day: '  ', lap: false, pm: false };
+  const led = { on: false };
   const timers = new Array(opts.timerSlots === undefined ? 4 : opts.timerSlots).fill(null);
   const calls = [];
   const sent = [];
@@ -53,6 +54,8 @@ function createHarness(opts = {}) {
     drawHR: rec('drawHR', () => {}),
     drawColon: rec('drawColon', () => {}),
     beep: rec('beep', () => {}),
+    led_on: rec('led_on', () => { led.on = true; }),
+    led_off: rec('led_off', () => { led.on = false; }),
     subscribe: rec('subscribe', (bits) => {
       if (bits & ~BACKGROUND_BITS) return false;
       state.background |= bits;
@@ -106,7 +109,7 @@ function createHarness(opts = {}) {
   }
 
   const h = {
-    ollee, ctx, clock, state, screen, calls, sent, E, T0, MINUTE,
+    ollee, ctx, clock, state, screen, led, calls, sent, E, T0, MINUTE,
     load() {
       const src = fs.readFileSync(scriptPath, 'utf8');
       h.source = src;
@@ -123,6 +126,8 @@ function createHarness(opts = {}) {
       timers.fill(null);
     },
     rx(data) { return deliver('ble_rx', data); },
+    // A button hook such as 'l_short'; reaches the face only on screen (no background bit)
+    press(name) { return deliver(name); },
     setConnected(on) {
       state.connected = on;
       return deliver(on ? 'ble_connect' : 'ble_disconnect');

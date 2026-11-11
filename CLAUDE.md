@@ -58,4 +58,10 @@ app/src/main/java/pl/cukrzycowy/ollee/glycemia/
 - Use file_path:line_number format for code references
 - Don't narrate internal deliberation
 
+## Watchface versions
+Any change to `watchface/glycemia.js` (behaviour, not comments only) in the same change:
+- bumps `FACE_VERSION` by 1
+- adds a row to `watchface/VERSIONS.md`: `FACE_VERSION`, Forge Apps version (`0.<FACE_VERSION>` until the official 1.0 face), minimum app version (the oldest release that supports every feature the face uses; the upcoming version if the face needs unreleased app code)
+- updates the hello `H1,gly,<FACE_VERSION>` in `watchface/test/fixtures/frames.json` and the docs that quote it (`docs/watchface/PROTOCOL.md`, `TESTING.md`)
+
 DO NOT AUTO-EXTEND THIS FILE UNLESS ASKED - if you feel the need - suggest with SHORT summary what you want to put it at end
